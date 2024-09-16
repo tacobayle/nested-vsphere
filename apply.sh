@@ -28,12 +28,12 @@ networks=$(jq -c -r '.spec.networks' $jsonFile)
 ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
 if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then
-  ip_nsx=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).gw' $jsonFile)
+  ip_nsx=$(jq -c -r .spec.gw.ip $jsonFile)
 else
   ip_nsx=$(jq -c -r '.spec.nsx.ip' $jsonFile)
 fi
 if [[ $(jq -c -r .spec.avi.ip $jsonFile) == "null" ]]; then
-  ip_avi=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).gw' $jsonFile)
+  ip_avi=$(jq -c -r .spec.gw.ip $jsonFile)
 else
   ip_avi=$(jq -c -r '.spec.avi.ip' $jsonFile)
 fi
@@ -86,8 +86,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${default_gw}/${default_gw}/" \
         -e "s/\${ntp_masters}/${ntp_masters}/" \
         -e "s/\${forwarders_netplan}/${forwarders_netplan}/" \
-        -e "s@\${networks}@${networks}@"
-        -e "s/\${forwarders_bind}/${forwarders_bind}/"
+        -e "s@\${networks}@${networks}@" \
+        -e "s/\${forwarders_bind}/${forwarders_bind}/" \
         -e "s/\${domain}/${domain}/g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
         -e "s/\${cidr_three_octets}/${cidr_three_octets}/g" \
