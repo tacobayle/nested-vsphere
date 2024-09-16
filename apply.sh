@@ -21,21 +21,21 @@ ip_gw=$(jq -c -r .spec.gw.ip $jsonFile)
 network_ref_gw=$(jq -c -r .spec.gw.network_ref $jsonFile)
 prefix_gw=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).cidr' $jsonFile | cut -d"/" -f2)
 default_gw=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).gw' $jsonFile)
-ntp_masters=$(jq -c -r .spec.gw.ntp_masters $jsonFile)
+ntp_masters=$(jq -c -r '.spec.gw.ntp_masters' $jsonFile)
 forwarders_netplan=$(jq -c -r 'spec.gw.dns_forwarders | join(",")' $jsonFile)
 forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
-networks=$(jq -c -r .spec.networks $jsonFile)
-ips_esxi=$(jq -c -r .spec.esxi.ips $jsonFile)
-ip_vcsa=$(jq -c -r .spec.vsphere.ip $jsonFile)
-if [[ $(jq -c -r .spec.nsx.ip $jsonFile) == "null" ]]; then
+networks=$(jq -c -r '.spec.networks' $jsonFile)
+ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
+ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
+if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then
   ip_nsx=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).gw' $jsonFile)
 else
-  ip_nsx=$(jq -c -r .spec.nsx.ip $jsonFile)
+  ip_nsx=$(jq -c -r '.spec.nsx.ip' $jsonFile)
 fi
 if [[ $(jq -c -r .spec.avi.ip $jsonFile) == "null" ]]; then
   ip_avi=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).gw' $jsonFile)
 else
-  ip_avi=$(jq -c -r .spec.avi.ip $jsonFile)
+  ip_avi=$(jq -c -r '.spec.avi.ip' $jsonFile)
 fi
 trunk1=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
 #
@@ -78,6 +78,7 @@ if [[ ${operation} == "apply" ]] ; then
     count=0
     for octet in "${octets[@]}"; do if [ $count -eq 3 ]; then break ; fi ; addr_mgmt=$octet"."$addr_mgmt ;((count++)) ; done
     reverse_mgmt=${addr_mgmt%.}
+    if [[ ${cidr} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then cidr_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}" ; fi
     sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s/\${hostname}/${gw_name}/" \
         -e "s/\${ip_gw}/${ip_gw}/" \
@@ -89,6 +90,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${forwarders_bind}/${forwarders_bind}/"
         -e "s/\${domain}/${domain}/g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
+        -e "s/\${cidr_three_octets}/${cidr_three_octets}/g" \
         -e "s/\${ips_esxi}/${ips_esxi}/" \
         -e "s/\${ip_nsx}/${ip_nsx}/" \
         -e "s/\${ip_avi}/${ip_avi}/" \
@@ -96,7 +98,7 @@ if [[ ${operation} == "apply" ]] ; then
     #
     sed -e "s#\${public_key}#$(awk '{printf "%s\\n", $0}' /root/.ssh/id_rsa.pub | awk '{length=$0; print substr($0, 1, length-2)}')#" \
         -e "s@\${base64_userdata}@$(base64 /tmp/${gw_name}_userdata.yaml -w 0)@" \
-        -e "s/\${EXTERNAL_GW_PASSWORD}/${EXTERNAL_GW_PASSWORD}/" \
+        -e "s/\${EXTERNAL_GW_PASSWORD}/${GENERIC_PASSWORD}/" \
         -e "s@\${network_ref}@${network_ref_gw}@" \
         -e "s/\${gw_name}/${gw_name}/" /nested-vsphere/templates/options-gw.json.template | tee "/tmp/options-${gw_name}.json"
     #
