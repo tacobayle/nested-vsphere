@@ -129,7 +129,7 @@ write_files:
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
       do
-        echo "esxi0$count_esxi      IN            A       ${ip_esxi}" | tee -a /var/lib/bind/db.${domain}
+        echo "esxi0$count_esxi      IN            A       ${cidr_three_octets}.${ip_esxi}" | tee -a /var/lib/bind/db.${domain}
         ((count_esxi++))
       done
       #
@@ -156,7 +156,7 @@ write_files:
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
       do
-        echo "`echo $ip_esxi`            PTR     $esxi0$count_esxi.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
+        echo "`echo $ip_esxi`            PTR     esxi0$count_esxi.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
         ((count_esxi++))
       done
       #
