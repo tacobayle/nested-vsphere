@@ -37,6 +37,7 @@ if [[ $(jq -c -r .spec.avi.ip $jsonFile) == "null" ]]; then
 else
   ip_avi=$(jq -c -r .spec.avi.ip $jsonFile)
 fi
+trunk1=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
 #
 if [[ ${operation} == "apply" || ${operation} == "destroy" ]] ; then log_file="/nested-vsphere/log/${deployment_name}_${operation}.stdout" ; fi
 if [[ ${operation} != "apply" && ${operation} != "destroy" ]] ; then echo "ERROR: Unsupported operation" ; exit 255 ; fi
@@ -77,8 +78,7 @@ if [[ ${operation} == "apply" ]] ; then
     count=0
     for octet in "${octets[@]}"; do if [ $count -eq 3 ]; then break ; fi ; addr_mgmt=$octet"."$addr_mgmt ;((count++)) ; done
     reverse_mgmt=${addr_mgmt%.}
-    basename=$(jq -c -r .esxi.basename $jsonFile)
-    sed -e "s/\${password}/${EXTERNAL_GW_PASSWORD}/" \
+    sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s/\${hostname}/${gw_name}/" \
         -e "s/\${ip_gw}/${ip_gw}/" \
         -e "s/\${prefix}/${prefix_gw}/" \
@@ -101,7 +101,6 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${gw_name}/${gw_name}/" /nested-vsphere/templates/options-gw.json.template | tee "/tmp/options-${gw_name}.json"
     #
     govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ova_url})" | tee -a ${log_file}
-    trunk1=$(jq -c -r .esxi.nics[0] $jsonFile)
     govc vm.network.add -vm "${folder}/${gw_name}" -net "${trunk1}" -net.adapter vmxnet3 | tee -a ${log_file}
     govc vm.power -on=true "${gw_name}" | tee -a ${log_file}
     echo "   +++ Updating /etc/hosts..." | tee -a ${log_file}
