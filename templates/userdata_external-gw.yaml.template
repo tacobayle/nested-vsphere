@@ -202,6 +202,8 @@ write_files:
       echo "deb [signed-by=/tmp/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${K8s_version_short}/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
       apt update
       apt-get install -y kubectl
+      echo "alias k=kubectl" | sudo tee -a /home/ubuntu/.profile
+      echo "source <(kubectl completion bash | sed s/kubectl/k/g)" | sudo tee -a /home/ubuntu/.profile
       #
       echo "cloud init done" | tee /tmp/cloudInitDone.log
     path: /opt/bootstrap.sh
