@@ -205,6 +205,14 @@ write_files:
       echo "alias k=kubectl" | sudo tee -a /home/ubuntu/.profile
       echo "source <(kubectl completion bash | sed s/kubectl/k/g)" | sudo tee -a /home/ubuntu/.profile
       #
+      # apt install
+      #
+      packages='${packages}'
+      echo $packages | jq -c -r .[] | while read package
+      do
+        apt install -y $package
+      done
+      #
       echo "cloud init done" | tee /tmp/cloudInitDone.log
     path: /opt/bootstrap.sh
     permissions: 0755
