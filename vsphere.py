@@ -16,9 +16,9 @@ logging.basicConfig(level=logging.INFO)
 config.load_incluster_config()
 
 # Helper function to create vsphere
-def create_vsphere(body):
+def create_vsphere(yaml_body):
     folder='/nested-vsphere'
-    a_dict = body
+    a_dict = yaml_body
     a_dict['operation'] = "apply"
     json_file='/root/${0}.json'.format(a_dict['metadata']['name'])
     with open(json_file, 'w') as outfile:
@@ -30,9 +30,9 @@ def create_vsphere(body):
 
 
 # Helper function to delete vsphere
-def delete_vsphere(body):
+def delete_vsphere(yaml_body):
     folder='/nested-vsphere'
-    a_dict = body
+    a_dict = yaml_body
     a_dict['operation'] = "destroy"
     json_file='/root/${0}.json'.format(a_dict['metadata']['name'])
     with open(json_file, 'w') as outfile:
@@ -47,17 +47,17 @@ def delete_vsphere(body):
 #
 @kopf.on.create('vsphere')
 def on_create(body, **kwargs):
-    body = body
+    yaml_body = body
     try:
-        create_vsphere(body)
+        create_vsphere(yaml_body)
     except requests.RequestException as e:
         raise kopf.PermanentError(f'Failed to create external resource: {e}')
 
 @kopf.on.delete('vsphere')
 def on_delete(body, **kwargs):
-    body = body
+    yaml_body = body
     try:
-        delete_vsphere(body)
+        delete_vsphere(yaml_body)
     except requests.RequestException as e:
         raise kopf.PermanentError(f'Failed to delete external resource: {e}')
 #
