@@ -213,12 +213,19 @@ write_files:
         apt install -y $package
       done
       #
+      # helm install
+      #
+      wget https://baltocdn.com/helm/signing.asc -O /tmp/signing.asc
+      apt-key add /tmp/signing.asc
+      sudo add-apt-repository "deb https://baltocdn.com/helm/stable/debian/ all main"
+      apt-get install -y helm
+      #
       #
       # yaml download
       #
       cd /home/ubuntu/${yaml_folder}
       yaml_links='${yaml_links}'
-      echo $wget_links | jq -c -r .[] | while read yaml_link
+      echo $yaml_links | jq -c -r .[] | while read yaml_link
       do
         sudo -u ubuntu wget $yaml_link
       done
