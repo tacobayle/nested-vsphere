@@ -22,7 +22,7 @@ def create_vsphere(metadata, spec):
     a_dict['metadata'] = metadata
     a_dict['spec'] = spec
     a_dict['operation'] = "apply"
-    json_file='/root/${0}.json'.format(a_dict['metadata']['name'])
+    json_file='/root/{0}.json'.format(a_dict['metadata']['name'])
     with open(json_file, 'w') as outfile:
         json.dump(a_dict, outfile)
     result=subprocess.Popen(['/bin/bash', 'apply.sh', json_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)
@@ -38,7 +38,7 @@ def delete_vsphere(metadata, spec):
     a_dict['metadata'] = metadata
     a_dict['spec'] = spec
     a_dict['operation'] = "destroy"
-    json_file='/root/${0}.json'.format(a_dict['metadata']['name'])
+    json_file='/root/{0}.json'.format(a_dict['metadata']['name'])
     with open(json_file, 'w') as outfile:
         json.dump(a_dict, outfile)
     result=subprocess.Popen(['/bin/bash', 'apply.sh', json_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)
