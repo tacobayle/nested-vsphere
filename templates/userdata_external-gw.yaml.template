@@ -191,9 +191,9 @@ write_files:
       directories='${directories}'
       echo $directories | jq -c -r .[] | while read directory
       do
-        mkdir -p /home/ubuntu/$directory
-        chown ubuntu /home/ubuntu/$directory
-        chgrp ubuntu /home/ubuntu/$directory
+        sudo -u ubuntu  mkdir -p /home/ubuntu/$directory
+        #chown ubuntu /home/ubuntu/$directory
+        #chgrp ubuntu /home/ubuntu/$directory
       done
       #
       # K8s install
@@ -212,6 +212,17 @@ write_files:
       do
         apt install -y $package
       done
+      #
+      #
+      # yaml download
+      #
+      cd /home/ubuntu/${yaml_folder}
+      yaml_links='${yaml_links}'
+      echo $wget_links | jq -c -r .[] | while read yaml_link
+      do
+        sudo -u ubuntu wget $yaml_link
+      done
+      cd -
       #
       echo "cloud init done" | tee /tmp/cloudInitDone.log
     path: /opt/bootstrap.sh

@@ -97,6 +97,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${ip_nsx}/${ip_nsx}/" \
         -e "s/\${ip_avi}/${ip_avi}/" \
         -e "s@\${directories}@$(jq -c -r '.directories' $jsonFile)@" \
+        -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
+        -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" \
         -e "s/\${K8s_version_short}/$(jq -c -r '.K8s_version_short' $jsonFile)/" \
         -e "s/\${packages}/$(jq -c -r '.apt_packages' $jsonFile)/" \
         -e "s/\${ip_vcsa}/${ip_vcsa}/" /nested-vsphere/templates/userdata_external-gw.yaml.template | tee /tmp/${gw_name}_userdata.yaml > /dev/null
