@@ -3,7 +3,7 @@
 SLACK_WEBHOOK_URL_LOCAL=${SLACK_WEBHOOK_URL}
 export GOVC_PASSWORD=${ESXI_PASSWORD}
 export GOVC_INSECURE=true
-export GOVC_URL=${esxi_ip}
+export GOVC_URL=${cidr_three_octets}.${esxi_ip}
 export GOVC_USERNAME=root
 # https check
 count=1

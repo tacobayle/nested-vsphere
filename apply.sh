@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 source /nested-vsphere/bash/download_file.sh
+source /nested-vsphere/bash/ip.sh
 #
 rm -f /root/govc.error
 jsonFile_kube="${1}"
@@ -32,6 +33,10 @@ forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
 networks=$(jq -c -r '.spec.networks' $jsonFile)
 ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
+cidr=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+if [[ ${cidr} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+fi
 if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then
   ip_nsx=$(jq -c -r .spec.gw.ip $jsonFile)
 else
@@ -75,12 +80,10 @@ if [[ ${operation} == "apply" ]] ; then
   if [[ ${list_gw} != "null" ]] ; then
     echo "ERROR: unable to create VM ${gw_name}: it already exists" | tee -a ${log_file}
   else
-    cidr=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
     IFS="." read -r -a octets <<< "$cidr"
     count=0
     for octet in "${octets[@]}"; do if [ $count -eq 3 ]; then break ; fi ; addr_mgmt=$octet"."$addr_mgmt ;((count++)) ; done
     reverse_mgmt=${addr_mgmt%.}
-    if [[ ${cidr} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then cidr_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}" ; fi
     sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s/\${hostname}/${gw_name}/" \
         -e "s/\${ip_gw}/${ip_gw}/" \
@@ -133,6 +136,7 @@ if [[ ${operation} == "apply" ]] ; then
           name_esxi="esxi0${esxi}"
           sed -e "s/\${esxi_ip}/${esxi_ip}/" \
               -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
+              -e "s/\${cidr_three_octets}/${cidr_three_octets}/g" \
               -e "s/\${esxi}/${esxi}/" \
               -e "s/\${deployment_name}/${deployment_name}/" \
               -e "s/\${name_esxi}/${name_esxi}/" \
@@ -152,11 +156,87 @@ if [[ ${operation} == "apply" ]] ; then
   names="${gw_name}"
   #
   #
+  echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Creation of an ESXi hosts on the underlay infrastructure - This should take 10 minutes" | tee -a ${log_file}
+  iso_url=$(jq -c -r .spec.esxi.iso_url $jsonFile)
+  download_file_from_url_to_location "${iso_url}" "/root/$(basename ${iso_url})" "ESXi ISO"
+  if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXI downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  #
+  iso_mount_location="/tmp/esxi_cdrom_mount"
+  iso_build_location="/tmp/esxi_cdrom"
+  boot_cfg_location="efi/boot/boot.cfg"
+  iso_location="/tmp/esxi"
+  xorriso -ecma119_map lowercase -osirrox on -indev "/root/$(basename ${iso_url})" -extract / ${iso_mount_location}
+  echo "Copying source ESXi ISO to Build directory" | tee -a ${log_file}
+  rm -fr ${iso_build_location}
+  mkdir -p ${iso_build_location}
+  cp -r ${iso_mount_location}/* ${iso_build_location}
+  rm -fr ${iso_mount_location}
+  echo "Modifying ${iso_build_location}/${boot_cfg_location}" | tee -a ${log_file}
+  echo "kernelopt=runweasel ks=cdrom:/KS_CUST.CFG" | tee -a ${iso_build_location}/${boot_cfg_location}
+  #
+  for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
+  do
+    name_esxi="${deployment_name}-esxi0${esxi}"
+    if [[ $(govc find -json vm | jq '[.[] | select(. == "vm/'${folder}'/'${name_esxi}'")] | length') -eq 1 ]]; then
+      echo "ERROR: unable to create nested ESXi ${name_esxi}: it already exists" | tee -a ${log_file}
+    else
+      net=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
+      esxi_ip=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
+      echo "Building custom ESXi ISO for ESXi${esxi}"
+      rm -f ${iso_build_location}/ks_cust.cfg
+      rm -f "${iso_location}-${esxi}.iso"
+      sed -e "s/\${nested_esxi_root_password}/${GENERIC_PASSWORD}/" \
+          -e "s/\${ip_mgmt}/${esxi_ip}/" \
+          -e "s/\${cidr_three_octets}/${cidr_three_octets}/g" \
+          -e "s/\${netmask}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
+          -e "s/\${vlan_id}/$(jq -c -r --arg arg "MANAGEMENT" '.specs.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+          -e "s/\${dns_servers}/${ip_gw}/" \
+          -e "s/\${ntp_servers}/${ip_gw}/" \
+          -e "s/\${hostname}/${name_esxi}/" \
+          -e "s/\${domain}/${domain}/" \
+          -e "s/\${gateway}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)/" /nested-vsphere/templates/ks_cust.cfg.template | tee ${iso_build_location}/ks_cust.cfg > /dev/null
+      echo "Building new ISO for ESXi ${esxi}"
+      xorrisofs -relaxed-filenames -J -R -o "${iso_location}-${esxi}.iso" -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efiboot.img -no-emul-boot ${iso_build_location}
+      govc datastore.upload  --ds=$(jq -c -r .spec.vsphere_underlay.datastore $jsonFile) --dc=$(jq -c -r .spec.vsphere_underlay.datacenter $jsonFile) "${iso_location}-${esxi}.iso" nic-vsphere/$(basename ${iso_location}-${esxi}.iso) | tee -a ${log_file}
+      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXi '${esxi}' uploaded "}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      names="${names} ${name_esxi}"
+      govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}" | tee -a ${log_file}
+      govc device.cdrom.add -vm "${folder}/${name_esxi}" | tee -a ${log_file}
+      govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 nic-vsphere/$(basename ${iso_location}-${esxi}.iso) | tee -a ${log_file}
+      govc vm.change -vm "${folder}/${name_esxi}" -nested-hv-enabled | tee -a ${log_file}
+      govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk1 -size $(jq -c -r .spec.esxi.disk_flash_size $jsonFile) | tee -a ${log_file}
+      govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk2 -size $(jq -c -r .spec.esxi.disk_capacity_size $jsonFile) | tee -a ${log_file}
+      net=$(jq -c -r .spec.esxi.nics[1] $jsonFile)
+      govc vm.network.add -vm "${folder}/${name_esxi}" -net ${net} -net.adapter vmxnet3 | tee -a ${log_file}
+      govc vm.power -on=true "${folder}/${name_esxi}" | tee -a ${log_file}
+      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${esxi}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    fi
+  done
+  # affinity rule
+  if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
+    govc cluster.rule.create -name "${deployment_name}-affinity-rule" -enable -affinity ${names}
+  fi
 fi
 #
 #
 #
 if [[ ${operation} == "destroy" ]] ; then
+  echo '------------------------------------------------------------' | tee -a ${log_file}
+  for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
+  do
+    name_esxi="${deployment_name}-esxi0${esxi}"
+    echo "Deletion of a nested ESXi ${name_esxi} on the underlay infrastructure - This should take less than a minute" | tee -a ${log_file}
+    if [[ $(govc find -json vm | jq '[.[] | select(. == "vm/'${folder}'/'${name_esxi}'")] | length') -eq 1 ]]; then
+      govc vm.power -off=true "${folder}/${name_esxi}"
+      govc vm.destroy "${folder}/${name_esxi}"
+      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' destroyed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    else
+      echo "ERROR: unable to delete ESXi ${name_esxi}: it is already gone" | tee -a ${log_file}
+    fi
+  done
+  #
+  #
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Deletion of a VM on the underlay infrastructure - This should take less than a minute" | tee -a ${log_file}
   if [[ ${list_gw} != "null" ]] ; then
