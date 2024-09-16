@@ -1,0 +1,198 @@
+#cloud-config
+users:
+  - default
+
+ssh_pwauth: True
+
+chpasswd:
+  list: |
+    ubuntu:${password}
+  expire: False
+
+hostname: ${hostname}
+
+write_files:
+  - content: |
+      #!/bin/bash
+      # retrieve the network interface names
+      ifaceFirstName=`ip -o link show | awk -F': ' '{print $2}' | head -2 | tail -1`
+      macFirst=`ip -o link show | awk -F'link/ether ' '{print $2}' | awk -F' ' '{print $1}' | head -2 | tail -1`
+      ifaceLastName=`ip -o link show | awk -F': ' '{print $2}' | head -3 | tail -1`
+      macLast=`ip -o link show | awk -F'link/ether ' '{print $2}' | awk -F' ' '{print $1}' | head -3 | tail -1`
+      hostname=${hostname}
+      echo "${ip_gw} $hostname" | tee -a /etc/hosts
+      cp /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.old
+      echo "network:" | tee /etc/netplan/50-cloud-init.yaml
+      echo "    ethernets:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "        $ifaceFirstName:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            dhcp4: false" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            addresses: [${ip_gw}/${prefix}]" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            match:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "                macaddress: $macFirst" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            set-name: $ifaceFirstName" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            gateway4: ${default_gw}" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            nameservers:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "              addresses: [${forwarders_netplan}]" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "        $ifaceLastName:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            match:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "                macaddress: $macLast" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            set-name: $ifaceLastName" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            mtu: 9000" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
+      netplan apply
+      apt update
+      apt install -y jq
+      mv /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.old
+      cat /etc/netplan/50-cloud-init.yaml.old | head -n -1 | tee /etc/netplan/50-cloud-init.yaml
+      echo "    vlans:" | tee -a /etc/netplan/50-cloud-init.yaml
+      networks='${networks}'
+      echo $networks | jq -c -r .[] | while read net
+      do
+        echo "        vlan.`echo $net | jq -c -r .vlan_id`:" | tee -a /etc/netplan/50-cloud-init.yaml
+        echo "            id: `echo $net | jq -c -r .vlan_id`" | tee -a /etc/netplan/50-cloud-init.yaml
+        echo "            link: $ifaceLastName" | tee -a /etc/netplan/50-cloud-init.yaml
+        echo "            addresses: [`echo $net | jq -c -r .gw`/`echo $net | jq -c -r .cidr | cut -f2 -d'/'`]" | tee -a /etc/netplan/50-cloud-init.yaml
+        echo "pool $ntp_master iburst" | tee -a /etc/chrony/chrony.conf
+      done
+      echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
+      netplan apply
+      sysctl -w net.ipv4.ip_forward=1
+      apt update
+      apt install -y expect
+      curl -L -o - "https://github.com/vmware/govmomi/releases/latest/download/govc_$(uname -s)_$(uname -m).tar.gz" | tar -C /usr/local/bin -xvzf - govc
+      #
+      # DNS config
+      #
+      apt install -y bind9 bind9utils dnsutils
+      cp /etc/bind/named.conf.options /etc/bind/named.conf.options.bkup
+      cp /etc/bind/named.conf.options /etc/bind/named.conf.options.old
+      sudo tee /etc/bind/named.conf.options > /dev/null <<EOT
+      options {
+        directory "/var/cache/bind";
+        recursion yes;
+        notify yes;
+        allow-query { any; };
+        allow-query-cache { any; };
+        allow-recursion { any; };
+        forwarders { ${forwarders_bind}; };
+        dnssec-validation no;
+        auth-nxdomain no; # conform to RFC1035
+        listen-on { localhost; any; };
+        listen-on-v6 { localhost; any; };
+        allow-transfer { any; };
+      };
+      EOT
+      #
+      sudo cp /etc/bind/named.conf.local /etc/bind/named.conf.local.old
+      sudo tee /etc/bind/named.conf.local > /dev/null <<EOT
+      zone "${domain}" {
+        type master;
+        forwarders {};
+        allow-transfer { any; };
+        update-policy {
+          grant myKeyName zonesub any;
+        };
+        file "/var/lib/bind/db.${domain}";
+      };
+      zone "${reverse_mgmt}.in-addr.arpa" {
+        type master;
+        update-policy {
+          grant myKeyName zonesub any;
+        };
+        allow-transfer { any; };
+        file "/var/lib/bind/db.${reverse_mgmt}";
+      };
+      EOT
+      #
+      sudo tee /var/lib/bind/db.${domain} > /dev/null <<EOT
+      \$ORIGIN .
+      \$TTL 60
+      ${domain}                IN SOA dns.${domain}. admin.${domain}. (
+                                      329        ; serial
+                                      604800     ; refresh (1 week)
+                                      86400      ; retry (1 day)
+                                      2419200    ; expire (4 weeks)
+                                      604800     ; minimum (1 week)
+                                      )
+                              NS      dns.${domain}.
+      \$ORIGIN ${domain}.
+      dns       IN            A       ${ip_gw}
+      vcsa       IN            A       ${ip_vcsa}
+      EOT
+      #
+      if [[ ${ip_nsx} != ${ip_gw} ]]; then
+      echo "nsx       IN            A       ${ip_nsx}" | tee -a /var/lib/bind/db.${domain}
+      fi
+      if [[ ${ip_avi} != ${ip_gw} ]]; then
+      echo "avi       IN            A       ${ip_avi}" | tee -a /var/lib/bind/db.${domain}
+      fi
+      count_esxi=1
+      echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
+      do
+        echo "esxi0$count_esxi      IN            A       ${ip_esxi}" | tee -a /var/lib/bind/db.${domain}
+        ((count_esxi++))
+      done
+      #
+      sudo tee /var/lib/bind/db.${reverse_mgmt} > /dev/null <<EOT
+      \$ORIGIN .
+      \$TTL 60
+      ${reverse_mgmt}.in-addr.arpa     IN SOA  dns.${domain}. admin.${domain}. (
+                                      298        ; serial
+                                      604800     ; refresh (1 week)
+                                      86400      ; retry (1 day)
+                                      2419200    ; expire (4 weeks)
+                                      604800     ; minimum (1 week)
+                                      )
+                              NS      dns.${domain}.
+      \$ORIGIN ${reverse_mgmt}.in-addr.arpa.
+      EOT
+      #
+      if [[ ${ip_nsx} != ${ip_gw} ]]; then
+      echo "`echo ${ip_nsx} | cut -f4 -d'.'`            PTR     nsx" | tee -a /var/lib/bind/db.${reverse_mgmt}
+      fi
+      if [[ ${ip_avi} != ${ip_gw} ]]; then
+      echo "`echo ${ip_avi} | cut -f4 -d'.'`            PTR     avi" | tee -a /var/lib/bind/db.${reverse_mgmt}
+      fi
+      count_esxi=1
+      echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
+      do
+        echo "`echo $ip_esxi | cut -f4 -d'.'`            PTR     $esxi0$count_esxi.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
+        ((count_esxi++))
+      done
+      #
+      systemctl restart bind9.service
+      #
+      # NTP config
+      #
+      apt install -y chrony
+      mv /etc/chrony/chrony.conf /etc/chrony/chrony.conf.old
+      cat /etc/chrony/chrony.conf.old | grep -v pool | tee /etc/chrony/chrony.conf
+      ntp_masters='${ntp_masters}'
+      echo $ntp_masters | jq -c -r .[] | while read ntp_master
+      do
+        echo "pool $ntp_master iburst" | tee -a /etc/chrony/chrony.conf
+      done
+      echo "allow 0.0.0.0/0" | tee -a /etc/chrony/chrony.conf
+      systemctl restart chrony.service
+      #
+      # HTTP config
+      #
+      apt install -y nginx
+      #
+      #
+      # Patching DNS to localhost
+      #
+      mv /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.patching_dns
+      cat /etc/netplan/50-cloud-init.yaml.patching_dns | sed -e "s/${forwarders_netplan}/127.0.0.1/" | tee /etc/netplan/50-cloud-init.yaml
+      netplan apply
+      #
+      echo "cloud init done" | tee /tmp/cloudInitDone.log
+    path: /opt/bootstrap.sh
+    permissions: 0755
+
+  - content: |
+      ubuntu ALL=(ALL) NOPASSWD:ALL
+    path: /etc/sudoers.d/ubuntu
+
+runcmd:
+  - /opt/bootstrap.sh

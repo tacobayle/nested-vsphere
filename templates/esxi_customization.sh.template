@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+SLACK_WEBHOOK_URL_LOCAL=${SLACK_WEBHOOK_URL}
+export GOVC_PASSWORD=${ESXI_PASSWORD}
+export GOVC_INSECURE=true
+export GOVC_URL=${esxi_ip}
+export GOVC_USERNAME=root
+# https check
+count=1
+until $(curl --output /dev/null --silent --head -k https://${esxi_ip})
+do
+  echo "Attempt ${count}: Waiting for ESXi host at https://${esxi_ip} to be reachable..."
+  sleep 10
+  count=$((count+1))
+    if [[ "${count}" -eq 60 ]]; then
+      echo "ERROR: Unable to connect to ESXi host at https://${esxi_ip}"
+      if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: nested ESXi ${name_esxi} unable to reach"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
+      exit
+    fi
+done
+govc host.storage.info -json -rescan | jq -c -r '.storageDeviceInfo.scsiLun[] | select( .deviceType == "disk" ) | .deviceName' | while read item
+do
+  govc host.storage.mark -ssd ${item}
+  if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: nested ESXi ${name_esxi} disks '${item}' marked as SSD"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
+done
