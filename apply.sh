@@ -248,6 +248,9 @@ if [[ ${operation} == "destroy" ]] ; then
   fi
   #
   #
+  govc cluster.rule.remove -name "${deployment_name}-affinity-rule"
+  #
+  #
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Deletion of a folder on the underlay infrastructure - This should take less than a minute" | tee -a ${log_file}
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
