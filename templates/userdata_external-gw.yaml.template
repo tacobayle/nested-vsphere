@@ -40,8 +40,28 @@ write_files:
       echo "            mtu: 9000" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
       netplan apply
+      #
+      # apt install
+      #
       apt update
-      apt install -y jq
+      packages='${packages}'
+      echo $packages | jq -c -r .[] | while read package
+      do
+        apt install -y $package
+      done
+      #
+      # pip3
+      #
+      pip3 install --upgrade pip
+      pip3_packages='${pip3_packages}'
+      echo $pip3_packages | jq -c -r .[] | while read pip3_package
+      do
+        sudo -u ubuntu pip3 install $pip3_package
+      done
+      sudo -u ubuntu ansible-galaxy collection install vmware.alb
+      #
+      # Network
+      #
       mv /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.old
       cat /etc/netplan/50-cloud-init.yaml.old | head -n -1 | tee /etc/netplan/50-cloud-init.yaml
       echo "    vlans:" | tee -a /etc/netplan/50-cloud-init.yaml
@@ -57,13 +77,13 @@ write_files:
       echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
       netplan apply
       sysctl -w net.ipv4.ip_forward=1
-      apt update
-      apt install -y expect
+      #
+      # GOVC install
+      #
       curl -L -o - "https://github.com/vmware/govmomi/releases/latest/download/govc_$(uname -s)_$(uname -m).tar.gz" | tar -C /usr/local/bin -xvzf - govc
       #
       # DNS config
       #
-      apt install -y bind9 bind9utils dnsutils
       cp /etc/bind/named.conf.options /etc/bind/named.conf.options.bkup
       cp /etc/bind/named.conf.options /etc/bind/named.conf.options.old
       sudo tee /etc/bind/named.conf.options > /dev/null <<EOT
@@ -164,7 +184,6 @@ write_files:
       #
       # NTP config
       #
-      apt install -y chrony
       mv /etc/chrony/chrony.conf /etc/chrony/chrony.conf.old
       cat /etc/chrony/chrony.conf.old | grep -v pool | tee /etc/chrony/chrony.conf
       ntp_masters='${ntp_masters}'
@@ -174,10 +193,6 @@ write_files:
       done
       echo "allow 0.0.0.0/0" | tee -a /etc/chrony/chrony.conf
       systemctl restart chrony.service
-      #
-      # HTTP config
-      #
-      apt install -y nginx
       #
       #
       # Patching DNS to localhost
@@ -205,21 +220,12 @@ write_files:
       echo "alias k=kubectl" | sudo tee -a /home/ubuntu/.profile
       echo "source <(kubectl completion bash | sed s/kubectl/k/g)" | sudo tee -a /home/ubuntu/.profile
       #
-      # apt install
-      #
-      packages='${packages}'
-      echo $packages | jq -c -r .[] | while read package
-      do
-        apt install -y $package
-      done
-      #
       # helm install
       #
       wget https://baltocdn.com/helm/signing.asc -O /tmp/signing.asc
       apt-key add /tmp/signing.asc
       sudo add-apt-repository "deb https://baltocdn.com/helm/stable/debian/ all main"
       apt-get install -y helm
-      #
       #
       # yaml download
       #
