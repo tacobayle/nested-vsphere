@@ -1,0 +1,36 @@
+{
+  "K8s_version_short": "v1.28.1",
+  "directories": ["yaml-files", ".kube", "avi", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "tanzu", "unmanaged_k8s_clusters"],
+  "vault": {
+    "secret_file_path": "/home/ubuntu/vault/secret.json",
+    "pki": {
+      "name": "pki",
+      "max_lease_ttl": "87600h",
+      "cert":{
+        "common_name": "vault.com",
+        "issuer_name": "vault_demoavi",
+        "ttl": "87600h",
+        "path": "/home/ubuntu/vault/ca.crt"
+      },
+      "issuers_file": "/home/ubuntu/vault/ca_issuers.json",
+      "role": {
+        "name": "role-pki-ca"
+      }
+    },
+    "pki_intermediate": {
+      "name": "pki_int",
+      "max_lease_ttl": "43800h",
+      "cert":{
+        "common_name": "intermediate-vault.com",
+        "issuer_name": "demoavi",
+        "path": "/home/ubuntu/vault/pki_intermediate.csr",
+        "path_signed": "/home/ubuntu/vault/pki_intermediate.cert.pem"
+      },
+      "role": {
+        "name": "pki_intermediate_role",
+        "allow_subdomains": true,
+        "max_ttl": "1440h"
+      }
+    }
+  }
+}

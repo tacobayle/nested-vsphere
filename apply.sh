@@ -3,17 +3,22 @@
 source /nested-vsphere/bash/download_file.sh
 #
 rm -f /root/govc.error
-jsonFile="${1}"
-if [ -s "${jsonFile}" ]; then
+jsonFile_kube="${1}"
+if [ -s "${jsonFile_from_kube}" ]; then
   jq . $jsonFile > /dev/null
 else
   echo "ERROR: jsonFile file is not present"
   exit 255
 fi
-#
-#
-operation=$(jq -c -r .operation $jsonFile)
+jsonFile_local="/nested-vsphere/json/variables.json"
+operation=$(jq -c -r .operation $jsonFile_local)
 deployment_name=$(jq -c -r .metadata.name $jsonFile)
+if [[ ${operation} == "apply" || ${operation} == "destroy" ]] ; then log_file="/nested-vsphere/log/${deployment_name}_${operation}.stdout" ; fi
+if [[ ${operation} != "apply" && ${operation} != "destroy" ]] ; then echo "ERROR: Unsupported operation" ; exit 255 ; fi
+jsonFile="/root/${deployment_name}_${operation}.json"
+jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} | tee ${jsonFile}
+#
+#
 folder=$(jq -c -r .spec.folder $jsonFile)
 gw_name="${deployment_name}-gw"
 domain=$(jq -c -r .spec.domain $jsonFile)
@@ -27,6 +32,8 @@ forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
 networks=$(jq -c -r '.spec.networks' $jsonFile)
 ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
+directories=$(jq -c -r '.directories' $jsonFile)
+K8s_version_short=$(jq -c -r '.K8s_version_short' $jsonFile)
 if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then
   ip_nsx=$(jq -c -r .spec.gw.ip $jsonFile)
 else
@@ -38,9 +45,6 @@ else
   ip_avi=$(jq -c -r '.spec.avi.ip' $jsonFile)
 fi
 trunk1=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
-#
-if [[ ${operation} == "apply" || ${operation} == "destroy" ]] ; then log_file="/nested-vsphere/log/${deployment_name}_${operation}.stdout" ; fi
-if [[ ${operation} != "apply" && ${operation} != "destroy" ]] ; then echo "ERROR: Unsupported operation" ; exit 255 ; fi
 #
 rm -f ${log_file}
 #
@@ -94,6 +98,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${ips_esxi}/${ips_esxi}/" \
         -e "s/\${ip_nsx}/${ip_nsx}/" \
         -e "s/\${ip_avi}/${ip_avi}/" \
+        -e "s/\${directories}/${directories}/" \
+        -e "s/\${K8s_version_short}/${K8s_version_short}/" \
         -e "s/\${ip_vcsa}/${ip_vcsa}/" /nested-vsphere/templates/userdata_external-gw.yaml.template | tee /tmp/${gw_name}_userdata.yaml > /dev/null
     #
     sed -e "s#\${public_key}#$(awk '{printf "%s\\n", $0}' /root/.ssh/id_rsa.pub | awk '{length=$0; print substr($0, 1, length-2)}')#" \

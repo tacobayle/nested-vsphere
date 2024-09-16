@@ -186,6 +186,23 @@ write_files:
       cat /etc/netplan/50-cloud-init.yaml.patching_dns | sed -e "s/${forwarders_netplan}/127.0.0.1/" | tee /etc/netplan/50-cloud-init.yaml
       netplan apply
       #
+      # Directories
+      #
+      directories='${directories}'
+      echo $directories | jq -c -r .[] | while read directory
+      do
+        mkdir -p /home/ubuntu/$directory
+        chown ubuntu /home/ubuntu/$directory
+        chgrp ubuntu /home/ubuntu/$directory
+      done
+      #
+      # K8s install
+      #
+      curl -fsSL https://pkgs.k8s.io/core:/stable:/${K8s_version_short}/deb/Release.key | sudo gpg --dearmor -o /tmp/kubernetes-apt-keyring.gpg
+      echo "deb [signed-by=/tmp/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${K8s_version_short}/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+      apt update
+      apt-get install -y kubectl
+      #
       echo "cloud init done" | tee /tmp/cloudInitDone.log
     path: /opt/bootstrap.sh
     permissions: 0755
