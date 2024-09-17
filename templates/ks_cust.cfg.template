@@ -31,13 +31,15 @@ esxcli network vswitch standard portgroup set -p "VM Network" -v ${vlan_id_mgmt}
 #
 esxcli network vswitch standard portgroup add -p "VMotion Network" -v "vSwitch0"
 esxcli network vswitch standard portgroup set -p "VMotion Network" -v ${vlan_id_vmotion}
-esxcli network ip interface add --interface-name=vmk1 --portgroup-name="VMotion Network" --netstack vmotion
+esxcli network ip interface add --interface-name=vmk1 --portgroup-name="VMotion Network"
 esxcli network ip interface ipv4 set --interface-name=vmk1 --ipv4=${cidr_vmotion_three_octets}.${ip_esxi} --netmask=${netmask_vmotion} --type=static
+esxcli network ip interface tag add -i vmk1 -t VMotion
 #
 esxcli network vswitch standard portgroup add -p "VSAN Network" -v "vSwitch0"
 esxcli network vswitch standard portgroup set -p "VSAN Network" -v ${vlan_id_vsan}
-esxcli network ip interface add --interface-name=vmk2 --portgroup-name="VSAN Network" --netstack vsan
+esxcli network ip interface add --interface-name=vmk2 --portgroup-name="VSAN Network"
 esxcli network ip interface ipv4 set --interface-name=vmk2 --ipv4=${cidr_vsan_three_octets}.${ip_esxi} --netmask=${netmask_vsan} --type=static
+esxcli network ip interface tag add -i vmk2 -t VSAN
 #
 # ssh config.
 vim-cmd hostsvc/enable_ssh
