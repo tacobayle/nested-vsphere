@@ -138,19 +138,19 @@ write_files:
                               NS      dns.${domain}.
       \$ORIGIN ${domain}.
       dns       IN            A       ${ip_gw}
-      vcsa       IN            A       ${cidr_three_octets}.${ip_vcsa}
+      vcsa       IN            A       ${cidr_mgmt_three_octets}.${ip_vcsa}
       EOT
       #
       if [[ ${ip_nsx} != ${ip_gw} ]]; then
-      echo "nsx       IN            A       ${cidr_three_octets}.${ip_nsx}" | tee -a /var/lib/bind/db.${domain}
+      echo "nsx       IN            A       ${cidr_mgmt_three_octets}.${ip_nsx}" | tee -a /var/lib/bind/db.${domain}
       fi
       if [[ ${ip_avi} != ${ip_gw} ]]; then
-      echo "avi       IN            A       ${cidr_three_octets}.${ip_avi}" | tee -a /var/lib/bind/db.${domain}
+      echo "avi       IN            A       ${cidr_mgmt_three_octets}.${ip_avi}" | tee -a /var/lib/bind/db.${domain}
       fi
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
       do
-        echo "esxi0$count_esxi      IN            A       ${cidr_three_octets}.${ip_esxi}" | tee -a /var/lib/bind/db.${domain}
+        echo "esxi0$count_esxi      IN            A       ${cidr_mgmt_three_octets}.${ip_esxi}" | tee -a /var/lib/bind/db.${domain}
         ((count_esxi++))
       done
       #

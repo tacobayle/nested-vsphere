@@ -3,17 +3,17 @@
 SLACK_WEBHOOK_URL_LOCAL=${SLACK_WEBHOOK_URL}
 export GOVC_PASSWORD=${ESXI_PASSWORD}
 export GOVC_INSECURE=true
-export GOVC_URL=${cidr_three_octets}.${esxi_ip}
+export GOVC_URL=${cidr_mgmt_three_octets}.${ip_esxi}
 export GOVC_USERNAME=root
 # https check
 count=1
-until $(curl --output /dev/null --silent --head -k https://${esxi_ip})
+until $(curl --output /dev/null --silent --head -k https://${ip_esxi})
 do
-  echo "Attempt ${count}: Waiting for ESXi host at https://${esxi_ip} to be reachable..."
+  echo "Attempt ${count}: Waiting for ESXi host at https://${ip_esxi} to be reachable..."
   sleep 10
   count=$((count+1))
     if [[ "${count}" -eq 60 ]]; then
-      echo "ERROR: Unable to connect to ESXi host at https://${esxi_ip}"
+      echo "ERROR: Unable to connect to ESXi host at https://${ip_esxi}"
       if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: nested ESXi ${name_esxi} unable to reach"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
       exit
     fi

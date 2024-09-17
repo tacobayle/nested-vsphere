@@ -33,9 +33,17 @@ forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
 networks=$(jq -c -r '.spec.networks' $jsonFile)
 ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
-cidr=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-if [[ ${cidr} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
-  cidr_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_vmotion=$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_vsan=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+fi
+if [[ ${cidr_vmotion} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_vmotion_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+fi
+if [[ ${cidr_vsan} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_vsan_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then
   ip_nsx=$(jq -c -r .spec.gw.ip $jsonFile)
@@ -80,7 +88,7 @@ if [[ ${operation} == "apply" ]] ; then
   if [[ ${list_gw} != "null" ]] ; then
     echo "ERROR: unable to create VM ${gw_name}: it already exists" | tee -a ${log_file}
   else
-    IFS="." read -r -a octets <<< "$cidr"
+    IFS="." read -r -a octets <<< "$cidr_mgmt"
     count=0
     for octet in "${octets[@]}"; do if [ $count -eq 3 ]; then break ; fi ; addr_mgmt=$octet"."$addr_mgmt ;((count++)) ; done
     reverse_mgmt=${addr_mgmt%.}
@@ -95,7 +103,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${forwarders_bind}/${forwarders_bind}/" \
         -e "s/\${domain}/${domain}/g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
-        -e "s/\${cidr_three_octets}/${cidr_three_octets}/g" \
+        -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
         -e "s/\${ips_esxi}/${ips_esxi}/" \
         -e "s/\${ip_nsx}/${ip_nsx}/" \
         -e "s/\${ip_avi}/${ip_avi}/" \
@@ -132,11 +140,11 @@ if [[ ${operation} == "apply" ]] ; then
         if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
         for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
         do
-          esxi_ip=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
+          ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
           name_esxi="esxi0${esxi}"
-          sed -e "s/\${esxi_ip}/${esxi_ip}/" \
+          sed -e "s/\${ip_esxi}/${ip_esxi}/" \
               -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
-              -e "s/\${cidr_three_octets}/${cidr_three_octets}/g" \
+              -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
               -e "s/\${esxi}/${esxi}/" \
               -e "s/\${deployment_name}/${deployment_name}/" \
               -e "s/\${name_esxi}/${name_esxi}/" \
@@ -182,15 +190,21 @@ if [[ ${operation} == "apply" ]] ; then
       echo "ERROR: unable to create nested ESXi ${name_esxi}: it already exists" | tee -a ${log_file}
     else
       net=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
-      esxi_ip=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
+      ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
       echo "Building custom ESXi ISO for ESXi${esxi}"
       rm -f ${iso_build_location}/ks_cust.cfg
       rm -f "${iso_location}-${esxi}.iso"
       sed -e "s/\${nested_esxi_root_password}/${GENERIC_PASSWORD}/" \
-          -e "s/\${ip_mgmt}/${esxi_ip}/" \
-          -e "s/\${cidr_three_octets}/${cidr_three_octets}/g" \
-          -e "s/\${netmask}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
-          -e "s/\${vlan_id}/$(jq -c -r --arg arg "MANAGEMENT" '.specs.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+          -e "s/\${ip_esxi}/${ip_esxi}/" \
+          -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
+          -e "s/\${cidr_vmotion_three_octets}/${cidr_mgmt_three_octets}/g" \
+          -e "s/\${cidr_vsan_three_octets}/${cidr_mgmt_three_octets}/g" \
+          -e "s/\${netmask_mgmt}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
+          -e "s/\${netmask_vmotion}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
+          -e "s/\${netmask_vsan}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
+          -e "s/\${vlan_id_mgmt}/$(jq -c -r --arg arg "MANAGEMENT" '.specs.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+          -e "s/\${vlan_id_vmotion}/$(jq -c -r --arg arg "VMOTION" '.specs.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+          -e "s/\${vlan_id_vsan}/$(jq -c -r --arg arg "VSAN" '.specs.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
           -e "s/\${dns_servers}/${ip_gw}/" \
           -e "s/\${ntp_servers}/${ip_gw}/" \
           -e "s/\${hostname}/${name_esxi}/" \
