@@ -213,18 +213,18 @@ if [[ ${operation} == "apply" ]] ; then
       echo "Building new ISO for ESXi ${esxi}" | tee -a ${log_file}
       xorrisofs -relaxed-filenames -J -R -o "${iso_location}-${esxi}.iso" -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efiboot.img -no-emul-boot ${iso_build_location}
       echo "Uploading new ISO for ESXi ${esxi} to datastore" | tee -a ${log_file}
-      govc datastore.upload  --ds=$(jq -c -r .spec.vsphere_underlay.datastore $jsonFile) --dc=$(jq -c -r .spec.vsphere_underlay.datacenter $jsonFile) "${iso_location}-${esxi}.iso" ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) | tee -a ${log_file}
+      govc datastore.upload  --ds=$(jq -c -r .spec.vsphere_underlay.datastore $jsonFile) --dc=$(jq -c -r .spec.vsphere_underlay.datacenter $jsonFile) "${iso_location}-${esxi}.iso" ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso)
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXi '${esxi}' uploaded "}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       names="${names} ${name_esxi}"
-      govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}" | tee -a ${log_file}
-      govc device.cdrom.add -vm "${folder}/${name_esxi}" | tee -a ${log_file}
-      govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 nic-vsphere/$(basename ${iso_location}-${esxi}.iso) | tee -a ${log_file}
-      govc vm.change -vm "${folder}/${name_esxi}" -nested-hv-enabled | tee -a ${log_file}
-      govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk1 -size $(jq -c -r .spec.esxi.disk_flash_size $jsonFile) | tee -a ${log_file}
-      govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk2 -size $(jq -c -r .spec.esxi.disk_capacity_size $jsonFile) | tee -a ${log_file}
+      govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}"
+      govc device.cdrom.add -vm "${folder}/${name_esxi}"
+      govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 nic-vsphere/$(basename ${iso_location}-${esxi}.iso)
+      govc vm.change -vm "${folder}/${name_esxi}" -nested-hv-enabled
+      govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk1 -size $(jq -c -r .spec.esxi.disk_flash_size $jsonFile)
+      govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk2 -size $(jq -c -r .spec.esxi.disk_capacity_size $jsonFile)
       net=$(jq -c -r .spec.esxi.nics[1] $jsonFile)
-      govc vm.network.add -vm "${folder}/${name_esxi}" -net ${net} -net.adapter vmxnet3 | tee -a ${log_file}
-      govc vm.power -on=true "${folder}/${name_esxi}" | tee -a ${log_file}
+      govc vm.network.add -vm "${folder}/${name_esxi}" -net ${net} -net.adapter vmxnet3
+      govc vm.power -on=true "${folder}/${name_esxi}"
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${esxi}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     fi
   done
