@@ -218,7 +218,7 @@ if [[ ${operation} == "apply" ]] ; then
       names="${names} ${name_esxi}"
       govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}"
       govc device.cdrom.add -vm "${folder}/${name_esxi}"
-      govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 nic-vsphere/$(basename ${iso_location}-${esxi}.iso)
+      govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso)
       govc vm.change -vm "${folder}/${name_esxi}" -nested-hv-enabled
       govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk1 -size $(jq -c -r .spec.esxi.disk_flash_size $jsonFile)
       govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk2 -size $(jq -c -r .spec.esxi.disk_capacity_size $jsonFile)
