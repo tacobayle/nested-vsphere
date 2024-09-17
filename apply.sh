@@ -202,9 +202,9 @@ if [[ ${operation} == "apply" ]] ; then
           -e "s/\${netmask_mgmt}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
           -e "s/\${netmask_vmotion}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
           -e "s/\${netmask_vsan}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
-          -e "s/\${vlan_id_mgmt}/$(jq -c -r --arg arg "MANAGEMENT" '.specs.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
-          -e "s/\${vlan_id_vmotion}/$(jq -c -r --arg arg "VMOTION" '.specs.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
-          -e "s/\${vlan_id_vsan}/$(jq -c -r --arg arg "VSAN" '.specs.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+          -e "s/\${vlan_id_mgmt}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+          -e "s/\${vlan_id_vmotion}/$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+          -e "s/\${vlan_id_vsan}/$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
           -e "s/\${dns_servers}/${ip_gw}/" \
           -e "s/\${ntp_servers}/${ip_gw}/" \
           -e "s/\${hostname}/${name_esxi}/" \
