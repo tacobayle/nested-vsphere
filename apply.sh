@@ -197,8 +197,8 @@ if [[ ${operation} == "apply" ]] ; then
       sed -e "s/\${nested_esxi_root_password}/${GENERIC_PASSWORD}/" \
           -e "s/\${ip_esxi}/${ip_esxi}/" \
           -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
-          -e "s/\${cidr_vmotion_three_octets}/${cidr_mgmt_three_octets}/g" \
-          -e "s/\${cidr_vsan_three_octets}/${cidr_mgmt_three_octets}/g" \
+          -e "s/\${cidr_vmotion_three_octets}/${cidr_vmotion_three_octets}/g" \
+          -e "s/\${cidr_vsan_three_octets}/${cidr_vsan_three_octets}/g" \
           -e "s/\${netmask_mgmt}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
           -e "s/\${netmask_vmotion}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
           -e "s/\${netmask_vsan}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
