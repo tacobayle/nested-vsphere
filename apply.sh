@@ -155,7 +155,7 @@ if [[ ${operation} == "apply" ]] ; then
         done
         scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/${deployment_name}_${operation}.json
         sed -e "s/\${GENERIC_PASSWORD}/${GENERIC_PASSWORD}/" \
-            -e "s/\${SLACK_WEBHOOK_URL}/${SLACK_WEBHOOK_URL}/" \
+            -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
             -e "s/\${vcsa_name}/${vcsa_name}/" \
             -e "s@\${jsonFile}@/home/ubuntu/${deployment_name}_${operation}.json@" /nested-vsphere/templates/vcsa.sh.template | tee /root/vcsa.sh > /dev/null
             scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcsa.sh
@@ -234,7 +234,6 @@ if [[ ${operation} == "apply" ]] ; then
       govc vm.network.add -vm "${folder}/${name_esxi}" -net ${net} -net.adapter vmxnet3 > /dev/null
       govc vm.power -on=true "${folder}/${name_esxi}" > /dev/null
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${esxi}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-      govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
     fi
   done
   # affinity rule
@@ -249,6 +248,7 @@ if [[ ${operation} == "apply" ]] ; then
     name_esxi="esxi0${esxi}"
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/esxi_customization-$esxi.sh"
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
   done
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
