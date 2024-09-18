@@ -33,6 +33,7 @@ forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
 networks=$(jq -c -r '.spec.networks' $jsonFile)
 ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
+vcsa_name="vcsa-01"
 cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
 cidr_vmotion=$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
 cidr_vsan=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
@@ -105,6 +106,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
         -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
         -e "s/\${ips_esxi}/${ips_esxi}/" \
+        -e "s/\${vcsa_name}/${vcsa_name}/" \
         -e "s/\${ip_nsx}/${ip_nsx}/" \
         -e "s/\${ip_avi}/${ip_avi}/" \
         -e "s@\${directories}@$(jq -c -r '.directories' $jsonFile)@" \
@@ -213,7 +215,7 @@ if [[ ${operation} == "apply" ]] ; then
       echo "Building new ISO for ESXi ${esxi}" | tee -a ${log_file}
       xorrisofs -relaxed-filenames -J -R -o "${iso_location}-${esxi}.iso" -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efiboot.img -no-emul-boot ${iso_build_location}
       echo "Uploading new ISO for ESXi ${esxi} to datastore" | tee -a ${log_file}
-      govc datastore.upload  --ds=$(jq -c -r .spec.vsphere_underlay.datastore $jsonFile) --dc=$(jq -c -r .spec.vsphere_underlay.datacenter $jsonFile) "${iso_location}-${esxi}.iso" ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
+      govc datastore.upload --ds=$(jq -c -r .spec.vsphere_underlay.datastore $jsonFile) --dc=$(jq -c -r .spec.vsphere_underlay.datacenter $jsonFile) "${iso_location}-${esxi}.iso" ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXi '${esxi}' uploaded "}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       names="${names} ${name_esxi}"
       govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}" > /dev/null
@@ -226,11 +228,53 @@ if [[ ${operation} == "apply" ]] ; then
       govc vm.network.add -vm "${folder}/${name_esxi}" -net ${net} -net.adapter vmxnet3 > /dev/null
       govc vm.power -on=true "${folder}/${name_esxi}" > /dev/null
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${esxi}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
     fi
   done
   # affinity rule
   if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
     govc cluster.rule.create -name "${deployment_name}-affinity-rule" -enable -affinity ${names}
+  fi
+  #
+  #
+  echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
+  iso_url=$(jq -c -r .spec.vsphere.iso_url $jsonFile)
+  download_file_from_url_to_location "${iso_url}" "/root/$(basename ${iso_url})" "VCSA ISO"
+  if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  xorriso -ecma119_map lowercase -osirrox on -indev "/root/$(basename ${iso_url})" -extract / /tmp/vcenter_cdrom_mount
+  if [[ $(jq -c -r .spec.vsphere.nested $jsonFile) == "true" ]] ; then
+    cp -r /tmp/vcenter_cdrom_mount/vcsa-cli-installer/templates/install/vCSA_with_cluster_on_ESXi.json /nested-vsphere/templates/
+    rm -fr /tmp/vcenter_cdrom
+    mkdir -p /tmp/vcenter_cdrom
+    cp -r /tmp/vcenter_cdrom_mount/* /tmp/vcenter_cdrom
+    rm -fr /tmp/vcenter_cdrom_mount
+    contents="$(jq '.new_vcsa.esxi.hostname = "'${deployment_name}'-esxi01" |
+                    .new_vcsa.esxi.username = "root" |
+                    .new_vcsa.esxi.password = "'${GENERIC_PASSWORD}'" |
+                    .new_vcsa.esxi.VCSA_cluster.datacenter = "dc1" |
+                    .new_vcsa.esxi.VCSA_cluster.cluster = "cluster1" |
+                    .new_vcsa.esxi.VCSA_cluster.disks_for_vsan.cache_disk[0] = "mpx.vmhba0:C0:T1:L0" |
+                    .new_vcsa.esxi.VCSA_cluster.disks_for_vsan.capacity_disk[0] = "mpx.vmhba0:C0:T2:L0" |
+                    .new_vcsa.esxi.VCSA_cluster.enable_vsan_esa = false |
+                    .new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier[0] = "mpx.vmhba0:C0:T2:L0" |
+                    .new_vcsa.appliance.thin_disk_mode = true |
+                    .new_vcsa.appliance.deployment_option = "small" |
+                    .new_vcsa.appliance.name = "'${vcsa_name}'" |
+                    .new_vcsa.network.ip = "'${cidr_mgmt_three_octets}'.'${ip_vcsa}'" |
+                    .new_vcsa.network.dns_servers[0] = "'${ip_gw}'" |
+                    .new_vcsa.network.prefix = "'$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)'" |
+                    .new_vcsa.network.gateway = "'$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)'" |
+                    .new_vcsa.network.system_name = "'${vcsa_name}'.'${domain}'" |
+                    .new_vcsa.os.password = "'${GENERIC_PASSWORD}'" |
+                    .new_vcsa.os.ntp_servers = "'${ip_gw}'" |
+                    .new_vcsa.os.ssh_enable = true |
+                    .new_vcsa.sso.password = "'${GENERIC_PASSWORD}'" |
+                    .new_vcsa.sso.domain_name = "'$(jq -r .spec.vsphere.ssoDomain $jsonFile)'" |
+                    .ceip.settings.ceip_enabled = 'false'' /nested-vsphere/templates/vCSA_with_cluster_on_ESXi.json)"
+    echo "${contents}" | jq 'del (.new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier)' | tee /root/vcenter_config.json
+    /tmp/vcenter_cdrom/vcsa-cli-installer/lin64/vcsa-deploy install --accept-eula --acknowledge-ceip --no-esx-ssl-verify /root/vcenter_config.json
+    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   fi
 fi
 #

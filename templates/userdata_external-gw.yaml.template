@@ -138,7 +138,7 @@ write_files:
                               NS      dns.${domain}.
       \$ORIGIN ${domain}.
       dns       IN            A       ${ip_gw}
-      vcsa       IN            A       ${cidr_mgmt_three_octets}.${ip_vcsa}
+      ${vcsa_name}       IN            A       ${cidr_mgmt_three_octets}.${ip_vcsa}
       EOT
       #
       if [[ ${ip_nsx} != ${ip_gw} ]]; then
@@ -166,6 +166,7 @@ write_files:
                                       )
                               NS      dns.${domain}.
       \$ORIGIN ${reverse_mgmt}.in-addr.arpa.
+      ${ip_vcsa}            PTR     ${vcsa_name}
       EOT
       #
       if [[ ${ip_nsx} != ${ip_gw} ]]; then
