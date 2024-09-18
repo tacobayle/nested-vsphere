@@ -50,3 +50,6 @@ esxcli system ntp set --server ${ntp_servers} --enabled true
 
 # make the disk as flash disk
 esxcli system settings advanced set -o /Disk/AllowUsbClaimedAsSSD -i 1
+esxcli storage hpp device set -d mpx.vmhba0:C0:T0:L0 -M true
+esxcli storage hpp device set -d mpx.vmhba0:C0:T1:L0 -M true
+esxcli storage hpp device set -d mpx.vmhba0:C0:T2:L0 -M true
