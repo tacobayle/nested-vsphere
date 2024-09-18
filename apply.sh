@@ -150,7 +150,7 @@ if [[ ${operation} == "apply" ]] ; then
               -e "s/\${esxi}/${esxi}/" \
               -e "s/\${deployment_name}/${deployment_name}/" \
               -e "s/\${name_esxi}/${name_esxi}/" \
-              -e "s/\${ESXI_PASSWORD}/${ESXI_PASSWORD}/" /nested-vsphere/templates/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
+              -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
           scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi_customization-$esxi.sh
         done
         break
@@ -236,6 +236,14 @@ if [[ ${operation} == "apply" ]] ; then
     govc cluster.rule.create -name "${deployment_name}-affinity-rule" -enable -affinity ${names}
   fi
   #
+  echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "ESXI reachablity check  - This should take 2 minutes per nested ESXi" | tee -a ${log_file}
+  for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
+  do
+    name_esxi="esxi0${esxi}"
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/esxi_customization-$esxi.sh"
+    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  done
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
@@ -273,7 +281,7 @@ if [[ ${operation} == "apply" ]] ; then
                     .new_vcsa.sso.domain_name = "'$(jq -r .spec.vsphere.ssoDomain $jsonFile)'" |
                     .ceip.settings.ceip_enabled = 'false'' /nested-vsphere/templates/vCSA_with_cluster_on_ESXi.json)"
     echo "${contents}" | jq 'del (.new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier)' | tee /root/vcenter_config.json
-    /tmp/vcenter_cdrom/vcsa-cli-installer/lin64/vcsa-deploy install --accept-eula --acknowledge-ceip --no-esx-ssl-verify /root/vcenter_config.json
+    /tmp/vcenter_cdrom/vcsa-cli-installer/lin64/vcsa-deploy install --accept-eula --acknowledge-ceip --no-esx-ssl-verify /root/vcenter_config.json | tee -a ${log_file}
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   fi
 fi
