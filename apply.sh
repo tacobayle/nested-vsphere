@@ -67,19 +67,22 @@ govc about
 if [ $? -ne 0 ] ; then touch /root/govc.error ; fi
 list_folder=$(govc find -json . -type f)
 list_gw=$(govc find -json vm -name "${gw_name}")
-echo '------------------------------------------------------------' | tee ${log_file}
 #
 if [[ ${operation} == "apply" ]] ; then
+  echo '------------------------------------------------------------' | tee ${log_file}
+  echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of a folder on the underlay infrastructure - This should take less than a minute" | tee -a ${log_file}
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
     echo "ERROR: unable to create folder ${folder}: it already exists" | tee -a ${log_file}
   else
     govc folder.create /${vsphere_dc}/vm/${folder} | tee -a ${log_file}
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vsphere external folder '${folder}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    echo "Ending timestamp: $(date)" | tee -a ${log_file}
   fi
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of an external gw on the underlay infrastructure - This should take 10 minutes" | tee -a ${log_file}
   # ova download
   ova_url=$(jq -c -r .spec.gw.ova_url $jsonFile)
@@ -170,11 +173,13 @@ if [[ ${operation} == "apply" ]] ; then
       fi
       sleep $pause
     done
+    echo "Ending timestamp: $(date)" | tee -a ${log_file}
   fi
   names="${gw_name}"
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of an ESXi hosts on the underlay infrastructure - This should take 10 minutes" | tee -a ${log_file}
   iso_url=$(jq -c -r .spec.esxi.iso_url $jsonFile)
   download_file_from_url_to_location "${iso_url}" "/root/$(basename ${iso_url})" "ESXi ISO"
@@ -220,6 +225,7 @@ if [[ ${operation} == "apply" ]] ; then
           -e "s/\${hostname}/${name_esxi}/" \
           -e "s/\${domain}/${domain}/" \
           -e "s/\${gateway}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)/" /nested-vsphere/templates/ks_cust.cfg.template | tee ${iso_build_location}/ks_cust.cfg > /dev/null
+          echo "Modifying ${iso_build_location}/ks_cust.cfg" | tee -a ${log_file}
       echo "Building new ISO for ESXi ${esxi}" | tee -a ${log_file}
       xorrisofs -relaxed-filenames -J -R -o "${iso_location}-${esxi}.iso" -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efiboot.img -no-emul-boot ${iso_build_location}
       echo "Uploading new ISO for ESXi ${esxi} to datastore" | tee -a ${log_file}
@@ -238,12 +244,14 @@ if [[ ${operation} == "apply" ]] ; then
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${esxi}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     fi
   done
+  echo "Ending timestamp: $(date)" | tee -a ${log_file}
   # affinity rule
   if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
     govc cluster.rule.create -name "${deployment_name}-affinity-rule" -enable -affinity ${names}
   fi
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "ESXI reachability check  - This should take 2 minutes per nested ESXi" | tee -a ${log_file}
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
@@ -252,16 +260,20 @@ if [[ ${operation} == "apply" ]] ; then
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
   done
+  echo "Ending timestamp: $(date)" | tee -a ${log_file}
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
   ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo /bin/bash /home/ubuntu/vcsa.sh"
+  echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
 #
 #
 #
 if [[ ${operation} == "destroy" ]] ; then
   echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Starting timestamp: $(date)" | tee -a ${log_file}
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${deployment_name}-esxi0${esxi}"
@@ -274,9 +286,11 @@ if [[ ${operation} == "destroy" ]] ; then
       echo "ERROR: unable to delete ESXi ${name_esxi}: it is already gone" | tee -a ${log_file}
     fi
   done
+  echo "Ending timestamp: $(date)" | tee -a ${log_file}
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Deletion of a VM on the underlay infrastructure - This should take less than a minute" | tee -a ${log_file}
   if [[ ${list_gw} != "null" ]] ; then
     govc vm.power -off=true "${gw_name}" | tee -a ${log_file}
@@ -288,9 +302,11 @@ if [[ ${operation} == "destroy" ]] ; then
   #
   #
   govc cluster.rule.remove -name "${deployment_name}-affinity-rule"
+  echo "Ending timestamp: $(date)" | tee -a ${log_file}
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
+  echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Deletion of a folder on the underlay infrastructure - This should take less than a minute" | tee -a ${log_file}
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
     govc object.destroy /${vsphere_dc}/vm/${folder} | tee -a ${log_file}
@@ -298,4 +314,5 @@ if [[ ${operation} == "destroy" ]] ; then
   else
     echo "ERROR: unable to delete folder ${folder}: it does not exist" | tee -a ${log_file}
   fi
+  echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
