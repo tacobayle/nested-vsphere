@@ -125,7 +125,7 @@ if [[ ${operation} == "apply" ]] ; then
     #
     govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ova_url})" | tee -a ${log_file}
     govc vm.network.add -vm "${folder}/${gw_name}" -net "${trunk1}" -net.adapter vmxnet3 | tee -a ${log_file}
-    govc vm.disk.change -vm "${folder}/${gw_name}" -size 20G
+    govc vm.disk.change -vm "${folder}/${gw_name}" -size 40G
     govc vm.power -on=true "${gw_name}" | tee -a ${log_file}
     echo "   +++ Updating /etc/hosts..." | tee -a ${log_file}
     contents=$(cat /etc/hosts | grep -v ${ip_gw})
@@ -255,7 +255,7 @@ if [[ ${operation} == "apply" ]] ; then
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
-  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/vcsa.sh"
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo /bin/bash /home/ubuntu/vcsa.sh"
 fi
 #
 #
