@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+source /home/ubuntu/download_file.sh
 jsonFile="${jsonFile}"
 log_file="/tmp/vcsa.log"
 deployment_name=$(jq -c -r .metadata.name $jsonFile)
@@ -8,10 +9,8 @@ if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] 
   cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
-ip_gw=$(jq -c -r .spec.gw.ip $jsonFile)
-domain=$(jq -c -r .spec.domain $jsonFile)
-
-
+ip_gw=$(jq -c -r '.spec.gw.ip' $jsonFile)
+domain=$(jq -c -r '.spec.domain' $jsonFile)
 echo '------------------------------------------------------------' | tee -a ${log_file}
 echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
 iso_url=$(jq -c -r .spec.vsphere.iso_url $jsonFile)

@@ -158,7 +158,8 @@ if [[ ${operation} == "apply" ]] ; then
             -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
             -e "s/\${vcsa_name}/${vcsa_name}/" \
             -e "s@\${jsonFile}@/home/ubuntu/${deployment_name}_${operation}.json@" /nested-vsphere/templates/vcsa.sh.template | tee /root/vcsa.sh > /dev/null
-            scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcsa.sh
+        scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcsa.sh
+        scp -o StrictHostKeyChecking=no /nested-vsphere/bash/download_file.sh ubuntu@${ip_gw}:/home/ubuntu/download_file.sh
         break
       fi
       ((attempt++))
