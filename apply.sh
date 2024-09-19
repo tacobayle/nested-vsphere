@@ -247,7 +247,11 @@ if [[ ${operation} == "apply" ]] ; then
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
   # affinity rule
   if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
+    echo '------------------------------------------------------------' | tee -a ${log_file}
+    echo "Starting timestamp: $(date)" | tee -a ${log_file}
+    echo "Creation of a affinity rule on the underlay infrastructure - This should take less than a minute" | tee -a ${log_file}
     govc cluster.rule.create -name "${deployment_name}-affinity-rule" -enable -affinity ${names}
+    echo "Ending timestamp: $(date)" | tee -a ${log_file}
   fi
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
@@ -301,8 +305,13 @@ if [[ ${operation} == "destroy" ]] ; then
   fi
   #
   #
-  govc cluster.rule.remove -name "${deployment_name}-affinity-rule"
-  echo "Ending timestamp: $(date)" | tee -a ${log_file}
+  if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
+    echo '------------------------------------------------------------' | tee -a ${log_file}
+    echo "Starting timestamp: $(date)" | tee -a ${log_file}
+    echo "Deletion of a affinity rule on the underlay infrastructure - This should take less than a minute" | tee -a ${log_file}
+    govc cluster.rule.remove -name "${deployment_name}-affinity-rule"
+    echo "Ending timestamp: $(date)" | tee -a ${log_file}
+  fi
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
