@@ -9,7 +9,7 @@ export GOVC_USERNAME=root
 count=1
 until $(curl --output /dev/null --silent --head -k https://${cidr_mgmt_three_octets}.${ip_esxi})
 do
-  echo "Attempt ${count}: Waiting for ESXi host at https://$${cidr_mgmt_three_octets}.{ip_esxi} to be reachable..."
+  echo "Attempt ${count}: Waiting for ESXi host at https://${cidr_mgmt_three_octets}.${ip_esxi} to be reachable..."
   sleep 10
   count=$((count+1))
     if [[ "${count}" -eq 60 ]]; then
