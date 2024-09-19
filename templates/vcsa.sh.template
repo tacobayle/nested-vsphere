@@ -34,12 +34,12 @@ contents="$(jq '.new_vcsa.esxi.hostname = "esxi01.'${domain}'" |
                 .new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier[0] = "mpx.vmhba0:C0:T2:L0" |
                 .new_vcsa.appliance.thin_disk_mode = true |
                 .new_vcsa.appliance.deployment_option = "small" |
-                .new_vcsa.appliance.name = "'${vcsa_name}'" |
+                .new_vcsa.appliance.name = "${vcsa_name}" |
                 .new_vcsa.network.ip = "'${cidr_mgmt_three_octets}'.'${ip_vcsa}'" |
                 .new_vcsa.network.dns_servers[0] = "'${ip_gw}'" |
                 .new_vcsa.network.prefix = "'$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)'" |
                 .new_vcsa.network.gateway = "'$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)'" |
-                .new_vcsa.network.system_name = "'${vcsa_name}'.'${domain}'" |
+                .new_vcsa.network.system_name = "${vcsa_name}.'${domain}'" |
                 .new_vcsa.os.password = "${GENERIC_PASSWORD}" |
                 .new_vcsa.os.ntp_servers = "'${ip_gw}'" |
                 .new_vcsa.os.ssh_enable = true |

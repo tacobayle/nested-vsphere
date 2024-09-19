@@ -303,6 +303,7 @@ if [[ ${operation} == "destroy" ]] ; then
   else
     echo "ERROR: unable to delete VM ${gw_name}: it already exists" | tee -a ${log_file}
   fi
+  echo "Ending timestamp: $(date)" | tee -a ${log_file}
   #
   #
   if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
