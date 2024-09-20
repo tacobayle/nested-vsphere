@@ -18,6 +18,7 @@ do
       exit
     fi
 done
+sleep 20
 govc host.storage.info -json -rescan | jq -c -r '.storageDeviceInfo.scsiLun[] | select( .deviceType == "disk" ) | .deviceName' | while read item
 do
   govc host.storage.mark -ssd ${item} > /dev/null
