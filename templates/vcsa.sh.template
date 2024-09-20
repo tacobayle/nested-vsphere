@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 source /home/ubuntu/bash/download_file.sh
-source /home/ubuntu/vcenter/vcenter_api.sh
+source /home/ubuntu/vcenter/functions.sh
 jsonFile="${jsonFile}"
 SLACK_WEBHOOK_URL_LOCAL=${SLACK_WEBHOOK_URL}
 log_file="/tmp/vcsa.log"
