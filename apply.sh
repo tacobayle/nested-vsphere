@@ -147,7 +147,6 @@ if [[ ${operation} == "apply" ]] ; then
       ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q >/dev/null 2>&1
       if [[ $? -eq 0 ]]; then
         echo "Gw ${gw_name} is reachable."
-        sleep 60 # should check if cloud init is finished
         if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
         for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
         do
@@ -168,9 +167,9 @@ if [[ ${operation} == "apply" ]] ; then
             -e "s/\${esxi_basename}/${esxi_basename}/" \
             -e "s/\${vcsa_name}/${vcsa_name}/" \
             -e "s@\${jsonFile}@/home/ubuntu/${deployment_name}_${operation}.json@" /nested-vsphere/templates/vcsa.sh.template | tee /root/vcsa.sh > /dev/null
-        scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/vcsa.sh
-        scp -o StrictHostKeyChecking=no /nested-vsphere/bash/functions.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/functions.sh
-        scp -o StrictHostKeyChecking=no /nested-vsphere/bash/create_vcenter_api_session.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/create_vcenter_api_session.sh
+        scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcsa.sh
+        scp -o StrictHostKeyChecking=no /nested-vsphere/bash/functions.sh ubuntu@${ip_gw}:/home/ubuntu/functions.sh
+        scp -o StrictHostKeyChecking=no /nested-vsphere/bash/create_vcenter_api_session.sh ubuntu@${ip_gw}:/home/ubuntu/create_vcenter_api_session.sh
         break
       fi
       ((attempt++))
@@ -276,7 +275,7 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
-  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo /bin/bash /home/ubuntu/vcenter/vcsa.sh"
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo /bin/bash /home/ubuntu/vcsa.sh"
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
 #

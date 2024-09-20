@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 source /home/ubuntu/bash/download_file.sh
-source /home/ubuntu/vcenter/functions.sh
+source /home/ubuntu/functions.sh
 jsonFile="${jsonFile}"
 SLACK_WEBHOOK_URL_LOCAL=${SLACK_WEBHOOK_URL}
 log_file="/tmp/vcsa.log"
@@ -69,7 +69,7 @@ do
 done
 if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: vCenter host https://${vcsa_name}.${domain} reachable"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
 echo "vCenter host https://${vcsa_name}.${domain} reachable" | tee -a ${log_file}
-token=$(/bin/bash /home/ubuntu/vcenter/create_vcenter_api_session.sh "${vsphere_nested_username}" "${ssoDomain}" "${vsphere_nested_password}" "${api_host}")
+token=$(/bin/bash /home/ubuntu/create_vcenter_api_session.sh "${vsphere_nested_username}" "${ssoDomain}" "${vsphere_nested_password}" "${api_host}")
 vcenter_api 6 10 "PUT" $token '{"enabled":true}' "${api_host}" "api/appliance/access/ssh"
 vcenter_api 6 10 "PUT" $token '{"enabled":true}' "${api_host}" "api/appliance/access/dcui"
 vcenter_api 6 10 "PUT" $token '{"enabled":true}' "${api_host}" "api/appliance/access/consolecli"
