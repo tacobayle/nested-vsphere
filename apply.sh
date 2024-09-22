@@ -19,20 +19,15 @@ if [[ ${operation} != "apply" && ${operation} != "destroy" ]] ; then echo "ERROR
 jsonFile="/root/${deployment_name}_${operation}.json"
 jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} | tee ${jsonFile}
 #
+# add env variables in json
 #
-# add new variables
 variables_json=$(jq -c -r . $jsonFile)
-variables_json=$(echo ${variables_json} | jq '. += {"dc": "dc01"}')
-variables_json=$(echo ${variables_json} | jq '. += {"cluster_basename": "cluster0"}')
-variables_json=$(echo ${variables_json} | jq '. += {"esxi_basename": "esxi0"}')
 variables_json=$(echo ${variables_json} | jq '. += {"SLACK_WEBHOOK_URL": "'${SLACK_WEBHOOK_URL}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"GENERIC_PASSWORD": "'${GENERIC_PASSWORD}'"}')
-variables_json=$(echo ${variables_json} | jq '. += {"vcsa_name": "vcsa-01"}')
 echo ${variables_json} | jq . | tee $jsonFile > /dev/null
 #
 #
 #
-dc=$(jq -c -r '.dc' $jsonFile)
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
 esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
 vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
@@ -143,6 +138,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${gw_name}/${gw_name}/" /nested-vsphere/templates/options-gw.json.template | tee "/tmp/options-${gw_name}.json"
     #
     govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ova_url})" | tee -a ${log_file}
+    govc vm.change -vm "${folder}/${gw_name}" -c $(jq -c -r .gw.cpu $jsonFile) -m $(jq -c -r .gw.memory $jsonFile)
     govc vm.network.add -vm "${folder}/${gw_name}" -net "${trunk1}" -net.adapter vmxnet3 | tee -a ${log_file}
     govc vm.disk.change -vm "${folder}/${gw_name}" -size 40G
     govc vm.power -on=true "${gw_name}" | tee -a ${log_file}
