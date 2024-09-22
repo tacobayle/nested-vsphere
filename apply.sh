@@ -151,7 +151,7 @@ if [[ ${operation} == "apply" ]] ; then
     # ssh check
     retry=60 ; pause=10 ; attempt=1
     while true ; do
-      echo "attempt $attempt to verify ssh to gw ${gw_name}" | tee -a ${log_file}
+      echo "attempt $attempt to verify gw ${gw_name} is ready" | tee -a ${log_file}
       ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q >/dev/null 2>&1
       if [[ $? -eq 0 ]]; then
         echo "Gw ${gw_name} is reachable." | tee -a ${log_file}
@@ -177,10 +177,11 @@ if [[ ${operation} == "apply" ]] ; then
           scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/vcsa.sh
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/functions.sh ubuntu@${ip_gw}:/home/ubuntu/bash/functions.sh
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/create_vcenter_api_session.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/create_vcenter_api_session.sh
+          echo "Gw ${gw_name} is ready." | tee -a ${log_file}
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break
         else
-          echo "Gw ${gw_name} is reachable but cloud init is not finished." | tee -a ${log_file}
+          echo "Gw ${gw_name}: cloud init is not finished." | tee -a ${log_file}
         fi
       fi
       ((attempt++))
