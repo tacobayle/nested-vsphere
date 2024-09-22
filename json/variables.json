@@ -1,6 +1,6 @@
 {
   "K8s_version_short": "v1.28",
-  "directories": ["bash","vcenter","yaml-files", ".kube", "avi", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "tanzu", "unmanaged_k8s_clusters"],
+  "directories": ["json", "esxi", "bash","vcenter","yaml-files", ".kube", "avi", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "tanzu", "unmanaged_k8s_clusters"],
   "apt_packages": ["python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso","expect"],
   "pip3_packages": ["ansible==2.10.7", "avi-sdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors"],
   "yaml_folder": "yaml-files",

@@ -20,6 +20,22 @@ jsonFile="/root/${deployment_name}_${operation}.json"
 jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} | tee ${jsonFile}
 #
 #
+# add new variables
+variables_json=$(jq -c -r . $jsonFile)
+variables_json=$(echo ${variables_json} | jq '. += {"dc": "dc01"}')
+variables_json=$(echo ${variables_json} | jq '. += {"cluster_basename": "cluster0"}')
+variables_json=$(echo ${variables_json} | jq '. += {"esxi_basename": "esxi0"}')
+variables_json=$(echo ${variables_json} | jq '. += {"SLACK_WEBHOOK_URL": "'${SLACK_WEBHOOK_URL}'"}')
+variables_json=$(echo ${variables_json} | jq '. += {"GENERIC_PASSWORD": "'${GENERIC_PASSWORD}'"}')
+variables_json=$(echo ${variables_json} | jq '. += {"vcsa_name": "vcsa-01"}')
+echo ${variables_json} | jq . | tee $jsonFile > /dev/null
+#
+#
+#
+dc=$(jq -c -r '.dc' $jsonFile)
+cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
+esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
+vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
 folder=$(jq -c -r .spec.folder $jsonFile)
 gw_name="${deployment_name}-gw"
 domain=$(jq -c -r .spec.domain $jsonFile)
@@ -33,13 +49,9 @@ forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
 networks=$(jq -c -r '.spec.networks' $jsonFile)
 ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
-vcsa_name="vcsa-01"
 cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
 cidr_vmotion=$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
 cidr_vsan=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-dc="dc01"
-cluster_basename="cluster0"
-esxi_basename="esxi0"
 if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
@@ -148,29 +160,31 @@ if [[ ${operation} == "apply" ]] ; then
       if [[ $? -eq 0 ]]; then
         echo "Gw ${gw_name} is reachable."
         if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-        for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
-        do
-          ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
-          name_esxi="${esxi_basename}${esxi}"
-          sed -e "s/\${ip_esxi}/${ip_esxi}/" \
-              -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
-              -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
-              -e "s/\${esxi}/${esxi}/" \
-              -e "s/\${deployment_name}/${deployment_name}/" \
-              -e "s/\${name_esxi}/${name_esxi}/" \
-              -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
-          scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi_customization-$esxi.sh
-        done
-        scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/${deployment_name}_${operation}.json
-        sed -e "s/\${GENERIC_PASSWORD}/${GENERIC_PASSWORD}/" \
-            -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
-            -e "s/\${esxi_basename}/${esxi_basename}/" \
-            -e "s/\${vcsa_name}/${vcsa_name}/" \
-            -e "s@\${jsonFile}@/home/ubuntu/${deployment_name}_${operation}.json@" /nested-vsphere/templates/vcsa.sh.template | tee /root/vcsa.sh > /dev/null
-        scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcsa.sh
-        scp -o StrictHostKeyChecking=no /nested-vsphere/bash/functions.sh ubuntu@${ip_gw}:/home/ubuntu/functions.sh
-        scp -o StrictHostKeyChecking=no /nested-vsphere/bash/create_vcenter_api_session.sh ubuntu@${ip_gw}:/home/ubuntu/create_vcenter_api_session.sh
-        break
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
+        if [[ $? -eq 0 ]]; then
+          for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
+          do
+            ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
+            name_esxi="${esxi_basename}${esxi}"
+            sed -e "s/\${ip_esxi}/${ip_esxi}/" \
+                -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
+                -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
+                -e "s/\${esxi}/${esxi}/" \
+                -e "s/\${deployment_name}/${deployment_name}/" \
+                -e "s/\${cluster_basename}/${cluster_basename}/" \
+                -e "s/\${name_esxi}/${name_esxi}/" \
+                -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
+            scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
+          done
+          scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
+          sed -e "s@\${jsonFile}@/home/ubuntu/json/${deployment_name}_${operation}.json@" /nested-vsphere/templates/vcsa.sh.template | tee /root/vcsa.sh > /dev/null
+          scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/vcsa.sh
+          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/functions.sh ubuntu@${ip_gw}:/home/ubuntu/bash/functions.sh
+          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/create_vcenter_api_session.sh ubuntu@${ip_gw}:/home/ubuntu/create_vcenter_api_session.sh
+          break
+        else
+          echo "Gw ${gw_name} is reachable but cloud init is not finished."
+        fi
       fi
       ((attempt++))
       if [ $attempt -eq $retry ]; then
@@ -266,7 +280,7 @@ if [[ ${operation} == "apply" ]] ; then
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${esxi_basename}${esxi}"
-    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/esxi_customization-$esxi.sh"
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/esxi/esxi_customization-$esxi.sh"
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
   done
@@ -275,7 +289,7 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
-  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo /bin/bash /home/ubuntu/vcsa.sh"
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo /bin/bash /home/ubuntu/vcenter/vcsa.sh"
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
 #

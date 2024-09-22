@@ -1,11 +1,12 @@
 #!/bin/bash
 #
-source /home/ubuntu/bash/download_file.sh
-source /home/ubuntu/functions.sh
+source /home/ubuntu/bash/functions.sh
 jsonFile="${jsonFile}"
-SLACK_WEBHOOK_URL_LOCAL=${SLACK_WEBHOOK_URL}
+SLACK_WEBHOOK_URL=$(jq -c -r .SLACK_WEBHOOK_URL $jsonFile)
 log_file="/tmp/vcsa.log"
 deployment_name=$(jq -c -r .metadata.name $jsonFile)
+GENERIC_PASSWORD=$(jq -c -r .GENERIC_PASSWORD $jsonFile)
+
 cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
 if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
@@ -13,11 +14,13 @@ fi
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
 ip_gw=$(jq -c -r '.spec.gw.ip' $jsonFile)
 domain=$(jq -c -r '.spec.domain' $jsonFile)
+esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
+vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
 echo '------------------------------------------------------------' | tee -a ${log_file}
 echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
 iso_url=$(jq -c -r .spec.vsphere.iso_url $jsonFile)
 download_file_from_url_to_location "${iso_url}" "/home/ubuntu/$(basename ${iso_url})" "VCSA ISO"
-if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 xorriso -ecma119_map lowercase -osirrox on -indev "/home/ubuntu/$(basename ${iso_url})" -extract / /tmp/vcenter_cdrom_mount
 cp -r /tmp/vcenter_cdrom_mount/vcsa-cli-installer/templates/install/vCSA_with_cluster_on_ESXi.json /home/ubuntu/
 rm -fr /tmp/vcenter_cdrom
@@ -28,23 +31,23 @@ ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
 vsphere_nested_username="administrator"
 vsphere_nested_password="${GENERIC_PASSWORD}"
 api_host="${vcsa_name}.${domain}"
-contents="$(jq '.new_vcsa.esxi.hostname = "${esxi_basename}1.'${domain}'" |
+contents="$(jq '.new_vcsa.esxi.hostname = "'${esxi_basename}'1.'${domain}'" |
                 .new_vcsa.esxi.username = "root" |
                 .new_vcsa.esxi.password = "${GENERIC_PASSWORD}" |
                 .new_vcsa.esxi.VCSA_cluster.datacenter = "'${dc}'" |
-                .new_vcsa.esxi.VCSA_cluster.cluster = "'${cluster_basename}'1" |
+                .new_vcsa.esxi.VCSA_cluster.cluster = "${cluster_basename}1" |
                 .new_vcsa.esxi.VCSA_cluster.disks_for_vsan.cache_disk[0] = "mpx.vmhba0:C0:T1:L0" |
                 .new_vcsa.esxi.VCSA_cluster.disks_for_vsan.capacity_disk[0] = "mpx.vmhba0:C0:T2:L0" |
                 .new_vcsa.esxi.VCSA_cluster.enable_vsan_esa = false |
                 .new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier[0] = "mpx.vmhba0:C0:T2:L0" |
                 .new_vcsa.appliance.thin_disk_mode = true |
                 .new_vcsa.appliance.deployment_option = "small" |
-                .new_vcsa.appliance.name = "${vcsa_name}" |
+                .new_vcsa.appliance.name = "'${vcsa_name}'" |
                 .new_vcsa.network.ip = "'${cidr_mgmt_three_octets}'.'${ip_vcsa}'" |
                 .new_vcsa.network.dns_servers[0] = "'${ip_gw}'" |
                 .new_vcsa.network.prefix = "'$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)'" |
                 .new_vcsa.network.gateway = "'$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)'" |
-                .new_vcsa.network.system_name = "${vcsa_name}.'${domain}'" |
+                .new_vcsa.network.system_name = "'${vcsa_name}'.'${domain}'" |
                 .new_vcsa.os.password = "${GENERIC_PASSWORD}" |
                 .new_vcsa.os.ntp_servers = "'${ip_gw}'" |
                 .new_vcsa.os.ssh_enable = true |
@@ -53,7 +56,7 @@ contents="$(jq '.new_vcsa.esxi.hostname = "${esxi_basename}1.'${domain}'" |
                 .ceip.settings.ceip_enabled = 'false'' /home/ubuntu/vCSA_with_cluster_on_ESXi.json)"
 echo "${contents}" | jq 'del (.new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier)' | tee /home/ubuntu/vcenter_config.json
 /tmp/vcenter_cdrom/vcsa-cli-installer/lin64/vcsa-deploy install --accept-eula --acknowledge-ceip --no-esx-ssl-verify /home/ubuntu/vcenter_config.json | tee -a ${log_file}
-if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VCSA installed"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VCSA installed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 ssh-keygen -f /home/ubuntu/.ssh/known_hosts -R ${vcsa_name}.${domain} || true
 count=1
 until $(curl --output /dev/null --silent --head -k https://${vcsa_name}.${domain})
@@ -63,11 +66,11 @@ do
   count=$((count+1))
     if [[ "${count}" -eq 60 ]]; then
       echo "ERROR: Unable to connect to vCenter host https://${vcsa_name}.${domain}" | tee -a ${log_file}
-      if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: vCenter host https://${vcsa_name}.${domain} unable to reach"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
+      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: vCenter host https://'${vcsa_name}'.'${domain}' unable to reach"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       exit
     fi
 done
-if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: vCenter host https://${vcsa_name}.${domain} reachable"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: vCenter host https://'${vcsa_name}'.${domain} reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 echo "vCenter host https://${vcsa_name}.${domain} reachable" | tee -a ${log_file}
 token=$(/bin/bash /home/ubuntu/create_vcenter_api_session.sh "${vsphere_nested_username}" "${ssoDomain}" "${vsphere_nested_password}" "${api_host}")
 vcenter_api 6 10 "PUT" $token '{"enabled":true}' "${api_host}" "api/appliance/access/ssh"
