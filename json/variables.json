@@ -70,5 +70,10 @@
   "dc": "dc01",
   "cluster_basename": "cluster0",
   "esxi_basename": "esxi0",
-  "vcsa_name": "vcsa-01"
+  "vcsa_name": "vcsa-01",
+  "vds_switches": [
+    "vds1-mgmt",
+    "vds2-VMotion",
+    "vds3-VSAN"
+  ]
 }

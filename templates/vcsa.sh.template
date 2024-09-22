@@ -10,6 +10,14 @@ cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type ==
 if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
+cidr_vmotion=$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+if [[ ${cidr_vmotion} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_vmotion_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+fi
+cidr_vsan=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+if [[ ${cidr_vsan} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_vsan_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+fi
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
 ip_gw=$(jq -c -r '.spec.gw.ip' $jsonFile)
 dc=$(jq -c -r '.dc' $jsonFile)
@@ -70,11 +78,11 @@ do
   count=$((count+1))
     if [[ "${count}" -eq 60 ]]; then
       echo "ERROR: Unable to connect to vCenter host https://${vcsa_name}.${domain}" | tee -a ${log_file}
-      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: vCenter host https://'${vcsa_name}'.'${domain}' unable to reach"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vCenter host https://'${vcsa_name}'.'${domain}' unable to reach"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       exit
     fi
 done
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: vCenter host https://'${vcsa_name}'.${domain} reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vCenter host https://'${vcsa_name}'.'${domain}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 echo "vCenter host https://${vcsa_name}.${domain} reachable" | tee -a ${log_file}
 token=$(/bin/bash /home/ubuntu/vcenter/create_vcenter_api_session.sh "${vsphere_nested_username}" "${ssoDomain}" "${vsphere_nested_password}" "${api_host}")
 vcenter_api 6 10 "PUT" $token '{"enabled":true}' "${api_host}" "api/appliance/access/ssh"
@@ -90,7 +98,7 @@ for cluster in $(seq 1 ${count_cluster})
 do
   if [[ ${cluster} -ne 1 ]] ; then
     load_govc_env_wo_cluster
-    echo "Adding vSphere cluster "${cluster_basename}${cluster}" | tee -a ${log_file}
+    echo "Adding vSphere cluster ${cluster_basename}${cluster}" | tee -a ${log_file}
     govc cluster.create "${cluster_basename}${cluster}" > /dev/null
   fi
 done
@@ -100,8 +108,8 @@ done
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
   if [[ ${esxi} != 1 ]] ; then
-    load_govc_env_with_cluster "${basename_cluster}$((($esxi-1)/3+1))"
-    echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} in cluster ${basename_cluster}$((($esxi-1)/3+1))" | tee -a ${log_file}
+    load_govc_env_with_cluster "${cluster_basename}$((($esxi-1)/3+1))"
+    echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} in cluster ${cluster_basename}$((($esxi-1)/3+1))" | tee -a ${log_file}
     govc cluster.add -hostname "${esxi_basename}${esxi}.${domain}" -username "root" -password "${GENERIC_PASSWORD}" -noverify > /dev/null
   fi
 done
@@ -109,6 +117,14 @@ done
 # Network config
 #
 load_govc_env_wo_cluster
+jq -c -r .vds_switches[] ${jsonFile} | while read vds
+do
+  echo "create vds called ${vds}" | tee -a ${log_file}
+  govc dvs.create -mtu 1500 -discovery-protocol lldp -product-version=7.0.2 ${vds} > /dev/null
+done
+#
+
+
 echo "create vds called vds1-mgmt" | tee -a ${log_file}
 govc dvs.create -mtu 1500 -discovery-protocol lldp -product-version=7.0.2 vds1-mgmt > /dev/null
 echo "create vds called vds2-VMotion" | tee -a ${log_file}
@@ -133,3 +149,16 @@ do
   echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on port-group vds3-VSAN on pnic vmnic1" | tee -a ${log_file}
   govc dvs.add -dvs vds3-VSAN -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}"
 done
+#
+govc about -json | tee /home/ubuntu/json/vcenter_about.json
+#
+# migrating vmk0 to vds1-mgmt and vmk2 to vds3-VSAN
+#
+echo "migrating vmk0 to vds1-mgmt and vmk2 to vds3-VSAN" | tee -a ${log_file}
+for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
+do
+  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vmotion}.$(jq -r '.spec.esxi.ips[$(expr ${esxi} - 1)]' $jsonFile) "esxcli network ip interface list; ls"
+done
+#
+# migrating vmk2 to vds
+#
