@@ -21,7 +21,10 @@ fi
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
 ip_gw=$(jq -c -r '.spec.gw.ip' $jsonFile)
 dc=$(jq -c -r '.dc' $jsonFile)
-
+ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
+vsphere_nested_username="administrator"
+vsphere_nested_password="${GENERIC_PASSWORD}"
+api_host="${vcsa_name}.${domain}"
 domain=$(jq -c -r '.spec.domain' $jsonFile)
 esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
@@ -38,10 +41,6 @@ rm -fr /tmp/vcenter_cdrom
 mkdir -p /tmp/vcenter_cdrom
 cp -r /tmp/vcenter_cdrom_mount/* /tmp/vcenter_cdrom
 rm -fr /tmp/vcenter_cdrom_mount
-ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
-vsphere_nested_username="administrator"
-vsphere_nested_password="${GENERIC_PASSWORD}"
-api_host="${vcsa_name}.${domain}"
 contents="$(jq '.new_vcsa.esxi.hostname = "'${esxi_basename}'1.'${domain}'" |
                 .new_vcsa.esxi.username = "root" |
                 .new_vcsa.esxi.password = "'${GENERIC_PASSWORD}'" |
@@ -121,45 +120,38 @@ done
 load_govc_env_wo_cluster
 jq -c -r .vds_switches[] ${jsonFile} | while read vds
 do
-  echo "create vds called ${vds}" | tee -a ${log_file}
-  govc dvs.create -mtu 1500 -discovery-protocol lldp -product-version=7.0.2 ${vds} > /dev/null
+  echo "create vds $(echo ${vds} | jq -c -r '.name') with $(echo ${vds} | jq -c -r '.discovery_protocol'), mtu: $(echo ${vds} | jq -c -r '.mtu'), version $(echo ${vds} | jq -c -r '.version')" | tee -a ${log_file}
+  govc dvs.create -mtu $(echo ${vds} | jq -c -r '.mtu') -discovery-protocol $(echo ${vds} | jq -c -r '.discovery_protocol') -product-version=$(echo ${vds} | jq -c -r '.version') $(echo ${vds} | jq -c -r '.name') > /dev/null
 done
 #
-exit
-
-echo "create vds called vds1-mgmt" | tee -a ${log_file}
-govc dvs.create -mtu 1500 -discovery-protocol lldp -product-version=7.0.2 vds1-mgmt > /dev/null
-echo "create vds called vds2-VMotion" | tee -a ${log_file}
-govc dvs.create -mtu 1500 -discovery-protocol lldp -product-version=7.0.2 vds2-VMotion > /dev/null
-echo "create vds called vds3-VSAN" | tee -a ${log_file}
-govc dvs.create -mtu 1500 -discovery-protocol lldp -product-version=7.0.2 vds3-VSAN > /dev/null
-echo "create portgroup mgmt in vds vds1-mgmt" | tee -a ${log_file}
-govc dvs.portgroup.add -dvs vds1-mgmt -vlan "$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" mgmt > /dev/null
-echo "create portgroup mgmt-vmk in vds vds1-mgmt" | tee -a ${log_file}
-govc dvs.portgroup.add -dvs vds1-mgmt -vlan "$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" mgmt-vmk > /dev/null
-echo "create portgroup VSAN in vds vds3-VSAN" | tee -a ${log_file}
-govc dvs.portgroup.add -dvs vds3-VSAN -vlan "$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" VSAN > /dev/null
-echo "create portgroup VMOTION in vds vds2-VMotion" | tee -a ${log_file}
-govc dvs.portgroup.add -dvs vds2-VMotion -vlan "$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" VMOTION > /dev/null
+jq -c -r .port_groups[] ${jsonFile} | while read port_group
+do
+  echo "create portgroup $(echo ${port_group} | jq -c -r '.name') in vds $(echo ${port_group} | jq -c -r '.vds_ref') with vlan $(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.type') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" | tee -a ${log_file}
+  govc dvs.portgroup.add -dvs $(echo ${port_group} | jq -c -r '.vds_ref') -vlan "$(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.type') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" $(echo ${port_group} | jq -c -r '.name') > /dev/null
+done
 #
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
-  echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on port-group vds1-mgmt on pnic vmnic1" | tee -a ${log_file}
-  govc dvs.add -dvs vds1-mgmt -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}"
-  echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on port-group vds2-VMotion on pnic vmnic1" | tee -a ${log_file}
-  govc dvs.add -dvs vds2-VMotion -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}"
-  echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on port-group vds3-VSAN on pnic vmnic1" | tee -a ${log_file}
-  govc dvs.add -dvs vds3-VSAN -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}"
+  echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[1].name ${jsonFile}) on pnic $(jq -c -r .vds_switches[1].pnic ${jsonFile})" | tee -a ${log_file}
+  govc dvs.add -dvs $(jq -c -r .vds_switches[1].name ${jsonFile}) -pnic=$(jq -c -r .vds_switches[1].pnic ${jsonFile}) "${esxi_basename}${esxi}.${domain}"
 done
+exit
+#
 #
 govc about -json | tee /home/ubuntu/json/vcenter_about.json
 #
-# migrating vmk0 to vds1-mgmt and vmk2 to vds3-VSAN
+# migrating vmk0 to and vmk2 to vds2
 #
-echo "migrating vmk0 to vds1-mgmt and vmk2 to vds3-VSAN" | tee -a ${log_file}
+echo "migrating vmk0 and vmk2 to vds2" | tee -a ${log_file}
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vmotion}.$(jq -r '.spec.esxi.ips[$(expr ${esxi} - 1)]' $jsonFile) "esxcli network ip interface list; ls"
+  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vmotion}.$(jq -r '.spec.esxi.ips[$(expr ${esxi} - 1)]' $jsonFile) "esxcli network ip interface remove --interface-name vmk0"
+  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vmotion}.$(jq -r '.spec.esxi.ips[$(expr ${esxi} - 1)]' $jsonFile) "portid=$(esxcfg-vswitch -l | tail -4 | head -1 | awk '{print $1}')"
+  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vmotion}.$(jq -r '.spec.esxi.ips[$(expr ${esxi} - 1)]' $jsonFile) "esxcli network ip interface add --interface-name=vmk0 --dvs-name=vds2 --dvport-id=${portid}"
+  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vmotion}.$(jq -r '.spec.esxi.ips[$(expr ${esxi} - 1)]' $jsonFile) "esxcli network ip interface ipv4 set --interface-name=vmk0 --ipv4=${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips[$(expr ${esxi} - 1)]' $jsonFile) --netmask=255.255.255.0 --type=static"
+
+
+  esxcli network ip interface tag add -i vmk0 -t Management"
 done
 #
 # migrating vmk2 to vds

@@ -72,8 +72,41 @@
   "esxi_basename": "esxi0",
   "vcsa_name": "vcsa-01",
   "vds_switches": [
-    "vds1-mgmt",
-    "vds2-VMotion",
-    "vds3-VSAN"
+    {
+      "name": "vds1",
+      "discovery_protocol": "lldp",
+      "version": "7.0.2",
+      "mtu": 1500,
+      "pnic": "vmnic0"
+    },
+    {
+      "name": "vds2",
+      "discovery_protocol": "lldp",
+      "version": "7.0.2",
+      "mtu": 1500,
+      "pnic": "vmnic1"
+    }
+  ],
+  "port_groups": [
+    {
+      "name": "mgmt",
+      "vds_ref": "vds2",
+      "type": "MANAGEMENT"
+    },
+    {
+      "name": "mgmt-vmk",
+      "vds_ref": "vds2",
+      "type": "MANAGEMENT"
+    },
+    {
+      "name": "VSAN",
+      "vds_ref": "vds2",
+      "type": "VSAN"
+    },
+    {
+      "name": "vMotion",
+      "vds_ref": "vds2",
+      "type": "VMOTION"
+    }
   ]
 }
