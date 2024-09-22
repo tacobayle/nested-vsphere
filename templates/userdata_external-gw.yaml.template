@@ -51,6 +51,14 @@ write_files:
         apt install -y $package
       done
       #
+      # Directories
+      #
+      directories='${directories}'
+      echo $directories | jq -c -r .[] | while read directory
+      do
+        sudo -u ubuntu  mkdir -p /home/ubuntu/$directory
+      done
+      #
       # pip3
       #
       pip3 install --upgrade pip
@@ -202,16 +210,6 @@ write_files:
       mv /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.patching_dns
       cat /etc/netplan/50-cloud-init.yaml.patching_dns | sed -e "s/${forwarders_netplan}/127.0.0.1/" | tee /etc/netplan/50-cloud-init.yaml
       netplan apply
-      #
-      # Directories
-      #
-      directories='${directories}'
-      echo $directories | jq -c -r .[] | while read directory
-      do
-        sudo -u ubuntu  mkdir -p /home/ubuntu/$directory
-        #chown ubuntu /home/ubuntu/$directory
-        #chgrp ubuntu /home/ubuntu/$directory
-      done
       #
       # K8s install
       #
