@@ -224,7 +224,7 @@ if [[ ${operation} == "apply" ]] ; then
     else
       net=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
       ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
-      echo "Building custom ESXi ISO for ESXi${esxi}"
+      echo "+++ Building custom ESXi ISO for ESXi${esxi}" | tee -a ${log_file}
       rm -f ${iso_build_location}/ks_cust.cfg
       rm -f "${iso_location}-${esxi}.iso"
       sed -e "s/\${nested_esxi_root_password}/${GENERIC_PASSWORD}/" \
