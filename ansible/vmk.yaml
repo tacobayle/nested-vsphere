@@ -1,0 +1,74 @@
+- hosts: localhost
+  tasks:
+
+    - name: Add mgmt vmkernel
+      community.vmware.vmware_vmkernel:
+        hostname: "{{ vcsa_name }}.{{ spec.domain }}"
+        username: "administrator@{{ spec.vsphere.ssoDomain }}"
+        password: "{{ GENERIC_PASSWORD }}"
+        validate_certs: false
+        device: "{{ port_groups[0].vmk }}"
+        esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
+        dvswitch_name: "{{ vds_switches[1].name }}"
+        portgroup_name: "{{ port_groups[0].name }}"
+        network:
+          type: 'dhcp'
+        state: present
+        enable_mgmt: True
+      loop: "{{ spec.esxi.ips }}"
+      loop_control:
+        index_var: my_idx
+
+    - name: Add mgmt-vmk vmkernel
+      community.vmware.vmware_vmkernel:
+        hostname: "{{ vcsa_name }}.{{ spec.domain }}"
+        username: "administrator@{{ spec.vsphere.ssoDomain }}"
+        password: "{{ GENERIC_PASSWORD }}"
+        validate_certs: false
+        device: "{{ port_groups[1].vmk }}"
+        esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
+        dvswitch_name: "{{ vds_switches[1].name }}"
+        portgroup_name: "{{ port_groups[1].name }}"
+        network:
+          type: 'dhcp'
+        state: present
+        enable_mgmt: True
+      loop: "{{ spec.esxi.ips }}"
+      loop_control:
+        index_var: my_idx
+
+    - name: Add VSAN vmkernel
+      community.vmware.vmware_vmkernel:
+        hostname: "{{ vcsa_name }}.{{ spec.domain }}"
+        username: "administrator@{{ spec.vsphere.ssoDomain }}"
+        password: "{{ GENERIC_PASSWORD }}"
+        validate_certs: false
+        device: "{{ port_groups[2].vmk }}"
+        esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
+        dvswitch_name: "{{ vds_switches[1].name }}"
+        portgroup_name: "{{ port_groups[2].name }}"
+        network:
+          type: 'dhcp'
+        state: present
+        enable_mgmt: False
+      loop: "{{ spec.esxi.ips }}"
+      loop_control:
+        index_var: my_idx
+
+    - name: Add vMotion vmkernel
+      community.vmware.vmware_vmkernel:
+        hostname: "{{ vcsa_name }}.{{ spec.domain }}"
+        username: "administrator@{{ spec.vsphere.ssoDomain }}"
+        password: "{{ GENERIC_PASSWORD }}"
+        validate_certs: false
+        device: "{{ port_groups[3].vmk }}"
+        esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
+        dvswitch_name: "{{ vds_switches[1].name }}"
+        portgroup_name: "{{ port_groups[3].name }}"
+        network:
+          type: 'dhcp'
+        state: present
+        enable_mgmt: False
+      loop: "{{ spec.esxi.ips }}"
+      loop_control:
+        index_var: my_idx
