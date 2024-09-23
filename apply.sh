@@ -275,7 +275,7 @@ if [[ ${operation} == "apply" ]] ; then
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Starting timestamp: $(date)" | tee -a ${log_file}
-  echo "ESXI reachability check  - This should take 2 minutes per nested ESXi" | tee -a ${log_file}
+  echo "ESXI reachability check and customization (SSD) - This should take 2 minutes per nested ESXi" | tee -a ${log_file}
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${esxi_basename}${esxi}"
