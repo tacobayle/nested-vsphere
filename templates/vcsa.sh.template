@@ -36,7 +36,7 @@ download_file_from_url_to_location "${iso_url}" "/home/ubuntu/$(basename ${iso_u
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 echo "ISO VCSA downloaded" | tee -a ${log_file}
 xorriso -ecma119_map lowercase -osirrox on -indev "/home/ubuntu/$(basename ${iso_url})" -extract / /tmp/vcenter_cdrom_mount
-cp -r /tmp/vcenter_cdrom_mount/vcsa-cli-installer/templates/install/vCSA_with_cluster_on_ESXi.json /home/ubuntu/
+cp -r /tmp/vcenter_cdrom_mount/vcsa-cli-installer/templates/install/vCSA_with_cluster_on_ESXi.json /home/ubuntu/json/
 rm -fr /tmp/vcenter_cdrom
 mkdir -p /tmp/vcenter_cdrom
 cp -r /tmp/vcenter_cdrom_mount/* /tmp/vcenter_cdrom
