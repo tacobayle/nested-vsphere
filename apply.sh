@@ -288,7 +288,7 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
-  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo /bin/bash /home/ubuntu/vcenter/vcsa.sh"
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/vcenter/vcsa.sh"
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
 #

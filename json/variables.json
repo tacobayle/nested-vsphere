@@ -91,27 +91,26 @@
     {
       "name": "mgmt",
       "vds_ref": "vds2",
-      "vmk": "vmk3",
       "type": "MANAGEMENT"
     },
     {
       "name": "mgmt-vmk",
       "vds_ref": "vds2",
-      "vmk": "vmk4",
+      "vmk": "vmk3",
       "old_vmk": "vmk0",
       "type": "MANAGEMENT"
     },
     {
       "name": "VSAN",
       "vds_ref": "vds2",
-      "vmk": "vmk5",
+      "vmk": "vmk4",
       "old_vmk": "vmk2",
       "type": "VSAN"
     },
     {
       "name": "vMotion",
       "vds_ref": "vds2",
-      "vmk": "vmk6",
+      "vmk": "vmk5",
       "old_vmk": "vmk1",
       "type": "VMOTION"
     }

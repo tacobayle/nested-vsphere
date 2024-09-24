@@ -137,8 +137,9 @@ do
 done
 sleep 10
 #
-# creating new VMK
+# creating new vmk interfaces
 #
+echo "Creating new vmk interfaces" | tee -a ${log_file}
 ansible-playbook /home/ubuntu/vcenter/vmk.yaml -e @${jsonFile} | tee -a ${log_file}
 exit
 #
