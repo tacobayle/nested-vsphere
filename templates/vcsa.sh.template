@@ -135,6 +135,7 @@ do
   echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[1].name ${jsonFile}) on pnic $(jq -c -r .vds_switches[1].pnic ${jsonFile})" | tee -a ${log_file}
   govc dvs.add -dvs $(jq -c -r .vds_switches[1].name ${jsonFile}) -pnic=$(jq -c -r .vds_switches[1].pnic ${jsonFile}) "${esxi_basename}${esxi}.${domain}"
 done
+sleep 10
 #
 # creating new VMK
 #
