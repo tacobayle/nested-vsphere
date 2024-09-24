@@ -138,7 +138,8 @@ done
 #
 # creating new VMK
 #
-ansible-playbook /home/ubuntu/vcenter/vmk.yaml -e @${jsonFile}
+ansible-playbook /home/ubuntu/vcenter/vmk.yaml -e @${jsonFile} | tee -a ${log_file}
+exit
 #
 #
 # migrating from standard vswitch to VDS
