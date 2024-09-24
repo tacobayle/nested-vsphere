@@ -40,7 +40,7 @@ cp -r /tmp/vcenter_cdrom_mount/vcsa-cli-installer/templates/install/vCSA_with_cl
 rm -fr /tmp/vcenter_cdrom
 mkdir -p /tmp/vcenter_cdrom
 cp -r /tmp/vcenter_cdrom_mount/* /tmp/vcenter_cdrom
-rm -fr /tmp/vcenter_cdrom_mount
+sudo rm -fr /tmp/vcenter_cdrom_mount
 contents="$(jq '.new_vcsa.esxi.hostname = "'${esxi_basename}'1.'${domain}'" |
                 .new_vcsa.esxi.username = "root" |
                 .new_vcsa.esxi.password = "'${GENERIC_PASSWORD}'" |
