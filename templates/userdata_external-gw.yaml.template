@@ -67,7 +67,10 @@ write_files:
       do
         sudo -u ubuntu pip3 install $pip3_package
       done
-      sudo -u ubuntu ansible-galaxy collection install vmware.alb
+      #
+      # GOVC install
+      #
+      curl -L -o - "https://github.com/vmware/govmomi/releases/latest/download/govc_$(uname -s)_$(uname -m).tar.gz" | tar -C /usr/local/bin -xvzf - govc
       #
       # Network
       #
@@ -86,10 +89,6 @@ write_files:
       echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
       netplan apply
       sysctl -w net.ipv4.ip_forward=1
-      #
-      # GOVC install
-      #
-      curl -L -o - "https://github.com/vmware/govmomi/releases/latest/download/govc_$(uname -s)_$(uname -m).tar.gz" | tar -C /usr/local/bin -xvzf - govc
       #
       # DNS config
       #
@@ -204,8 +203,6 @@ write_files:
       echo "allow 0.0.0.0/0" | tee -a /etc/chrony/chrony.conf
       systemctl restart chrony.service
       #
-      #
-      #
       # K8s install
       #
       curl -fsSL https://pkgs.k8s.io/core:/stable:/${K8s_version_short}/deb/Release.key | sudo gpg --dearmor -o /tmp/kubernetes-apt-keyring.gpg
@@ -231,6 +228,10 @@ write_files:
         sudo -u ubuntu wget $yaml_link
       done
       cd -
+      #
+      # ansible collection install vmware.alb
+      #
+      sudo -u ubuntu ansible-galaxy collection install vmware.alb
       #
       # Patching DNS to localhost
       #
