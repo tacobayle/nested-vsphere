@@ -48,6 +48,15 @@ load_govc_env_with_cluster () {
   export GOVC_CLUSTER=$1
 }
 
+load_govc_esxi () {
+  export GOVC_USERNAME="root"
+  export GOVC_PASSWORD=${esxi_nested_password}
+  export GOVC_INSECURE=true
+  unset GOVC_DATACENTER
+  unset GOVC_CLUSTER
+  unset GOVC_URL
+}
+
 function download_file_from_url_to_location () {
   # $1 is url
   # $2 is download location

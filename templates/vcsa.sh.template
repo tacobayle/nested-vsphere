@@ -24,6 +24,9 @@ dc=$(jq -c -r '.dc' $jsonFile)
 ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
 vsphere_nested_username="administrator"
 vsphere_nested_password="${GENERIC_PASSWORD}"
+esxi_nested_password="${GENERIC_PASSWORD}"
+disk_capacity=$(jq -c -r '.disks.capacity' $jsonFile)
+disk_cache=$(jq -c -r '.disks.cache' $jsonFile)
 domain=$(jq -c -r '.spec.domain' $jsonFile)
 esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
@@ -46,10 +49,10 @@ contents="$(jq '.new_vcsa.esxi.hostname = "'${esxi_basename}'1.'${domain}'" |
                 .new_vcsa.esxi.password = "'${GENERIC_PASSWORD}'" |
                 .new_vcsa.esxi.VCSA_cluster.datacenter = "'${dc}'" |
                 .new_vcsa.esxi.VCSA_cluster.cluster = "'${cluster_basename}'1" |
-                .new_vcsa.esxi.VCSA_cluster.disks_for_vsan.cache_disk[0] = "mpx.vmhba0:C0:T1:L0" |
-                .new_vcsa.esxi.VCSA_cluster.disks_for_vsan.capacity_disk[0] = "mpx.vmhba0:C0:T2:L0" |
+                .new_vcsa.esxi.VCSA_cluster.disks_for_vsan.cache_disk[0] = "'${disk_cache}'" |
+                .new_vcsa.esxi.VCSA_cluster.disks_for_vsan.capacity_disk[0] = "'${disk_capacity}'" |
                 .new_vcsa.esxi.VCSA_cluster.enable_vsan_esa = false |
-                .new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier[0] = "mpx.vmhba0:C0:T2:L0" |
+                .new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier[0] = "'${disk_capacity}'" |
                 .new_vcsa.appliance.thin_disk_mode = true |
                 .new_vcsa.appliance.deployment_option = "small" |
                 .new_vcsa.appliance.name = "'${vcsa_name}'" |
@@ -115,6 +118,10 @@ do
   fi
 done
 #
+# saving vCenter uuid
+#
+govc about -json | tee /home/ubuntu/json/vcenter_about.json
+#
 # Network config
 #
 load_govc_env_wo_cluster
@@ -135,13 +142,13 @@ do
   echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[1].name ${jsonFile}) on pnic $(jq -c -r .vds_switches[1].pnic ${jsonFile})" | tee -a ${log_file}
   govc dvs.add -dvs $(jq -c -r .vds_switches[1].name ${jsonFile}) -pnic=$(jq -c -r .vds_switches[1].pnic ${jsonFile}) "${esxi_basename}${esxi}.${domain}"
 done
-sleep 10
+sleep 30
 #
 # creating new vmk interfaces
 #
 echo "Creating new vmk interfaces" | tee -a ${log_file}
-ansible-playbook /home/ubuntu/vcenter/vmk.yaml -e @${jsonFile} 2>&1 ${log_file}
-exit
+/home/ubuntu/.local/bin/ansible-playbook /home/ubuntu/vcenter/vmk.yaml -e @${jsonFile} | tee -a ${log_file}
+sleep 30
 #
 #
 # migrating from standard vswitch to VDS
@@ -172,9 +179,14 @@ do
   sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vmotion_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[1].vmk $jsonFile) --ipv4=${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) --netmask=255.255.255.0 --type=static"
   #
 done
+sleep 30
 #
+# moving VCSA VM to VDS
+#
+echo "migrating VCSA VM to VDS" | tee -a ${log_file}
 load_govc_env_with_cluster "${cluster_basename}1"
-govc vm.network.change -vm ${vcsa_name} -net $(jq -c -r .port_groups[0].name $jsonFile) ethernet-0 &
+govc vm.network.change -vm ${vcsa_name} -net $(jq -c -r .port_groups[0].name $jsonFile) ethernet-0 & > /dev/null
+sleep 30
 #
 # cleaning standard Vswitch
 #
@@ -184,6 +196,23 @@ do
   sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network vswitch standard remove -v vSwitch0"
 done
 #
+# VSAN Configuration
 #
-#
-govc about -json | tee /home/ubuntu/json/vcenter_about.json
+count_cluster=$(($(jq -r '.spec.esxi.ips | length' $jsonFile)/3))
+for cluster in $(seq 1 ${count_cluster})
+do
+  load_govc_env_with_cluster "${cluster_basename}${cluster}"
+  echo "Enabling VSAN configuration for cluster ${cluster_basename}${cluster}"
+  govc cluster.change -drs-enabled -ha-enabled -vsan-enabled -vsan-autoclaim "${cluster_basename}${cluster}"
+done
+# Adding host in VSAN config.
+for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
+do
+  load_govc_esxi
+  if [[ $esxi -ne 1 ]] ; then
+    export GOVC_URL=${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
+    echo "Adding host ${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) in VSAN configuration"
+    govc host.esxcli vsan storage tag add -t capacityFlash -d "${disk_capacity}"
+    govc host.esxcli vsan storage add --disks "${disk_capacity}" -s "${disk_cache}"
+  fi
+done
