@@ -202,8 +202,8 @@ count_cluster=$(($(jq -r '.spec.esxi.ips | length' $jsonFile)/3))
 for cluster in $(seq 1 ${count_cluster})
 do
   load_govc_env_with_cluster "${cluster_basename}${cluster}"
-  echo "Enabling VSAN configuration for cluster ${cluster_basename}${cluster}"
-  govc cluster.change -drs-enabled -ha-enabled -vsan-enabled -vsan-autoclaim "${cluster_basename}${cluster}"
+  echo "Enabling VSAN configuration for cluster ${cluster_basename}${cluster}" | tee -a ${log_file}
+  govc cluster.change -drs-enabled -ha-enabled -vsan-enabled -vsan-autoclaim "${cluster_basename}${cluster}" > /dev/null
 done
 # Adding host in VSAN config.
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
@@ -211,8 +211,8 @@ do
   load_govc_esxi
   if [[ $esxi -ne 1 ]] ; then
     export GOVC_URL=${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
-    echo "Adding host ${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) in VSAN configuration"
-    govc host.esxcli vsan storage tag add -t capacityFlash -d "${disk_capacity}"
-    govc host.esxcli vsan storage add --disks "${disk_capacity}" -s "${disk_cache}"
+    echo "Adding host ${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) in VSAN configuration" | tee -a ${log_file}
+    govc host.esxcli vsan storage tag add -t capacityFlash -d "${disk_capacity}" > /dev/null
+    govc host.esxcli vsan storage add --disks "${disk_capacity}" -s "${disk_cache}" > /dev/null
   fi
 done
