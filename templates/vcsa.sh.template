@@ -137,10 +137,12 @@ do
   govc dvs.portgroup.add -dvs $(echo ${port_group} | jq -c -r '.vds_ref') -vlan "$(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.type') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" $(echo ${port_group} | jq -c -r '.name') > /dev/null
 done
 #
+# adding each ESXi hosts on vmnic1
+#
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
-  echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[1].name ${jsonFile}) on pnic $(jq -c -r .vds_switches[1].pnic ${jsonFile})" | tee -a ${log_file}
-  govc dvs.add -dvs $(jq -c -r .vds_switches[1].name ${jsonFile}) -pnic=$(jq -c -r .vds_switches[1].pnic ${jsonFile}) "${esxi_basename}${esxi}.${domain}"
+  echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[0].name ${jsonFile}) on pnic vmnic1" | tee -a ${log_file}
+  govc dvs.add -dvs $(jq -c -r .vds_switches[0].name ${jsonFile}) -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}"
 done
 sleep 30
 #
@@ -149,7 +151,6 @@ sleep 30
 echo "Creating new vmk interfaces" | tee -a ${log_file}
 /home/ubuntu/.local/bin/ansible-playbook /home/ubuntu/vcenter/vmk.yaml -e @${jsonFile} | tee -a ${log_file}
 sleep 30
-#
 #
 # migrating from standard vswitch to VDS
 #
@@ -195,6 +196,15 @@ do
   sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network vswitch standard uplink remove -u vmnic0 -v vSwitch0"
   sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network vswitch standard remove -v vSwitch0"
 done
+#
+# adding each ESXi hosts on vmnic0
+#
+for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
+do
+  echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[0].name ${jsonFile}) on pnic vmnic0" | tee -a ${log_file}
+  govc dvs.add -dvs $(jq -c -r .vds_switches[0].name ${jsonFile}) -pnic=vmnic0 "${esxi_basename}${esxi}.${domain}"
+done
+sleep 30
 #
 # VSAN Configuration
 #

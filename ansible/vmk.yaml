@@ -9,7 +9,7 @@
 #        validate_certs: false
 #        device: "{{ port_groups[0].vmk }}"
 #        esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
-#        dvswitch_name: "{{ vds_switches[1].name }}"
+#        dvswitch_name: "{{ vds_switches[0].name }}"
 #        portgroup_name: "{{ port_groups[0].name }}"
 #        network:
 #          type: 'dhcp'
@@ -27,7 +27,7 @@
         validate_certs: false
         device: "{{ port_groups[1].vmk }}"
         esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
-        dvswitch_name: "{{ vds_switches[1].name }}"
+        dvswitch_name: "{{ vds_switches[0].name }}"
         portgroup_name: "{{ port_groups[1].name }}"
         network:
           type: 'dhcp'
@@ -45,7 +45,7 @@
         validate_certs: false
         device: "{{ port_groups[2].vmk }}"
         esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
-        dvswitch_name: "{{ vds_switches[1].name }}"
+        dvswitch_name: "{{ vds_switches[0].name }}"
         portgroup_name: "{{ port_groups[2].name }}"
         network:
           type: 'dhcp'
@@ -63,10 +63,11 @@
         validate_certs: false
         device: "{{ port_groups[3].vmk }}"
         esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
-        dvswitch_name: "{{ vds_switches[1].name }}"
+        dvswitch_name: "{{ vds_switches[0].name }}"
         portgroup_name: "{{ port_groups[3].name }}"
         network:
           type: 'dhcp'
+          tcpip_stack: vmotion
         state: present
         enable_mgmt: False
       loop: "{{ spec.esxi.ips }}"

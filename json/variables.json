@@ -1,11 +1,12 @@
 {
   "gw": {
     "cpu": 4,
-    "memory": 4096
+    "memory": 4096,
+    "disk": "40G"
   },
   "K8s_version_short": "v1.28",
   "directories": ["json", "esxi", "bash","vcenter","yaml-files", ".kube", "avi", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "tanzu", "unmanaged_k8s_clusters"],
-  "apt_packages": ["python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso","expect"],
+  "apt_packages": ["python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso", "expect", "iptables-persistent"],
   "pip3_packages": ["ansible==2.10.7", "avisdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors", "pyvmomi"],
   "yaml_folder": "yaml-files",
   "yaml_links": [
@@ -78,38 +79,31 @@
       "version": "7.0.2",
       "mtu": 1500,
       "pnic": "vmnic0"
-    },
-    {
-      "name": "vds2",
-      "discovery_protocol": "lldp",
-      "version": "7.0.2",
-      "mtu": 1500,
-      "pnic": "vmnic1"
     }
   ],
   "port_groups": [
     {
       "name": "mgmt",
-      "vds_ref": "vds2",
+      "vds_ref": "vds1",
       "type": "MANAGEMENT"
     },
     {
       "name": "mgmt-vmk",
-      "vds_ref": "vds2",
+      "vds_ref": "vds1",
       "vmk": "vmk3",
       "old_vmk": "vmk0",
       "type": "MANAGEMENT"
     },
     {
       "name": "VSAN",
-      "vds_ref": "vds2",
+      "vds_ref": "vds1",
       "vmk": "vmk4",
       "old_vmk": "vmk2",
       "type": "VSAN"
     },
     {
       "name": "vMotion",
-      "vds_ref": "vds2",
+      "vds_ref": "vds1",
       "vmk": "vmk5",
       "old_vmk": "vmk1",
       "type": "VMOTION"
