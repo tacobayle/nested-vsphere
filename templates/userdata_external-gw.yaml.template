@@ -46,6 +46,8 @@ write_files:
       apt update
       apt install -y jq
       packages='${packages}'
+      echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections
+      echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections
       echo $packages | jq -c -r .[] | while read package
       do
         apt install -y $package
