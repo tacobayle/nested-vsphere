@@ -193,7 +193,10 @@ sleep 30
 #
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
+  echo "  +++ connecting to root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)" | tee -a ${log_file}
+  echo "  +++ running: esxcli network vswitch standard uplink remove -u vmnic0 -v vSwitch0"
   sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network vswitch standard uplink remove -u vmnic0 -v vSwitch0"
+  echo "  +++ running: esxcli network vswitch standard remove -v vSwitch0"
   sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network vswitch standard remove -v vSwitch0"
 done
 #
