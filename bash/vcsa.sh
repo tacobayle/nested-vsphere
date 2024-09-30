@@ -229,7 +229,7 @@ do
   if [[ esxi -eq 1 ]] ; then
     echo "pausing for 120 seconds" | tee -a ${log_file}
     sleep 120
-    echo "restarting ${vcsa_name} VM" | tee -a ${log_file}
+    echo "restarting ${vcsa_name} VM: vim-cmd vmsvc/power.on 1" | tee -a ${log_file}
     sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "vim-cmd vmsvc/power.on 1"
     echo "pausing for 300 seconds" | tee -a ${log_file}
     sleep 300
