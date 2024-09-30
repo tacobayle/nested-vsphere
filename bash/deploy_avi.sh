@@ -30,6 +30,9 @@ fi
 #
 # Avi ctrl creation
 #
+ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
+download_file_from_url_to_location "${ova_url}" "/home/ubuntu/$(basename ${ova_url})" "AVI OVA"
+#
 avi_spec=$(jq '.' /home/ubuntu/json/avi_spec.json)
 
 sed -e "s#\${public_key}#$(awk '{printf "%s\\n", $0}' /root/.ssh/id_rsa.pub | awk '{length=$0; print substr($0, 1, length-2)}')#" \

@@ -294,7 +294,7 @@ if [[ ${operation} == "apply" ]] ; then
   ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json"
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
   #
-  if [[ ${kind} == "vsphere-avi" ]]; then
+  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' | tee -a ${log_file}
     echo "Starting timestamp: $(date)" | tee -a ${log_file}
     echo "Creation of Avi ctrl  - This should take about 20 minutes" | tee -a ${log_file}

@@ -146,6 +146,23 @@ do
 done
 sleep 30
 #
+# moving VCSA VM to VDS
+#
+echo "migrating VCSA VM to VDS" | tee -a ${log_file}
+load_govc_env_with_cluster "${cluster_basename}1"
+govc vm.network.change -vm ${vcsa_name} -net $(jq -c -r .port_groups[0].name $jsonFile) ethernet-0 &
+govc_pid=$(echo $!)
+echo "pausing for 10 seconds" | tee -a ${log_file}
+sleep 10
+if ping -c 1 ${api_host} & > /dev/null
+then
+  echo "vCenter VM is UP"
+  kill $(echo $govc_pid) || true
+else
+  echo "vCenter VM is DOWN - exit script config" | tee -a ${log_file}
+  exit
+fi
+#
 # creating new vmk interfaces
 #
 echo "Creating new vmk interfaces" | tee -a ${log_file}
@@ -179,14 +196,6 @@ do
   sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_vsan_three_octets}.${ip_last_octet} "esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[1].vmk $jsonFile) --ipv4=${cidr_mgmt_three_octets}.${ip_last_octet} --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
   #
 done
-echo "pausing for 30 seconds" | tee -a ${log_file}
-sleep 30
-#
-# moving VCSA VM to VDS
-#
-echo "migrating VCSA VM to VDS" | tee -a ${log_file}
-load_govc_env_with_cluster "${cluster_basename}1"
-govc vm.network.change -vm ${vcsa_name} -net $(jq -c -r .port_groups[0].name $jsonFile) ethernet-0 & > /dev/null
 echo "pausing for 30 seconds" | tee -a ${log_file}
 sleep 30
 #
