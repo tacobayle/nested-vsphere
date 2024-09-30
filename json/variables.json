@@ -128,6 +128,20 @@
       "vds_ref": "vds1"
     }
   ],
+  "port_groups_nsx": [
+    {
+      "name": "NSX-EXTERNAL",
+      "vds_ref": "vds1"
+    },
+    {
+      "name": "NSX-OVERLAY",
+      "vds_ref": "vds1"
+    },
+    {
+      "name": "NSX-OVERLAY-EDGE",
+      "vds_ref": "vds1"
+    }
+  ],
   "disks": {
     "capacity": "mpx.vmhba0:C0:T2:L0",
     "cache": "mpx.vmhba0:C0:T1:L0"

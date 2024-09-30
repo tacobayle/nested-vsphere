@@ -49,3 +49,15 @@ else
   govc folder.create /${dc}/vm/${folder} | tee -a ${log_file}
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
+#
+# NSX options
+#
+nsx_options=$(jq -c -r '.' /home/ubuntu/json/nsx_spec.json)
+nsx_options=$(echo ${nsx_options} | jq '. += {"Deployment": "small"}')
+nsx_options=$(echo ${nsx_options} | jq '. += {"IPAllocationPolicy": "fixedPolicy"}')
+nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[0] += {"Value": "'${GENERIC_PASSWORD}'"}')
+nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[2] += {"Value": "'${GENERIC_PASSWORD}'"}')
+nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[3] += {"Value": "'${GENERIC_PASSWORD}'"}')
+nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[4] += {"Value": "'${GENERIC_PASSWORD}'"}')
+nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[5] += {"Value": "'${GENERIC_PASSWORD}'"}')
+nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[5] += {"Value": "'${GENERIC_PASSWORD}'"}')

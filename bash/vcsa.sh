@@ -146,12 +146,20 @@ if [[ ${kind} == "vsphere-avi" ]] ; then
   done
 fi
 #
+if [[ ${kind} == "vsphere-nsx" ]] ; then
+  jq -c -r .port_groups_nsx[] ${jsonFile} | while read port_group
+  do
+    echo "create portgroup $(echo ${port_group} | jq -c -r '.name') in vds $(echo ${port_group} | jq -c -r '.vds_ref') with vlan $(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.name') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" | tee -a ${log_file}
+    govc dvs.portgroup.add -dvs $(echo ${port_group} | jq -c -r '.vds_ref') -vlan "$(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.name') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" $(echo ${port_group} | jq -c -r '.name') > /dev/null
+  done
+fi
+#
 # adding each ESXi hosts on vmnic1
 #
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
   echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[0].name ${jsonFile}) on pnic vmnic1" | tee -a ${log_file}
-  govc dvs.add -dvs $(jq -c -r .vds_switches[0].name ${jsonFile}) -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}"
+  govc dvs.add -dvs $(jq -c -r .vds_switches[0].name ${jsonFile}) -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}" > /dev/null
 done
 sleep 30
 #
@@ -159,7 +167,7 @@ sleep 30
 #
 echo "migrating VCSA VM to VDS" | tee -a ${log_file}
 load_govc_env_with_cluster "${cluster_basename}1"
-govc vm.network.change -vm ${vcsa_name} -net $(jq -c -r .port_groups[0].name $jsonFile) ethernet-0 &
+govc vm.network.change -vm ${vcsa_name} -net $(jq -c -r .port_groups[0].name $jsonFile) ethernet-0 & > /dev/null
 govc_pid=$(echo $!)
 echo "pausing for 10 seconds" | tee -a ${log_file}
 sleep 10

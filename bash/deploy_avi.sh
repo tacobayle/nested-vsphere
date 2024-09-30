@@ -29,6 +29,7 @@ ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 # Avi download
 #
 download_file_from_url_to_location "${ova_url}" "/home/ubuntu/$(basename ${ova_url})" "AVI OVA"
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #
 # GOVC check
 #

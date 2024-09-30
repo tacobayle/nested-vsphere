@@ -182,10 +182,10 @@ write_files:
       EOT
       #
       if [[ ${ip_nsx} != ${ip_gw} ]]; then
-      echo "`echo ${ip_nsx}`            PTR     ${nsx_manager_name}" | tee -a /var/lib/bind/db.${reverse_mgmt}
+      echo "`echo ${ip_nsx}`            PTR     ${nsx_manager_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
       fi
       if [[ ${ip_avi} != ${ip_gw} ]]; then
-      echo "`echo ${ip_avi}`            PTR     ${avi_ctrl_name}" | tee -a /var/lib/bind/db.${reverse_mgmt}
+      echo "`echo ${ip_avi}`            PTR     ${avi_ctrl_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
       fi
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
