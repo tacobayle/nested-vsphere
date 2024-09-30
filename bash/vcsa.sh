@@ -25,6 +25,7 @@ ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
 vsphere_nested_username="administrator"
 vsphere_nested_password="${GENERIC_PASSWORD}"
 esxi_nested_password="${GENERIC_PASSWORD}"
+kind=$(jq -c -r '.kind' $jsonFile)
 disk_capacity=$(jq -c -r '.disks.capacity' $jsonFile)
 disk_cache=$(jq -c -r '.disks.cache' $jsonFile)
 domain=$(jq -c -r '.spec.domain' $jsonFile)
@@ -137,6 +138,14 @@ do
   govc dvs.portgroup.add -dvs $(echo ${port_group} | jq -c -r '.vds_ref') -vlan "$(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.type') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" $(echo ${port_group} | jq -c -r '.name') > /dev/null
 done
 #
+if [[ ${kind} == "vsphere-avi" ]] ; then
+  jq -c -r .port_groups_vsphere_avi[] ${jsonFile} | while read port_group
+  do
+    echo "create portgroup $(echo ${port_group} | jq -c -r '.name') in vds $(echo ${port_group} | jq -c -r '.vds_ref') with vlan $(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.name') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" | tee -a ${log_file}
+    govc dvs.portgroup.add -dvs $(echo ${port_group} | jq -c -r '.vds_ref') -vlan "$(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.name') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" $(echo ${port_group} | jq -c -r '.name') > /dev/null
+  done
+fi
+#
 # adding each ESXi hosts on vmnic1
 #
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
@@ -214,33 +223,33 @@ do
   echo "  +++ running: port_id=XXX ; esxcfg-vswitch -P vmnic0 -V XXX $(jq -c -r .vds_switches[0].name ${jsonFile})" | tee -a ${log_file}
   sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "port_id=\$(esxcli network vswitch dvs vmware list | grep 'Port ID' | awk '{print \$3}' | head -2 | tail -1) ; esxcfg-vswitch -P vmnic0 -V \${port_id} $(jq -c -r .vds_switches[0].name ${jsonFile})"
   if [[ esxi -eq 1 ]] ; then
-    echo "shutting down ${vcsa_name} VM" | tee -a ${log_file}
+    echo "  +++ shutting down ${vcsa_name} VM" | tee -a ${log_file}
     govc vm.power -s ${vcsa_name} > /dev/null
-    echo "pausing for 60 seconds" | tee -a ${log_file}
+    echo "  +++ pausing for 60 seconds" | tee -a ${log_file}
     sleep 60
   fi
   echo "  +++ running: reboot" | tee -a ${log_file}
   sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "reboot"
-  echo "pausing for 60 seconds" | tee -a ${log_file}
+  echo "  +++ pausing for 60 seconds" | tee -a ${log_file}
   sleep 60
   count=1
   until $(curl --output /dev/null --silent --head -k https://${cidr_mgmt_three_octets}.${ip_last_octet})
   do
-    echo "Attempt ${count}: Waiting for ESXi host at https://${cidr_mgmt_three_octets}.${ip_last_octet} to be reachable..." | tee -a ${log_file}
+    echo "  +++ Attempt ${count}: Waiting for ESXi host at https://${cidr_mgmt_three_octets}.${ip_last_octet} to be reachable..." | tee -a ${log_file}
     sleep 10
     count=$((count+1))
       if [[ "${count}" -eq 60 ]]; then
-        echo "ERROR: Unable to connect to ESXi host at https://${cidr_mgmt_three_octets}.${ip_last_octet}" | tee -a ${log_file}
+        echo "  +++ ERROR: Unable to connect to ESXi host at https://${cidr_mgmt_three_octets}.${ip_last_octet}" | tee -a ${log_file}
         exit
       fi
   done
-  echo "ESXi host reachable at https://${cidr_mgmt_three_octets}.${ip_last_octet}" | tee -a ${log_file}
+  echo "  +++ ESXi host reachable at https://${cidr_mgmt_three_octets}.${ip_last_octet}" | tee -a ${log_file}
   if [[ esxi -eq 1 ]] ; then
-    echo "pausing for 120 seconds" | tee -a ${log_file}
+    echo "  +++ pausing for 120 seconds" | tee -a ${log_file}
     sleep 120
-    echo "restarting ${vcsa_name} VM: vim-cmd vmsvc/power.on 1" | tee -a ${log_file}
+    echo "  +++ restarting ${vcsa_name} VM: vim-cmd vmsvc/power.on 1" | tee -a ${log_file}
     sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "vim-cmd vmsvc/power.on 1"
-    echo "pausing for 300 seconds" | tee -a ${log_file}
+    echo "  +++ pausing for 300 seconds" | tee -a ${log_file}
     sleep 300
   fi
 done

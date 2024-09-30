@@ -109,9 +109,30 @@
       "type": "VMOTION"
     }
   ],
+  "port_groups_vsphere_avi": [
+    {
+      "name": "AVI-SE-MGMT",
+      "vds_ref": "vds1"
+    },
+    {
+      "name": "AVI-APP",
+      "vds_ref": "vds1"
+    },
+    {
+      "name": "AVI-APP-BACKEND",
+      "vds_ref": "vds1"
+    },
+    {
+      "name": "TANZU",
+      "vds_ref": "vds1"
+    }
+  ],
   "disks": {
     "capacity": "mpx.vmhba0:C0:T2:L0",
     "cache": "mpx.vmhba0:C0:T1:L0"
   },
-  "avi_folder": "avi_ctrl"
+  "avi_folder": "avi-ctrl",
+  "avi_ctrl_name": "avi-ctrl-01",
+  "nsx_folder": "nsx-manager",
+  "nsx_manager_name": "nsx-manager-01"
 }

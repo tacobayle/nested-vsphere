@@ -11,10 +11,30 @@ vsphere_nested_username="administrator"
 vsphere_nested_password="${GENERIC_PASSWORD}"
 dc=$(jq -c -r '.dc' $jsonFile)
 vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
+domain=$(jq -c -r '.spec.domain' $jsonFile)
 api_host="${vcsa_name}.${domain}"
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
 folder=$(jq -c -r '.avi_folder' $jsonFile)
+cidr_mgmt_three_octets=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"0/" -f1)
+ip_avi="${cidr_mgmt_three_octets}$(jq -c -r .spec.avi.ip $jsonFile)"
+netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
+gw_avi=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
+network_avi=$(jq -c -r --arg arg "MANAGEMENT" '.port_groups[] | select( .type == $arg).name' $jsonFile)
+ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
+#
+# Avi download
+#
+download_file_from_url_to_location "${ova_url}" "/home/ubuntu/$(basename ${ova_url})" "AVI OVA"
+#
+# GOVC check
+#
 load_govc_env_with_cluster "${cluster_basename}1"
+govc about
+if [ $? -ne 0 ] ; then
+  echo "ERROR: unable to connect to vCenter" | tee -a ${log_file}
+  exit
+fi
 #
 # folder creation
 #
@@ -28,24 +48,37 @@ else
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
 #
-# Avi ctrl creation
+# Avi options
 #
-ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
-download_file_from_url_to_location "${ova_url}" "/home/ubuntu/$(basename ${ova_url})" "AVI OVA"
+avi_options=$(jq -c -r '.' /home/ubuntu/json/avi_spec.json)
+avi_options=$(echo ${avi_options} | jq '. += {"dhcpPolicy": "fixedPolicy"}')
+avi_options=$(echo ${avi_options} | jq '.PropertyMapping[0] += {"Value": "'${ip_avi}'"}')
+avi_options=$(echo ${avi_options} | jq '.PropertyMapping[1] += {"Value": "'${netmask_avi}'"}')
+avi_options=$(echo ${avi_options} | jq '.PropertyMapping[2] += {"Value": "'${gw_avi}'"}')
+avi_options=$(echo ${avi_options} | jq '.PropertyMapping[11] += {"Value": "'${avi_ctrl_name}'"}')
+avi_options=$(echo ${avi_options} | jq '.NetworkMapping[0] += {"Network": "'${network_avi}'"}')
+avi_options=$(echo ${avi_options} | jq '. += {"Name": "'${avi_ctrl_name}'"}')
+echo ${avi_options} | jq -c -r '.' | tee /home/ubuntu/json/options-${avi_ctrl_name}.json
 #
-avi_spec=$(jq '.' /home/ubuntu/json/avi_spec.json)
-
-sed -e "s#\${public_key}#$(awk '{printf "%s\\n", $0}' /root/.ssh/id_rsa.pub | awk '{length=$0; print substr($0, 1, length-2)}')#" \
-    -e "s@\${base64_userdata}@$(base64 /tmp/${gw_name}_userdata.yaml -w 0)@" \
-    -e "s/\${EXTERNAL_GW_PASSWORD}/${GENERIC_PASSWORD}/" \
-    -e "s@\${network_ref}@${network_ref_gw}@" \
-    -e "s/\${gw_name}/${gw_name}/" /nested-vsphere/templates/options-gw.json.template | tee "/tmp/options-${gw_name}.json"
+# Avi Creation
 #
-govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ova_url})" | tee -a ${log_file}
-govc vm.change -vm "${folder}/${gw_name}" -c $(jq -c -r .gw.cpu $jsonFile) -m $(jq -c -r .gw.memory $jsonFile)
-govc vm.network.add -vm "${folder}/${gw_name}" -net "${trunk1}" -net.adapter vmxnet3 | tee -a ${log_file}
-govc vm.disk.change -vm "${folder}/${gw_name}" -size $(jq -c -r .gw.disk $jsonFile)
-govc vm.power -on=true "${gw_name}" | tee -a ${log_file}
-
-
-
+govc import.ova --options="/home/ubuntu/json/options-${avi_ctrl_name}.json" -folder "${folder}" "/home/ubuntu/$(basename ${ova_url})" > /dev/null
+govc vm.power -on=true "${avi_ctrl_name}" > /dev/null
+echo "Avi ctrl deployed" | tee -a ${log_file}
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl deployed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#
+# Avi HTTPS check
+#
+count=1
+until $(curl --output /dev/null --silent --head -k https://${ip_avi})
+do
+  echo "  +++ Attempt ${count}: Waiting for Avi ctrl at https://${ip_avi} to be reachable..." | tee -a ${log_file}
+  sleep 10
+  count=$((count+1))
+    if [[ "${count}" -eq 90 ]]; then
+      echo "  +++ ERROR: Unable to connect to Avi ctrl at https://${ip_avi}" | tee -a ${log_file}
+      exit
+    fi
+done
+echo "Avi ctrl reachable at https://${ip_avi}" | tee -a ${log_file}
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl reachable at https://'${ip_avi}'"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
