@@ -1,0 +1,127 @@
+{
+  "Deployment": "medium",
+  "DiskProvisioning": "flat",
+  "IPAllocationPolicy": "dhcpPolicy",
+  "IPProtocol": "IPv4",
+  "PropertyMapping": [
+    {
+      "Key": "nsx_grub_passwd",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_grub_menu_timeout",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_passwd_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_cli_passwd_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_cli_audit_passwd_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_cli_username",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_cli_audit_username",
+      "Value": ""
+    },
+    {
+      "Key": "extraPara",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_hostname",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_role",
+      "Value": "NSX Manager"
+    },
+    {
+      "Key": "nsx_ip_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_netmask_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_gateway_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_ip6_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_netmask6_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_gateway6_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_dns1_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_domain_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_ntp_0",
+      "Value": ""
+    },
+    {
+      "Key": "nsx_isSSHEnabled",
+      "Value": "False"
+    },
+    {
+      "Key": "nsx_allowSSHRootLogin",
+      "Value": "False"
+    },
+    {
+      "Key": "nsx_swIntegrityCheck",
+      "Value": "False"
+    },
+    {
+      "Key": "mpIp",
+      "Value": ""
+    },
+    {
+      "Key": "mpToken",
+      "Value": ""
+    },
+    {
+      "Key": "mpThumbprint",
+      "Value": ""
+    },
+    {
+      "Key": "mpNodeId",
+      "Value": ""
+    },
+    {
+      "Key": "mpClusterId",
+      "Value": ""
+    }
+  ],
+  "NetworkMapping": [
+    {
+      "Name": "Network 1",
+      "Network": ""
+    }
+  ],
+  "MarkAsTemplate": false,
+  "PowerOn": false,
+  "InjectOvfEnv": false,
+  "WaitForIP": false,
+  "Name": null
+}

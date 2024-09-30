@@ -112,5 +112,6 @@
   "disks": {
     "capacity": "mpx.vmhba0:C0:T2:L0",
     "cache": "mpx.vmhba0:C0:T1:L0"
-  }
+  },
+  "avi_folder": "avi_ctrl"
 }

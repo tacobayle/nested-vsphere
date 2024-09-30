@@ -16,11 +16,12 @@ logging.basicConfig(level=logging.INFO)
 config.load_incluster_config()
 
 # Helper function to create vsphere
-def create_vsphere(metadata, spec):
+def create_vsphere(metadata, spec, kind):
     folder='/nested-vsphere'
     a_dict = {}
     a_dict['metadata'] = metadata
     a_dict['spec'] = spec
+    a_dict['kind'] = kind
     a_dict['operation'] = "apply"
     json_file='/root/{0}_from_kube.json'.format(a_dict['metadata']['name'])
     with open(json_file, 'w') as outfile:
@@ -32,11 +33,12 @@ def create_vsphere(metadata, spec):
 
 
 # Helper function to delete vsphere
-def delete_vsphere(metadata, spec):
+def delete_vsphere(metadata, spec, kind):
     folder='/nested-vsphere'
     a_dict = {}
     a_dict['metadata'] = metadata
     a_dict['spec'] = spec
+    a_dict['kind'] = kind
     a_dict['operation'] = "destroy"
     json_file='/root/{0}_from_kube.json'.format(a_dict['metadata']['name'])
     with open(json_file, 'w') as outfile:
@@ -53,8 +55,9 @@ def delete_vsphere(metadata, spec):
 def on_create(body, **kwargs):
     metadata = body['metadata']
     spec = body['spec']
+    kind = body['kind']
     try:
-        create_vsphere(metadata, spec)
+        create_vsphere(metadata, spec, kind)
     except requests.RequestException as e:
         raise kopf.PermanentError(f'Failed to create external resource: {e}')
 
@@ -62,8 +65,9 @@ def on_create(body, **kwargs):
 def on_delete(body, **kwargs):
     metadata = body['metadata']
     spec = body['spec']
+    kind = body['kind']
     try:
-        delete_vsphere(metadata, spec)
+        delete_vsphere(metadata, spec, kind)
     except requests.RequestException as e:
         raise kopf.PermanentError(f'Failed to delete external resource: {e}')
 #
