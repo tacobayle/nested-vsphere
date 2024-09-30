@@ -15,12 +15,15 @@ domain=$(jq -c -r '.spec.domain' $jsonFile)
 api_host="${vcsa_name}.${domain}"
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
 folder=$(jq -c -r '.nsx_folder' $jsonFile)
-cidr_mgmt_three_octets=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"0/" -f1)
-ip_nsx="${cidr_mgmt_three_octets}$(jq -c -r .spec.nsx.ip $jsonFile)"
+cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+fi
+ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
 #netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
 gw_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 nsx_manager_name=$(jq -c -r '.nsx_manager_name' $jsonFile)
-network_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.port_groups[] | select( .type == $arg).name' $jsonFile)
+network_nsx=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 ova_url=$(jq -c -r .spec.nsx.ova_url $jsonFile)
 #
 # NSX download
@@ -42,7 +45,6 @@ list_folder=$(govc find -json . -type f)
 echo "Creation of a folder for the NSX Manager" | tee -a ${log_file}
 if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
   echo "ERROR: unable to create folder ${folder}: it already exists" | tee -a ${log_file}
-  exit
 else
   govc folder.create /${dc}/vm/${folder} | tee -a ${log_file}
   echo "Ending timestamp: $(date)" | tee -a ${log_file}

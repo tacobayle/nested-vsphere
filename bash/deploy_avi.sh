@@ -15,12 +15,15 @@ domain=$(jq -c -r '.spec.domain' $jsonFile)
 api_host="${vcsa_name}.${domain}"
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
 folder=$(jq -c -r '.avi_folder' $jsonFile)
-cidr_mgmt_three_octets=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"0/" -f1)
-ip_avi="${cidr_mgmt_three_octets}$(jq -c -r .spec.avi.ip $jsonFile)"
+cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+fi
+ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .spec.avi.ip $jsonFile)"
 netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
 gw_avi=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
-network_avi=$(jq -c -r --arg arg "MANAGEMENT" '.port_groups[] | select( .type == $arg).name' $jsonFile)
+network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 #
 # Avi download
@@ -42,7 +45,6 @@ list_folder=$(govc find -json . -type f)
 echo "Creation of a folder for the Avi ctrl" | tee -a ${log_file}
 if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
   echo "ERROR: unable to create folder ${folder}: it already exists" | tee -a ${log_file}
-  exit
 else
   govc folder.create /${dc}/vm/${folder} | tee -a ${log_file}
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
@@ -51,7 +53,7 @@ fi
 # Avi options
 #
 avi_options=$(jq -c -r '.' /home/ubuntu/json/avi_spec.json)
-avi_options=$(echo ${avi_options} | jq '. += {"dhcpPolicy": "fixedPolicy"}')
+avi_options=$(echo ${avi_options} | jq '. += {"IPAllocationPolicy": "fixedPolicy"}')
 avi_options=$(echo ${avi_options} | jq '.PropertyMapping[0] += {"Value": "'${ip_avi}'"}')
 avi_options=$(echo ${avi_options} | jq '.PropertyMapping[1] += {"Value": "'${netmask_avi}'"}')
 avi_options=$(echo ${avi_options} | jq '.PropertyMapping[2] += {"Value": "'${gw_avi}'"}')

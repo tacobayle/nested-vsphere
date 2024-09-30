@@ -85,7 +85,8 @@
     {
       "name": "mgmt",
       "vds_ref": "vds1",
-      "type": "MANAGEMENT"
+      "type": "MANAGEMENT",
+      "scope": "mgmt"
     },
     {
       "name": "mgmt-vmk",
