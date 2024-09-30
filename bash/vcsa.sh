@@ -154,30 +154,32 @@ sleep 30
 #
 # migrating from standard vswitch to VDS
 #
+echo "migrating vmk1 and vmk2 to vds1" | tee -a ${log_file}
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
+  ip_last_octet=$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
   # migrating vmk0, vmk1 and vmk2 to vds1
-  echo "migrating vmk1 and vmk2 to vds1" | tee -a ${log_file}
-  echo "  +++ connecting to root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)" | tee -a ${log_file}
+  echo "  +++ connecting to root@${cidr_mgmt_three_octets}.${ip_last_octet}" | tee -a ${log_file}
   echo "  +++ running: esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[3].old_vmk $jsonFile)" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[3].old_vmk $jsonFile)" | tee -a ${log_file}
-  echo "  +++ running: esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[3].vmk $jsonFile) --ipv4=${cidr_vmotion_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[3].vmk $jsonFile) --ipv4=${cidr_vmotion_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[3].old_vmk $jsonFile)" | tee -a ${log_file}
+  echo "  +++ running: esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[3].vmk $jsonFile) --ipv4=${cidr_vmotion_three_octets}.${ip_last_octet} --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[3].vmk $jsonFile) --ipv4=${cidr_vmotion_three_octets}.${ip_last_octet} --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
   #
   echo "  +++ running: esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[2].old_vmk $jsonFile)" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[2].old_vmk $jsonFile)"
-  echo "  +++ running: esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[2].vmk $jsonFile) --ipv4=${cidr_vsan_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[2].vmk $jsonFile) --ipv4=${cidr_vsan_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[2].old_vmk $jsonFile)"
+  echo "  +++ running: esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[2].vmk $jsonFile) --ipv4=${cidr_vsan_three_octets}.${ip_last_octet} --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[2].vmk $jsonFile) --ipv4=${cidr_vsan_three_octets}.${ip_last_octet} --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
   echo "  +++ running: esxcli network ip interface tag add -i $(jq -c -r .port_groups[2].vmk $jsonFile) -t VSAN" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network ip interface tag add -i $(jq -c -r .port_groups[2].vmk $jsonFile) -t VSAN" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "esxcli network ip interface tag add -i $(jq -c -r .port_groups[2].vmk $jsonFile) -t VSAN" | tee -a ${log_file}
   #
-  echo "  +++ connecting to root@${cidr_vsan_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)" | tee -a ${log_file}
+  echo "  +++ connecting to root@${cidr_vsan_three_octets}.${ip_last_octet}" | tee -a ${log_file}
   echo "  +++ running: esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[1].old_vmk $jsonFile)" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vsan_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[1].old_vmk $jsonFile)" | tee -a ${log_file}
-  echo "  +++ running: esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[1].vmk $jsonFile) --ipv4=${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_vsan_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[1].vmk $jsonFile) --ipv4=${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_vsan_three_octets}.${ip_last_octet} "esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[1].old_vmk $jsonFile)" | tee -a ${log_file}
+  echo "  +++ running: esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[1].vmk $jsonFile) --ipv4=${cidr_mgmt_three_octets}.${ip_last_octet} --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_vsan_three_octets}.${ip_last_octet} "esxcli network ip interface ipv4 set --interface-name=$(jq -c -r .port_groups[1].vmk $jsonFile) --ipv4=${cidr_mgmt_three_octets}.${ip_last_octet} --netmask=255.255.255.0 --type=static" | tee -a ${log_file}
   #
 done
+echo "pausing for 30 seconds" | tee -a ${log_file}
 sleep 30
 #
 # moving VCSA VM to VDS
@@ -185,33 +187,52 @@ sleep 30
 echo "migrating VCSA VM to VDS" | tee -a ${log_file}
 load_govc_env_with_cluster "${cluster_basename}1"
 govc vm.network.change -vm ${vcsa_name} -net $(jq -c -r .port_groups[0].name $jsonFile) ethernet-0 & > /dev/null
+echo "pausing for 30 seconds" | tee -a ${log_file}
 sleep 30
 #
 # cleaning standard Vswitch and adding vmnic0 in the vds
 #
+load_govc_env_with_cluster "${cluster_basename}1"
+echo "cleaning standard Vswitch and adding vmnic0 in the vds" | tee -a ${log_file}
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
-  echo "  +++ connecting to root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)" | tee -a ${log_file}
+  ip_last_octet=$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
+  echo "  +++ connecting to root@${cidr_mgmt_three_octets}.${ip_last_octet}" | tee -a ${log_file}
   echo "  +++ running: esxcli network vswitch standard uplink remove -u vmnic0 -v vSwitch0" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network vswitch standard uplink remove -u vmnic0 -v vSwitch0"
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "esxcli network vswitch standard uplink remove -u vmnic0 -v vSwitch0"
   echo "  +++ running: esxcli network vswitch standard remove -v vSwitch0" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "esxcli network vswitch standard remove -v vSwitch0"
-  echo "  +++ running: port_id=$(esxcli network vswitch dvs vmware list | grep "Port ID" | awk '{print $3}' | head -2 | tail -1) ; esxcfg-vswitch -P vmnic0 -V ${port_id} $(jq -c -r .vds_switches[0].name ${jsonFile})" | tee -a ${log_file}
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "port_id=\$(esxcli network vswitch dvs vmware list | grep 'Port ID' | awk '{print \$3}' | head -2 | tail -1) ; esxcfg-vswitch -P vmnic0 -V \${port_id} $(jq -c -r .vds_switches[0].name ${jsonFile})"
-  sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "reboot"
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "esxcli network vswitch standard remove -v vSwitch0"
+  echo "  +++ running: port_id=XXX ; esxcfg-vswitch -P vmnic0 -V ${port_id} $(jq -c -r .vds_switches[0].name ${jsonFile})" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "port_id=\$(esxcli network vswitch dvs vmware list | grep 'Port ID' | awk '{print \$3}' | head -2 | tail -1) ; esxcfg-vswitch -P vmnic0 -V \${port_id} $(jq -c -r .vds_switches[0].name ${jsonFile})"
+  if [[ esxi -eq 1 ]] ; then
+    echo "shutting down ${vcsa_name} VM" | tee -a ${log_file}
+    govc vm.power -s ${vcsa_name} > /dev/null
+    echo "pausing for 60 seconds" | tee -a ${log_file}
+    sleep 60
+  fi
+  echo "  +++ running: reboot" | tee -a ${log_file}
+  sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "reboot"
+  sleep 60
+  echo "pausing for 60 seconds" | tee -a ${log_file}
   count=1
-  until $(curl --output /dev/null --silent --head -k https://${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile))
+  until $(curl --output /dev/null --silent --head -k https://${cidr_mgmt_three_octets}.${ip_last_octet})
   do
-    echo "Attempt ${count}: Waiting for ESXi host at https://${cidr_mgmt_three_octets}.${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) to be reachable..." | tee -a ${log_file}
+    echo "Attempt ${count}: Waiting for ESXi host at https://${cidr_mgmt_three_octets}.${ip_last_octet} to be reachable..." | tee -a ${log_file}
     sleep 10
     count=$((count+1))
       if [[ "${count}" -eq 60 ]]; then
-        echo "ERROR: Unable to connect to ESXi host at https://${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)" | tee -a ${log_file}
+        echo "ERROR: Unable to connect to ESXi host at https://${cidr_mgmt_three_octets}.${ip_last_octet}" | tee -a ${log_file}
         exit
       fi
   done
+  echo "ESXi host reachable at https://${cidr_mgmt_three_octets}.${ip_last_octet}" | tee -a ${log_file}
+  if [[ esxi -eq 1 ]] ; then
+    echo "restarting ${vcsa_name} VM" | tee -a ${log_file}
+    sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "vim-cmd vmsvc/power.on 1"
+    echo "pausing for 300 seconds" | tee -a ${log_file}
+    sleep 300
+  fi
 done
-sleep 30
 #
 # VSAN Configuration
 #
@@ -226,9 +247,10 @@ done
 for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
 do
   load_govc_esxi
+  ip_last_octet=$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
   if [[ $esxi -ne 1 ]] ; then
-    export GOVC_URL=${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
-    echo "Adding host ${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) in VSAN configuration" | tee -a ${log_file}
+    export GOVC_URL=${cidr_mgmt_three_octets}.${ip_last_octet}
+    echo "Adding host ${cidr_mgmt_three_octets}.${ip_last_octet} in VSAN configuration" | tee -a ${log_file}
     govc host.esxcli vsan storage tag add -t capacityFlash -d "${disk_capacity}" > /dev/null
     govc host.esxcli vsan storage add --disks "${disk_capacity}" -s "${disk_cache}" > /dev/null
   fi
