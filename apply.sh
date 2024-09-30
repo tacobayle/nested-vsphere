@@ -173,8 +173,7 @@ if [[ ${operation} == "apply" ]] ; then
             scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
           done
           scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
-          sed -e "s@\${jsonFile}@/home/ubuntu/json/${deployment_name}_${operation}.json@" /nested-vsphere/templates/vcsa.sh.template | tee /root/vcsa.sh > /dev/null
-          scp -o StrictHostKeyChecking=no /root/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/vcsa.sh
+          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/vcsa.sh
           scp -o StrictHostKeyChecking=no /nested-vsphere/ansible/vmk.yaml ubuntu@${ip_gw}:/home/ubuntu/vcenter/vmk.yaml
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/functions.sh ubuntu@${ip_gw}:/home/ubuntu/bash/functions.sh
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/create_vcenter_api_session.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/create_vcenter_api_session.sh
@@ -288,7 +287,7 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
-  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/vcenter/vcsa.sh"
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json"
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
 #

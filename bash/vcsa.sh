@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 source /home/ubuntu/bash/functions.sh
-jsonFile="${jsonFile}"
+jsonFile=${1}
 SLACK_WEBHOOK_URL=$(jq -c -r .SLACK_WEBHOOK_URL $jsonFile)
 log_file="/tmp/vcsa.log"
 deployment_name=$(jq -c -r .metadata.name $jsonFile)
@@ -200,7 +200,7 @@ do
   sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "port_id=\$(esxcli network vswitch dvs vmware list | grep 'Port ID' | awk '{print \$3}' | head -2 | tail -1) ; esxcfg-vswitch -P vmnic0 -V \${port_id} $(jq -c -r .vds_switches[0].name ${jsonFile})"
   sshpass -p $(jq -c -r .GENERIC_PASSWORD $jsonFile) ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) "reboot"
   count=1
-  until $(curl --output /dev/null --silent --head -k https://${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
+  until $(curl --output /dev/null --silent --head -k https://${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile))
   do
     echo "Attempt ${count}: Waiting for ESXi host at https://${cidr_mgmt_three_octets}.${cidr_mgmt_three_octets}.$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile) to be reachable..." | tee -a ${log_file}
     sleep 10
