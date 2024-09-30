@@ -72,6 +72,8 @@ if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl
 #
 # Avi HTTPS check
 #
+echo "pausing for 180 seconds" | tee -a ${log_file}
+sleep 180
 count=1
 until $(curl --output /dev/null --silent --head -k https://${ip_avi})
 do
