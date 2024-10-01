@@ -51,6 +51,7 @@ if [[ ${operation} == "apply" ]] ; then
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vsphere external folder '${folder}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     echo "Ending timestamp: $(date)" | tee -a ${log_file}
   fi
+  exit
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
@@ -62,6 +63,7 @@ if [[ ${operation} == "apply" ]] ; then
   #
   if [[ ${list_gw} != "null" ]] ; then
     echo "ERROR: unable to create VM ${gw_name}: it already exists" | tee -a ${log_file}
+    exit
   else
     IFS="." read -r -a octets <<< "$cidr_mgmt"
     count=0
@@ -287,6 +289,7 @@ if [[ ${operation} == "destroy" ]] ; then
     fi
   done
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
+  exit
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
