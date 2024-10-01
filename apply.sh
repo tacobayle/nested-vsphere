@@ -51,7 +51,6 @@ if [[ ${operation} == "apply" ]] ; then
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vsphere external folder '${folder}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     echo "Ending timestamp: $(date)" | tee -a ${log_file}
   fi
-  exit
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
@@ -289,7 +288,6 @@ if [[ ${operation} == "destroy" ]] ; then
     fi
   done
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
-  exit
   #
   #
   echo '------------------------------------------------------------' | tee -a ${log_file}
