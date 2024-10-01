@@ -36,7 +36,7 @@ rm -f ${log_file}
 echo "Starting timestamp: $(date)" | tee -a ${log_file}
 source /nested-vsphere/bash/govc/load_govc_external.sh
 govc about
-if [ $? -ne 0 ] ; then touch /root/govc.error ; fi
+if [ $? -ne 0 ] ; then touch /root/govc.error ; exit ; fi
 list_folder=$(govc find -json . -type f)
 list_gw=$(govc find -json vm -name "${gw_name}")
 #
