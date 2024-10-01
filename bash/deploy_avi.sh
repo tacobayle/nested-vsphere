@@ -2,7 +2,6 @@
 #
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
-log_file="/tmp/deploy_avi.log"
 source /home/ubuntu/bash/variables.sh
 netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
 #

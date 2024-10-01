@@ -2,7 +2,6 @@
 #
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
-log_file="/tmp/deploy_nsx.log"
 source /home/ubuntu/bash/variables.sh
 #
 # NSX download
