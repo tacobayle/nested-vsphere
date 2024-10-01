@@ -24,3 +24,4 @@ do
   govc host.storage.mark -ssd ${item} > /dev/null
   if [ -z "${SLACK_WEBHOOK_URL_LOCAL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: nested ESXi ${name_esxi} disks '${item}' marked as SSD"}' ${SLACK_WEBHOOK_URL_LOCAL} >/dev/null 2>&1; fi
 done
+exit

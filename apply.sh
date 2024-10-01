@@ -173,6 +173,7 @@ if [[ ${operation} == "apply" ]] ; then
                 -e "s/\${cluster_basename}/${cluster_basename}/" \
                 -e "s/\${name_esxi}/${name_esxi}/" \
                 -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
+            chmod u+x /root/esxi_customization-$esxi.sh
             scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
           done
           scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
@@ -183,6 +184,7 @@ if [[ ${operation} == "apply" ]] ; then
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/create_vcenter_api_session.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/create_vcenter_api_session.sh
           scp -o StrictHostKeyChecking=no /nested-vsphere/json/avi_spec.json ubuntu@${ip_gw}:/home/ubuntu/json/avi_spec.json
           scp -o StrictHostKeyChecking=no /nested-vsphere/json/nsx_spec.json ubuntu@${ip_gw}:/home/ubuntu/json/nsx_spec.json
+          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/variables.sh ubuntu@${ip_gw}:/home/ubuntu/bash/variables.sh
           echo "Gw ${gw_name} is ready." | tee -a ${log_file}
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break
@@ -284,7 +286,7 @@ if [[ ${operation} == "apply" ]] ; then
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${esxi_basename}${esxi}"
-    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/bin/bash /home/ubuntu/esxi/esxi_customization-$esxi.sh"
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh"
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
   done
@@ -293,14 +295,14 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/bin/bash /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json"
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json"
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
   #
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' | tee -a ${log_file}
     echo "Starting timestamp: $(date)" | tee -a ${log_file}
     echo "Creation of Avi ctrl  - This should take about 20 minutes" | tee -a ${log_file}
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/bin/bash /home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json"
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json"
     echo "Ending timestamp: $(date)" | tee -a ${log_file}
   fi
 fi

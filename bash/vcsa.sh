@@ -2,37 +2,8 @@
 #
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
-SLACK_WEBHOOK_URL=$(jq -c -r .SLACK_WEBHOOK_URL $jsonFile)
 log_file="/tmp/vcsa.log"
-deployment_name=$(jq -c -r .metadata.name $jsonFile)
-GENERIC_PASSWORD=$(jq -c -r .GENERIC_PASSWORD $jsonFile)
-cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
-  cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-fi
-cidr_vmotion=$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-if [[ ${cidr_vmotion} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
-  cidr_vmotion_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-fi
-cidr_vsan=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-if [[ ${cidr_vsan} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
-  cidr_vsan_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-fi
-ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
-ip_gw=$(jq -c -r '.spec.gw.ip' $jsonFile)
-dc=$(jq -c -r '.dc' $jsonFile)
-ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
-vsphere_nested_username="administrator"
-vsphere_nested_password="${GENERIC_PASSWORD}"
-esxi_nested_password="${GENERIC_PASSWORD}"
-kind=$(jq -c -r '.kind' $jsonFile)
-disk_capacity=$(jq -c -r '.disks.capacity' $jsonFile)
-disk_cache=$(jq -c -r '.disks.cache' $jsonFile)
-domain=$(jq -c -r '.spec.domain' $jsonFile)
-esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
-cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
-vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
-api_host="${vcsa_name}.${domain}"
+source /home/ubuntu/bash/variables.sh
 echo '------------------------------------------------------------' | tee -a ${log_file}
 echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
 iso_url=$(jq -c -r .spec.vsphere.iso_url $jsonFile)
@@ -284,3 +255,4 @@ do
   fi
 done
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vCenter configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+exit
