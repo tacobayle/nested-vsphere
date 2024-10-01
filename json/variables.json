@@ -148,7 +148,7 @@
   },
   "avi_folder": "avi-ctrl",
   "avi_ctrl_name": "avi-ctrl-01",
-  "app_folder": "app-vms",
+  "folder_app": "app-vms",
   "app_basename": "app0",
   "app_apt_packages": ["docker.io"],
   "docker_registry_repo_default_app" : "tacobayle/avi_app",

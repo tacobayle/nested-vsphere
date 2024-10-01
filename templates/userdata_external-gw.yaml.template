@@ -86,6 +86,7 @@ write_files:
         echo "            id: `echo $net | jq -c -r .vlan_id`" | tee -a /etc/netplan/50-cloud-init.yaml
         echo "            link: $ifaceLastName" | tee -a /etc/netplan/50-cloud-init.yaml
         echo "            addresses: [`echo $net | jq -c -r .gw`/`echo $net | jq -c -r .cidr | cut -f2 -d'/'`]" | tee -a /etc/netplan/50-cloud-init.yaml
+        sudo iptables -t nat -A POSTROUTING -s `echo $net | jq -c -r .cidr` -o $ifaceFirstName -j MASQUERADE
         sudo iptables -A FORWARD -i vlan.`echo $net | jq -c -r .vlan_id` -o $ifaceFirstName -j ACCEPT
       done
       echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
@@ -246,7 +247,7 @@ write_files:
       #
       # ssh keys init
       #
-      ssh-keygen -t rsa -N "" -f /home/ubuntu/.ssh/id_rsa
+      sudo -u ubuntu ssh-keygen -t rsa -N "" -f /home/ubuntu/.ssh/id_rsa
       #
       # End of cloud init
       #

@@ -68,8 +68,8 @@ avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 #
 # App variables
 #
-ip_apps=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).ip_apps' $jsonFile)
-prefix_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).cidr' $jsonFile | cut -d"/" -f2)
+ips_app=$(jq -c -r '.avi.app.ips' $jsonFile)
+prefix_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
 gw_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 app_basename=$(jq -c -r '.app_basename' $jsonFile)
 app_apt_packages=$(jq -c -r '.app_apt_packages' $jsonFile)
@@ -78,7 +78,7 @@ docker_registry_repo_waf=$(jq -c -r '.docker_registry_repo_waf' $jsonFile)
 app_tcp_default=$(jq -c -r '.app_tcp_default' $jsonFile)
 app_tcp_waf=$(jq -c -r '.app_tcp_waf' $jsonFile)
 network_ref_app="AVI-APP-BACKEND"
-app_folder=$(jq -c -r '.app_folder' $jsonFile)
+folder_app=$(jq -c -r '.folder_app' $jsonFile)
 app_cpu=$(jq -c -r '.app_cpu' $jsonFile)
 app_memory=$(jq -c -r '.app_memory' $jsonFile)
 #

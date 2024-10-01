@@ -18,12 +18,23 @@ if [ $? -ne 0 ] ; then
   exit
 fi
 #
+# folder creation
+#
+list_folder=$(govc find -json . -type f)
+echo "Creation of a folder for the Apps"
+if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_app}'")' >/dev/null ) ; then
+  echo "ERROR: unable to create folder ${folder_app}: it already exists"
+else
+  govc folder.create /${dc}/vm/${folder_app}
+  echo "Ending timestamp: $(date)"
+fi
+#
 # App VM creations // vsphere-avi use case)
 #
-if [[ ${ip_apps} != "null" ]]; then
-  for index in $(seq 1 $(echo ${ip_apps} | jq -c -r '. | length'))
+if [[ ${ips_app} != "null" ]]; then
+  for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
   do
-    ip_app="${cidr_app_three_octets}.$(echo ${ip_apps} | jq -c -r .[$(expr ${index} - 1)])"
+    ip_app="${cidr_app_three_octets}.$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
     sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s/\${hostname}/${app_basename}${index}/" \
         -e "s/\${ip_app}/${ip_app}/" \
@@ -38,14 +49,14 @@ if [[ ${ip_apps} != "null" ]]; then
         -e "s/\${default_gw}/${gw_app}/" \
         -e "s/\${forwarders_netplan}/${gw_app}/" /home/ubuntu/templates/userdata_app.yaml.template | tee /home/ubuntu/app/userdata_app${index}.yaml
     #
-    sed -e "s#\${public_key}#$(awk '{printf "%s\\n", $0}' /home/ubuntu/.ssh/id_rsa.pub | awk '{length=$0; print substr($0, 1, length-2)}')#" \
+    sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
         -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app${index}.yaml -w 0)@" \
         -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s@\${network_ref}@${network_ref_app}@" \
-        -e "s/\${vm_name}/${app_basename}${index}/" /home/ubuntu/templates/options-app.json.template | tee "/home/ubuntu/templates/options-app-${index}.json"
+        -e "s/\${vm_name}/${app_basename}${index}/" /home/ubuntu/templates/options-app.json.template | tee "/home/ubuntu/app/options-app-${index}.json"
     #
-    govc import.ova --options="/home/ubuntu/templates/options-app-${index}.json" -folder "${app_folder}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
-    govc vm.change -vm "${app_folder}/${app_basename}${index}" -c ${app_cpu} -m ${app_memory}
-    govc vm.power -on=true "${app_folder}/${app_basename}${index}"
+    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
+    govc vm.change -vm "${folder_app}/${app_basename}${index}" -c ${app_cpu} -m ${app_memory}
+    govc vm.power -on=true "${folder_app}/${app_basename}${index}"
   done
 fi
