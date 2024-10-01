@@ -24,6 +24,8 @@ jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} | tee ${jsonFile}
 variables_json=$(jq -c -r . $jsonFile)
 variables_json=$(echo ${variables_json} | jq '. += {"SLACK_WEBHOOK_URL": "'${SLACK_WEBHOOK_URL}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"GENERIC_PASSWORD": "'${GENERIC_PASSWORD}'"}')
+variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_USERNAME": "'${DOCKER_REGISTRY_USERNAME}'"}')
+variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_PASSWORD": "'${DOCKER_REGISTRY_PASSWORD}'"}')
 echo ${variables_json} | jq . | tee $jsonFile > /dev/null
 #
 # source the variables
@@ -148,6 +150,9 @@ if [[ ${operation} == "apply" ]] ; then
           scp -o StrictHostKeyChecking=no /nested-vsphere/json/avi_spec.json ubuntu@${ip_gw}:/home/ubuntu/json/avi_spec.json
           scp -o StrictHostKeyChecking=no /nested-vsphere/json/nsx_spec.json ubuntu@${ip_gw}:/home/ubuntu/json/nsx_spec.json
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/variables.sh ubuntu@${ip_gw}:/home/ubuntu/bash/variables.sh
+          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/userdata_app.yaml.template ubuntu@${ip_gw}:/home/ubuntu/templates/userdata_app.yaml.template
+          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/options-app.json.template ubuntu@${ip_gw}:/home/ubuntu/templates/options-app.json.template
+          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/deploy_app.sh ubuntu@${ip_gw}:/home/ubuntu/app/deploy_app.sh
           echo "Gw ${gw_name} is ready." | tee -a ${log_file}
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break

@@ -1,0 +1,65 @@
+#cloud-config
+users:
+  - default
+
+ssh_pwauth: True
+
+chpasswd:
+  list: |
+    ubuntu:${password}
+  expire: False
+
+hostname: ${hostname}
+
+write_files:
+  - content: |
+      #!/bin/bash
+      # retrieve the network interface names
+      ifaceFirstName=`ip -o link show | awk -F': ' '{print $2}' | head -2 | tail -1`
+      macFirst=`ip -o link show | awk -F'link/ether ' '{print $2}' | awk -F' ' '{print $1}' | head -2 | tail -1`
+      hostname=${hostname}
+      echo "${ip_app} $hostname" | tee -a /etc/hosts
+      cp /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.old
+      echo "network:" | tee /etc/netplan/50-cloud-init.yaml
+      echo "    ethernets:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "        $ifaceFirstName:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            dhcp4: false" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            addresses: [${ip_app}/${prefix}]" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            match:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "                macaddress: $macFirst" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            set-name: $ifaceFirstName" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            gateway4: ${default_gw}" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            nameservers:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "              addresses: [${forwarders_netplan}]" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
+      netplan apply
+      #
+      # apt install
+      #
+      apt update
+      apt install -y jq
+      packages='${packages}'
+      echo $packages | jq -c -r .[] | while read package
+      do
+        apt install -y $package
+      done
+      #
+      # Docker
+      #
+      sudo usermod -a -G docker ubuntu
+      docker login --username ${docker_registry_username} --password ${docker_registry_password}
+      docker run -d -p ${app_tcp_default}:80 ${docker_registry_repo_default_app}
+      docker run --name hackazon -d -p ${app_tcp_waf}:80 ${docker_registry_repo_waf} supervisord -n
+      #
+      # End of cloud init
+      #
+      echo "cloud init done" | tee /tmp/cloudInitDone.log
+    path: /opt/bootstrap.sh
+    permissions: 0755
+
+  - content: |
+      ubuntu ALL=(ALL) NOPASSWD:ALL
+    path: /etc/sudoers.d/ubuntu
+
+runcmd:
+  - /opt/bootstrap.sh

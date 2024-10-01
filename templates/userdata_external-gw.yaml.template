@@ -243,6 +243,13 @@ write_files:
       mv /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.patching_dns
       cat /etc/netplan/50-cloud-init.yaml.patching_dns | sed -e "s/${forwarders_netplan}/127.0.0.1/" | tee /etc/netplan/50-cloud-init.yaml
       netplan apply
+      #
+      # ssh keys init
+      #
+      ssh-keygen -t rsa -N "" -f /home/ubuntu/.ssh/id_rsa
+      #
+      # End of cloud init
+      #
       echo "cloud init done" | tee /tmp/cloudInitDone.log
     path: /opt/bootstrap.sh
     permissions: 0755

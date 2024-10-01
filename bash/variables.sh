@@ -3,6 +3,8 @@
 SLACK_WEBHOOK_URL=$(jq -c -r .SLACK_WEBHOOK_URL $jsonFile)
 deployment_name=$(jq -c -r .metadata.name $jsonFile)
 GENERIC_PASSWORD=$(jq -c -r .GENERIC_PASSWORD $jsonFile)
+DOCKER_REGISTRY_USERNAME=$(jq -c -r .DOCKER_REGISTRY_USERNAME $jsonFile)
+DOCKER_REGISTRY_PASSWORD=$(jq -c -r .DOCKER_REGISTRY_PASSWORD $jsonFile)
 ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
 vsphere_nested_username="administrator"
 vsphere_nested_password="${GENERIC_PASSWORD}"
@@ -24,6 +26,10 @@ fi
 cidr_vsan=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
 if [[ ${cidr_vsan} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_vsan_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+fi
+cidr_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+if [[ ${cidr_app} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+  cidr_app_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 kind=$(jq -c -r '.kind' $jsonFile)
 disk_capacity=$(jq -c -r '.disks.capacity' $jsonFile)
@@ -59,6 +65,22 @@ gw_avi=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $a
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
+#
+# App variables
+#
+ip_apps=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).ip_apps' $jsonFile)
+prefix_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).cidr' $jsonFile | cut -d"/" -f2)
+gw_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+app_basename=$(jq -c -r '.app_basename' $jsonFile)
+app_apt_packages=$(jq -c -r '.app_apt_packages' $jsonFile)
+docker_registry_repo_default_app=$(jq -c -r '.docker_registry_repo_default_app' $jsonFile)
+docker_registry_repo_waf=$(jq -c -r '.docker_registry_repo_waf' $jsonFile)
+app_tcp_default=$(jq -c -r '.app_tcp_default' $jsonFile)
+app_tcp_waf=$(jq -c -r '.app_tcp_waf' $jsonFile)
+network_ref_app="AVI-APP-BACKEND"
+app_folder=$(jq -c -r '.app_folder' $jsonFile)
+app_cpu=$(jq -c -r '.app_cpu' $jsonFile)
+app_memory=$(jq -c -r '.app_memory' $jsonFile)
 #
 # NSX variables
 #
