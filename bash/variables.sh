@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 SLACK_WEBHOOK_URL=$(jq -c -r .SLACK_WEBHOOK_URL $jsonFile)
 deployment_name=$(jq -c -r .metadata.name $jsonFile)
 GENERIC_PASSWORD=$(jq -c -r .GENERIC_PASSWORD $jsonFile)
@@ -8,8 +10,9 @@ dc=$(jq -c -r '.dc' $jsonFile)
 vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
 domain=$(jq -c -r '.spec.domain' $jsonFile)
 api_host="${vcsa_name}.${domain}"
+folder=$(jq -c -r .spec.folder $jsonFile)
+gw_name="${deployment_name}-gw"
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
-folder=$(jq -c -r '.avi_folder' $jsonFile)
 cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
 if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
@@ -28,10 +31,28 @@ disk_cache=$(jq -c -r '.disks.cache' $jsonFile)
 esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
 ip_gw=$(jq -c -r '.spec.gw.ip' $jsonFile)
+network_ref_gw=$(jq -c -r .spec.gw.network_ref $jsonFile)
+prefix_gw=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).cidr' $jsonFile | cut -d"/" -f2)
+default_gw=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).gw' $jsonFile)
+ntp_masters=$(jq -c -r '.spec.gw.ntp_masters' $jsonFile)
+forwarders_netplan=$(jq -c -r '.spec.gw.dns_forwarders | join(",")' $jsonFile)
+forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
+networks=$(jq -c -r '.spec.networks' $jsonFile)
+ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
+if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then
+  ip_nsx=$(jq -c -r .spec.gw.ip $jsonFile)
+fi
+if [[ $(jq -c -r .spec.avi.ip $jsonFile) == "null" ]]; then
+  ip_avi=$(jq -c -r .spec.gw.ip $jsonFile)
+fi
+trunk1=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
 #
 # Avi variables
 #
-ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .spec.avi.ip $jsonFile)"
+folder_avi=$(jq -c -r '.avi_folder' $jsonFile)
+if [[ $(jq -c -r .spec.avi.ip $jsonFile) != "null" ]]; then
+  ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .spec.avi.ip $jsonFile)"
+fi
 gw_avi=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
@@ -39,7 +60,10 @@ avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 #
 # NSX variables
 #
-ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
+folder_nsx=$(jq -c -r '.nsx_folder' $jsonFile)
+if [[ $(jq -c -r .spec.nsx.ip $jsonFile) != "null" ]]; then
+  ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
+fi
 #netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
 gw_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 nsx_manager_name=$(jq -c -r '.nsx_manager_name' $jsonFile)

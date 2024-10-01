@@ -23,10 +23,10 @@ fi
 #
 list_folder=$(govc find -json . -type f)
 echo "Creation of a folder for the NSX Manager" | tee -a ${log_file}
-if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
-  echo "ERROR: unable to create folder ${folder}: it already exists" | tee -a ${log_file}
+if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_nsx}'")' >/dev/null ) ; then
+  echo "ERROR: unable to create folder ${folder_nsx}: it already exists" | tee -a ${log_file}
 else
-  govc folder.create /${dc}/vm/${folder} | tee -a ${log_file}
+  govc folder.create /${dc}/vm/${folder_nsx} | tee -a ${log_file}
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
 #

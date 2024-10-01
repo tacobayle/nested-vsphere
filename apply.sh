@@ -26,48 +26,9 @@ variables_json=$(echo ${variables_json} | jq '. += {"SLACK_WEBHOOK_URL": "'${SLA
 variables_json=$(echo ${variables_json} | jq '. += {"GENERIC_PASSWORD": "'${GENERIC_PASSWORD}'"}')
 echo ${variables_json} | jq . | tee $jsonFile > /dev/null
 #
+# source the variables
 #
-#
-kind=$(jq -c -r '.kind' $jsonFile)
-cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
-esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
-vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
-folder=$(jq -c -r .spec.folder $jsonFile)
-gw_name="${deployment_name}-gw"
-domain=$(jq -c -r .spec.domain $jsonFile)
-ip_gw=$(jq -c -r .spec.gw.ip $jsonFile)
-network_ref_gw=$(jq -c -r .spec.gw.network_ref $jsonFile)
-prefix_gw=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).cidr' $jsonFile | cut -d"/" -f2)
-default_gw=$(jq -c -r --arg arg "${network_ref_gw}" '.spec.vsphere_underlay.networks[] | select( .ref == $arg).gw' $jsonFile)
-ntp_masters=$(jq -c -r '.spec.gw.ntp_masters' $jsonFile)
-forwarders_netplan=$(jq -c -r '.spec.gw.dns_forwarders | join(",")' $jsonFile)
-forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
-networks=$(jq -c -r '.spec.networks' $jsonFile)
-ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
-ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
-cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-cidr_vmotion=$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-cidr_vsan=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
-  cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-fi
-if [[ ${cidr_vmotion} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
-  cidr_vmotion_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-fi
-if [[ ${cidr_vsan} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
-  cidr_vsan_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-fi
-if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then
-  ip_nsx=$(jq -c -r .spec.gw.ip $jsonFile)
-else
-  ip_nsx=$(jq -c -r '.spec.nsx.ip' $jsonFile)
-fi
-if [[ $(jq -c -r .spec.avi.ip $jsonFile) == "null" ]]; then
-  ip_avi=$(jq -c -r .spec.gw.ip $jsonFile)
-else
-  ip_avi=$(jq -c -r '.spec.avi.ip' $jsonFile)
-fi
-trunk1=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
+source /nested-vsphere/bash/variables.sh
 #
 rm -f ${log_file}
 #

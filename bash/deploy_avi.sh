@@ -24,10 +24,10 @@ fi
 #
 list_folder=$(govc find -json . -type f)
 echo "Creation of a folder for the Avi ctrl" | tee -a ${log_file}
-if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
-  echo "ERROR: unable to create folder ${folder}: it already exists" | tee -a ${log_file}
+if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_avi}'")' >/dev/null ) ; then
+  echo "ERROR: unable to create folder ${folder_avi}: it already exists" | tee -a ${log_file}
 else
-  govc folder.create /${dc}/vm/${folder} | tee -a ${log_file}
+  govc folder.create /${dc}/vm/${folder_avi} | tee -a ${log_file}
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
 fi
 #
@@ -45,7 +45,7 @@ echo ${avi_options} | jq -c -r '.' | tee /home/ubuntu/json/options-${avi_ctrl_na
 #
 # Avi Creation
 #
-govc import.ova --options="/home/ubuntu/json/options-${avi_ctrl_name}.json" -folder "${folder}" "/home/ubuntu/$(basename ${avi_ova_url})" > /dev/null
+govc import.ova --options="/home/ubuntu/json/options-${avi_ctrl_name}.json" -folder "${folder_avi}" "/home/ubuntu/$(basename ${avi_ova_url})" > /dev/null
 govc vm.power -on=true "${avi_ctrl_name}" > /dev/null
 echo "Avi ctrl deployed" | tee -a ${log_file}
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl deployed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
