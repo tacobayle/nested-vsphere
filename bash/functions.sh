@@ -50,7 +50,7 @@ load_govc_env_with_cluster () {
 
 load_govc_esxi () {
   export GOVC_USERNAME="root"
-  export GOVC_PASSWORD=${esxi_nested_password}
+  export GOVC_PASSWORD=${vsphere_nested_password}
   export GOVC_INSECURE=true
   unset GOVC_DATACENTER
   unset GOVC_CLUSTER
