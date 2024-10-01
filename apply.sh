@@ -248,7 +248,7 @@ if [[ ${operation} == "apply" ]] ; then
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${esxi_basename}${esxi}"
-    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh"
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh" > ${log_file}
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
   done
@@ -257,14 +257,14 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of VCSA  - This should take about 45 minutes" | tee -a ${log_file}
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json"
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file}
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
   #
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' | tee -a ${log_file}
     echo "Starting timestamp: $(date)" | tee -a ${log_file}
     echo "Creation of Avi ctrl  - This should take about 20 minutes" | tee -a ${log_file}
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json"
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file}
     echo "Ending timestamp: $(date)" | tee -a ${log_file}
   fi
 fi
