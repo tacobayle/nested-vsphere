@@ -53,6 +53,7 @@ ubuntu_ova_url=$(jq -c -r .spec.gw.ova_url $jsonFile)
 folder_avi=$(jq -c -r '.avi_folder' $jsonFile)
 if [[ $(jq -c -r .spec.avi.ip $jsonFile) != "null" ]]; then
   ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .spec.avi.ip $jsonFile)"
+  ip_avi_last_octet=$(jq -c -r .spec.avi.ip $jsonFile)
 fi
 gw_avi=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
@@ -64,6 +65,7 @@ avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 folder_nsx=$(jq -c -r '.nsx_folder' $jsonFile)
 if [[ $(jq -c -r .spec.nsx.ip $jsonFile) != "null" ]]; then
   ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
+  ip_nsx_last_octet=$(jq -c -r .spec.nsx.ip $jsonFile)
 fi
 #netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
 gw_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)

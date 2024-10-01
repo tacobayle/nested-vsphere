@@ -154,10 +154,10 @@ write_files:
       EOT
       #
       if [[ ${ip_nsx} != ${ip_gw} ]]; then
-      echo "${nsx_manager_name}       IN            A       ${cidr_mgmt_three_octets}.${ip_nsx}" | tee -a /var/lib/bind/db.${domain}
+      echo "${nsx_manager_name}       IN            A       ${ip_nsx}" | tee -a /var/lib/bind/db.${domain}
       fi
       if [[ ${ip_avi} != ${ip_gw} ]]; then
-      echo "${avi_ctrl_name}       IN            A       ${cidr_mgmt_three_octets}.${ip_avi}" | tee -a /var/lib/bind/db.${domain}
+      echo "${avi_ctrl_name}       IN            A       ${ip_avi}" | tee -a /var/lib/bind/db.${domain}
       fi
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
@@ -182,10 +182,10 @@ write_files:
       EOT
       #
       if [[ ${ip_nsx} != ${ip_gw} ]]; then
-      echo "`echo ${ip_nsx}`            PTR     ${nsx_manager_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
+        echo "${ip_nsx_last_octet}            PTR     ${nsx_manager_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
       fi
       if [[ ${ip_avi} != ${ip_gw} ]]; then
-      echo "`echo ${ip_avi}`            PTR     ${avi_ctrl_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
+        echo "${ip_avi_last_octet}            PTR     ${avi_ctrl_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
       fi
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi

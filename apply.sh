@@ -84,6 +84,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${esxi_basename}/${esxi_basename}/" \
         -e "s/\${ip_nsx}/${ip_nsx}/" \
         -e "s/\${ip_avi}/${ip_avi}/" \
+        -e "s/\${ip_avi_last_octet}/${ip_avi_last_octet}/" \
+        -e "s/\${ip_nsx_last_octet}/${ip_nsx_last_octet}/" \
         -e "s/\${nsx_manager_name}/$(jq -c -r '.nsx_manager_name' $jsonFile)/" \
         -e "s/\${avi_ctrl_name}/$(jq -c -r '.avi_ctrl_name' $jsonFile)/" \
         -e "s@\${directories}@$(jq -c -r '.directories' $jsonFile)@" \
