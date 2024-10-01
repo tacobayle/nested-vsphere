@@ -276,6 +276,15 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file}
     echo "Ending timestamp: $(date)" | tee -a ${log_file}
   fi
+  #
+  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+    echo '------------------------------------------------------------' | tee -a ${log_file}
+    echo "Starting timestamp: $(date)" | tee -a ${log_file}
+    echo "Creation of Avi apps  - This should take about 10 minutes" | tee -a ${log_file}
+    echo "running the following command from the gw: /home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" | tee -a ${log_file}
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file}
+    echo "Ending timestamp: $(date)" | tee -a ${log_file}
+  fi
 fi
 #
 #
