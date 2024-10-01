@@ -295,9 +295,9 @@ if [[ ${operation} == "destroy" ]] ; then
   if [[ ${list_gw} != "null" ]] ; then
     govc vm.power -off=true "${gw_name}" | tee -a ${log_file}
     govc vm.destroy "${gw_name}" | tee -a ${log_file}
-  if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Gw destroyed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Gw destroyed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   else
-    echo "ERROR: unable to delete VM ${gw_name}: it already exists" | tee -a ${log_file}
+    echo "ERROR: unable to delete VM ${gw_name}: it does not exists" | tee -a ${log_file}
   fi
   echo "Ending timestamp: $(date)" | tee -a ${log_file}
   #
