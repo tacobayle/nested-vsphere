@@ -46,6 +46,7 @@ if [[ $(jq -c -r .spec.avi.ip $jsonFile) == "null" ]]; then
   ip_avi=$(jq -c -r .spec.gw.ip $jsonFile)
 fi
 trunk1=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
+ubuntu_ova_url=$(jq -c -r .spec.gw.ova_url $jsonFile)
 #
 # Avi variables
 #
