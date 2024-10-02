@@ -5,7 +5,7 @@
     "disk": "40G"
   },
   "K8s_version_short": "v1.28",
-  "directories": ["json", "esxi", "bash","vcenter","yaml-files", ".kube", "avi", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "tanzu", "unmanaged_k8s_clusters", "templates", "bin", "app", ".ssh"],
+  "directories": ["json", "esxi", "bash","vcenter","yaml-files", ".kube", "avi", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "tanzu", "unmanaged_k8s_clusters", "templates", "bin", "app", "python", ".ssh"],
   "apt_packages": ["python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso", "expect", "iptables-persistent"],
   "pip3_packages": ["ansible==2.10.7", "avisdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors", "pyvmomi"],
   "yaml_folder": "yaml-files",
@@ -37,6 +37,13 @@
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-gw-http-route-multiple-1-2_based-on-np.yml"
   ],
   "vault": {
+    "control_script": {
+      "name": "vault_control_script",
+      "path": "/home/ubuntu/python/control-script-vault.py"
+    },
+    "certificate_mgmt_profile": {
+      "name": "vault_cert_profile"
+    },
     "secret_file_path": "/home/ubuntu/vault/secret.json",
     "pki": {
       "name": "pki",
@@ -124,6 +131,10 @@
       "vds_ref": "vds1"
     },
     {
+      "name": "AVI-VIP",
+      "vds_ref": "vds1"
+    },
+    {
       "name": "TANZU",
       "vds_ref": "vds1"
     }
@@ -148,6 +159,50 @@
   },
   "avi_folder": "avi-ctrl",
   "avi_ctrl_name": "avi-ctrl-01",
+  "avi_slack": {
+    "name": "avi-slack",
+    "path": "/home/ubuntu/python/control-script-avi-slack.py"
+  },
+  "tenants": [
+    {
+      "name": "automation",
+      "local": true,
+      "config_settings": {
+        "tenant_vrf": false,
+        "se_in_provider_context": true,
+        "tenant_access_to_provider_se": true
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "automation",
+      "name": "automation",
+      "is_superuser": true,
+      "default_tenant_ref": "",
+      "access": [],
+      "user_profile_ref": "/api/useraccountprofile?name=Default-User-Account-Profile"
+    }
+  ],
+  "avi_content_library_name": "content_library_avi_se",
+  "avi_subdomain" : "app",
+  "service_engine_groups": [
+    {
+      "name": "Default-Group",
+      "ha_mode": "HA_MODE_SHARED_PAIR",
+      "min_scaleout_per_vs": 2,
+      "vcenter_folder": "seg-Default-Group",
+      "buffer_se": 0,
+      "extra_shared_config_memory": 0,
+      "vcpus_per_se": 2,
+      "memory_per_se": 2048,
+      "disk_per_se": 25,
+      "realtime_se_metrics": {
+        "enabled": true,
+        "duration": 0
+      }
+    }
+  ],
   "folder_app": "app-vms",
   "app_basename": "app0",
   "app_apt_packages": ["docker.io"],
@@ -158,5 +213,8 @@
   "app_cpu": 2,
   "app_memory": 2048,
   "nsx_folder": "nsx-manager",
-  "nsx_manager_name": "nsx-manager-01"
+  "nsx_manager_name": "nsx-manager-01",
+  "tanzu": {
+    "cert": "tanzu-cert"
+  }
 }

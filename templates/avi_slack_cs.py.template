@@ -1,0 +1,30 @@
+#!/usr/bin/python
+import json, requests, sys, os, json, traceback, re, time
+requests.packages.urllib3.disable_warnings()
+from datetime import date
+
+def parse_avi_params(argv):
+    if len(argv) != 2:
+        return {}
+    script_parms = json.loads(argv[1])
+    return script_parms
+
+script_parms = parse_avi_params(sys.argv)
+webhook_url = '${webhook_url}'
+if script_parms['events'][0]['event_id'] == 'CONFIG_DELETE':
+  slack_data = ({'text': 'Date: {date}, Virtual Service {vs_name} has been deleted'.format(vs_name=script_parms['obj_name'], date=date.today())})
+if script_parms['events'][0]['event_id'] == 'CONFIG_CREATE':
+  slack_data = ({'text': 'Date: {date}, Virtual Service {vs_name} has been created'.format(vs_name=script_parms['obj_name'], date=date.today())})
+print('Environment Vars: %s \n' % os.environ)
+print('Alert Arguments: %s \n' % sys.argv)
+
+
+response = requests.post(
+        webhook_url, data=json.dumps(slack_data),
+        headers={'Content-Type': 'application/json'}
+        )
+if response.status_code != 200:
+       raise ValueError(
+               'Request to slack returned an error %s, the response is:\n%s'
+               % (response.status_code, response.text)
+               )

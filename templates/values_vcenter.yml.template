@@ -1,0 +1,61 @@
+controllerPrivateIps: |
+  ["${controllerPrivateIp}"]
+controller:
+  cluster: false
+  ntp: |
+    ["${ntp}"]
+  dns: |
+    ["${dns}"]
+  environment: vcenter
+  floating_ip : ""
+avi_password: ${avi_password}
+avi_old_password: ${avi_old_password}
+avi_version: ${avi_version}
+avi_username: admin
+vsphere_username: ${vsphere_username}
+vsphere_password: ${vsphere_password}
+vsphere_server: ${vsphere_server}
+external_gw_ip: ${external_gw_ip}
+default_route_se_management: ${external_gw_se_ip}
+import_sslkeyandcertificate_ca: |
+  ${import_sslkeyandcertificate_ca}
+certificatemanagementprofile: |
+  ${certificatemanagementprofile}
+alertscriptconfig: |
+  ${alertscriptconfig}
+actiongroupconfig: |
+  ${actiongroupconfig}
+alertconfig: |
+  ${alertconfig}
+sslkeyandcertificate: |
+  ${sslkeyandcertificate}
+portal_configuration:
+  sslkeyandcertificate_ref: ${sslkeyandcertificate_ref}
+tenants: |
+  ${tenants}
+users: |
+  ${users}
+vcenter:
+  domains: |
+    [{"name": "${domain}"}]
+  ipam: |
+    ${ipam}
+  cloud:
+    name: "Default-Cloud"
+    dc: ${dc}
+    content_lib:
+      id: ${content_library_id}
+      name: ${content_library_name}
+    dhcp_enabled: false
+    networks: |
+      ${networks}
+    contexts: |
+      ${contexts}
+    additional_subnets: |
+      ${additional_subnets}
+    service_engine_groups: |
+      ${service_engine_groups}
+    pools: |
+      ${pools}
+    virtual_services: |
+      ${virtual_services}

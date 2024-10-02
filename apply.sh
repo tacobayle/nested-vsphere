@@ -23,7 +23,9 @@ jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} | tee ${jsonFile}
 #
 variables_json=$(jq -c -r . $jsonFile)
 variables_json=$(echo ${variables_json} | jq '. += {"SLACK_WEBHOOK_URL": "'${SLACK_WEBHOOK_URL}'"}')
+variables_json=$(echo ${variables_json} | jq '. += {"SLACK_WEBHOOK_URL_AVI": "'${SLACK_WEBHOOK_URL_AVI}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"GENERIC_PASSWORD": "'${GENERIC_PASSWORD}'"}')
+variables_json=$(echo ${variables_json} | jq '. += {"AVI_OLD_PASSWORD": "'${AVI_OLD_PASSWORD}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_USERNAME": "'${DOCKER_REGISTRY_USERNAME}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_PASSWORD": "'${DOCKER_REGISTRY_PASSWORD}'"}')
 echo ${variables_json} | jq . | tee $jsonFile > /dev/null
@@ -91,6 +93,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${ip_nsx_last_octet}/${ip_nsx_last_octet}/" \
         -e "s/\${nsx_manager_name}/$(jq -c -r '.nsx_manager_name' $jsonFile)/" \
         -e "s/\${avi_ctrl_name}/$(jq -c -r '.avi_ctrl_name' $jsonFile)/" \
+        -e "s@\${vault_secret_file_path}@${vault_secret_file_path}@" \
+        -e "s@\${vault_pki_name}@${vault_pki_name}@" \
         -e "s@\${directories}@$(jq -c -r '.directories' $jsonFile)@" \
         -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
         -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" \
@@ -153,6 +157,9 @@ if [[ ${operation} == "apply" ]] ; then
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/userdata_app.yaml.template ubuntu@${ip_gw}:/home/ubuntu/templates/userdata_app.yaml.template
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/options-app.json.template ubuntu@${ip_gw}:/home/ubuntu/templates/options-app.json.template
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/deploy_app.sh ubuntu@${ip_gw}:/home/ubuntu/app/deploy_app.sh
+          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/values_vcenter.yml.template ubuntu@${ip_gw}:/home/ubuntu/templates/values_vcenter.yml.template
+          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/avi_slack_cs.py.template ubuntu@${ip_gw}:/home/ubuntu/templates/avi_slack_cs.py.template
+          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/control-script-vault.py ubuntu@${ip_gw}:/home/ubuntu/python/control-script-vault.py
           echo "Gw ${gw_name} is ready." | tee -a ${log_file}
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break
