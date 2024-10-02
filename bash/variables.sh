@@ -68,7 +68,7 @@ avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 #
 # App variables
 #
-ips_app=$(jq -c -r '.avi.app.ips' $jsonFile)
+ips_app=$(jq -c -r '.spec.avi.app.ips' $jsonFile)
 prefix_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
 gw_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 app_basename=$(jq -c -r '.app_basename' $jsonFile)
