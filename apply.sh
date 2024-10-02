@@ -91,8 +91,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${ip_avi}/${ip_avi}/" \
         -e "s/\${ip_avi_last_octet}/${ip_avi_last_octet}/" \
         -e "s/\${ip_nsx_last_octet}/${ip_nsx_last_octet}/" \
-        -e "s/\${nsx_manager_name}/$(jq -c -r '.nsx_manager_name' $jsonFile)/" \
-        -e "s/\${avi_ctrl_name}/$(jq -c -r '.avi_ctrl_name' $jsonFile)/" \
+        -e "s/\${nsx_manager_name}/${nsx_manager_name}/" \
+        -e "s/\${avi_ctrl_name}/${avi_ctrl_name}/" \
         -e "s@\${vault_secret_file_path}@${vault_secret_file_path}@" \
         -e "s@\${vault_pki_name}@${vault_pki_name}@" \
         -e "s@\${vault_pki_max_lease_ttl}@${vault_pki_max_lease_ttl}@" \

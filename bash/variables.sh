@@ -199,7 +199,7 @@ avi_ipam_last=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
 if [[ ${kind} == "vsphere-avi" ]]; then
   network_ref_app="AVI-APP-BACKEND"
   ipam='["AVI-SE-MGMT", "AVI-APP-BACKEND", "AVI-VIP", "TANZU"]'
-  networks='[
+  networks_avi='[
               {
                 "avi_ipam_pool": "'${cidr_se_mgmt_three_octets}'.'${avi_ipam_first}'-'${cidr_se_mgmt_three_octets}'.'${avi_ipam_last}'",
                 "cidr": "'${cidr_se_mgmt}'",

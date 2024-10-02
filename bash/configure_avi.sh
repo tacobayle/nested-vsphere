@@ -44,7 +44,7 @@ sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s@\${dc}@${dc}@" \
     -e "s@\${content_library_id}@${content_library_id}@" \
     -e "s@\${content_library_name}@${avi_content_library_name}@" \
-    -e "s@\${networks}@${networks}@" \
+    -e "s@\${networks}@${networks_avi}@" \
     -e "s@\${contexts}@${contexts}@" \
     -e "s@\${additional_subnets}@${additional_subnets}@" \
     -e "s@\${service_engine_groups}@${service_engine_groups}@" \
