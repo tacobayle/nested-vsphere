@@ -326,6 +326,9 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                        }'
   virtual_services_dns=$(echo ${virtual_services_dns} | jq '. += ['$(echo $virtual_service_dns | jq -c -r .)']')
   virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
+  avi_config_repo=$(jq -c -r '.avi_config_repo' $jsonFile)
+  playbook="vcenter.yml"
+  tag="v2.01"
 fi
 #
 # NSX variables

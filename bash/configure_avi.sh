@@ -53,3 +53,13 @@ sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
 #
 # starting ansible configuration
 #
+cd avi
+git clone ${avi_config_repo} --branch ${tag}
+cd $(basename ${avi_config_repo})
+echo '---' | tee hosts_avi
+echo 'all:' | tee -a hosts_avi
+echo '  children:' | tee -a hosts_avi
+echo '    controller:' | tee -a hosts_avi
+echo '      hosts:' | tee -a hosts_avi
+echo '        '${ip_avi}':' | tee -a hosts_avi
+ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/values_vcenter.yml

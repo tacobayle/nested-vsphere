@@ -186,6 +186,7 @@
   ],
   "avi_content_library_name": "content_library_avi_se",
   "avi_subdomain" : "app",
+  "avi_config_repo": "https://github.com/tacobayle/ansibleAviConfig",
   "service_engine_groups": [
     {
       "name": "Default-Group",
