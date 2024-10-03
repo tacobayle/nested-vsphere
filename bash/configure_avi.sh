@@ -63,3 +63,11 @@ echo '    controller:' | tee -a hosts_avi
 echo '      hosts:' | tee -a hosts_avi
 echo '        '${ip_avi}':' | tee -a hosts_avi
 ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/values_vcenter.yml
+#
+# traffic gen
+#
+sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
+    -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
+    -e "s/\${avi_username}/admin/" /home/ubuntu/templates/traffic_gen.sh.template | tee /home/ubuntu/avi/traffic_gen.sh
+chmod u+x /home/ubuntu/avi/traffic_gen.sh
+(crontab -l 2>/dev/null; echo \"* * * * * /home/ubuntu/avi/traffic_gen.sh\") | crontab -

@@ -172,6 +172,7 @@ if [[ ${operation} == "apply" ]] ; then
           scp -o StrictHostKeyChecking=no /nested-vsphere/json/nsx_spec.json ubuntu@${ip_gw}:/home/ubuntu/json/nsx_spec.json
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/variables.sh ubuntu@${ip_gw}:/home/ubuntu/bash/variables.sh
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/userdata_app.yaml.template ubuntu@${ip_gw}:/home/ubuntu/templates/userdata_app.yaml.template
+          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/traffic_gen.sh.template ubuntu@${ip_gw}:/home/ubuntu/templates/traffic_gen.sh.template
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/options-app.json.template ubuntu@${ip_gw}:/home/ubuntu/templates/options-app.json.template
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/deploy_app.sh ubuntu@${ip_gw}:/home/ubuntu/app/deploy_app.sh
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/values_vcenter.yml.template ubuntu@${ip_gw}:/home/ubuntu/templates/values_vcenter.yml.template
