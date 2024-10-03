@@ -120,7 +120,7 @@ gw_avi_se=$(jq -c -r --arg arg "AVI-SE-MGMT" '.spec.networks[] | select( .type =
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
-avi_version=$(jq -c -r .spec.avi_version $jsonFile)
+avi_version=$(jq -c -r .spec.avi.version $jsonFile)
 import_sslkeyandcertificate_ca='[{"name": "'${vault_pki_intermediate_name}'",
                                   "cert": {"path": "'${vault_pki_intermediate_cert_path_signed}'"}},
                                  {"name": "'${vault_pki_name}'",
@@ -255,7 +255,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                 "management": false,
                 "name": "TANZU",
                 "type": "V4"
-              },
+              }
             ]'
   contexts='[]'
   additional_subnets='[]'
