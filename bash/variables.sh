@@ -260,7 +260,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   contexts='[]'
   additional_subnets='[]'
   service_engine_groups=$(jq -c -r '.service_engine_groups' $jsonFile)
-  ips_app_full=$(echo ${ips_app} | jq '. | map("'${cidr_app_three_octets}'." + .)')
+  ips_app_full=$(echo ${ips_app} | jq '. | map("'${cidr_app_three_octets}'." + (. | tostring))')
   pools="[]"
   virtual_services_http="[]"
   virtual_services_dns="[]"
@@ -270,14 +270,14 @@ if [[ ${kind} == "vsphere-avi" ]]; then
               "type": "V4",
               "avi_app_server_ips": '${ips_app_full}'
             }'
-  pools=$(echo ${pools} | jq '. += ['${pool}']')
+  pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
   pool='{
               "name": "pool2",
               "default_server_port": '${app_tcp_waf}',
               "type": "V4",
               "avi_app_server_ips": '${ips_app_full}'
             }'
-  pools=$(echo ${pools} | jq '. += ['${pool}']')
+  pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
   virtual_service_http='{
                      "name": "app-avi",
                      "type": "V4",
@@ -296,7 +296,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                                     }
                      ]
                    }'
-  virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['${virtual_service_http}']')
+  virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
   virtual_service_http='{
                      "name": "app-waf",
                      "type": "V4",
@@ -315,7 +315,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                                     }
                      ]
                    }'
-  virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['${virtual_service_http}']')
+  virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
   virtual_service_dns='{
                          "name": "app-dns",
                          "type": "V4",
@@ -324,7 +324,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                          "se_group_ref": "Default-Group",
                          "services": [{"port": 53}]
                        }'
-  virtual_services_dns=$(echo ${virtual_services_dns} | jq '. += ['${virtual_service_dns}']')
+  virtual_services_dns=$(echo ${virtual_services_dns} | jq '. += ['$(echo $virtual_service_dns | jq -c -r .)']')
   virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
 fi
 #
