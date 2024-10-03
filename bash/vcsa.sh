@@ -131,6 +131,7 @@ do
   echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[0].name ${jsonFile}) on pnic vmnic1"
   govc dvs.add -dvs $(jq -c -r .vds_switches[0].name ${jsonFile}) -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}" > /dev/null
 done
+echo "pausing for 30 seconds"
 sleep 30
 #
 # moving VCSA VM to VDS

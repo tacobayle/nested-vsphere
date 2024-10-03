@@ -26,7 +26,7 @@ def create_vsphere(metadata, spec, kind):
     json_file='/root/{0}_from_kube.json'.format(a_dict['metadata']['name'])
     with open(json_file, 'w') as outfile:
         json.dump(a_dict, outfile)
-    result=subprocess.Popen(['/bin/bash', 'apply.sh', json_file, '> /nested-vsphere/log/apply.log 2>&1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)
+    result=subprocess.Popen(['/bin/bash', 'apply.sh', json_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)
     if os.path.isfile("/root/govc.error"):
       logging.error("create_vsphere: External vCenter not reachable")
       raise ValueError("create_vsphere: External vCenter not reachable")
@@ -43,7 +43,7 @@ def delete_vsphere(metadata, spec, kind):
     json_file='/root/{0}_from_kube.json'.format(a_dict['metadata']['name'])
     with open(json_file, 'w') as outfile:
         json.dump(a_dict, outfile)
-    result=subprocess.Popen(['/bin/bash', 'apply.sh', json_file, '> /nested-vsphere/log/destroy.log 2>&1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)
+    result=subprocess.Popen(['/bin/bash', 'apply.sh', json_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)
     if os.path.isfile("/root/govc.error"):
       logging.error("delete_vsphere: External vCenter not reachable")
       raise ValueError("delete_vsphere: External vCenter not reachable")
