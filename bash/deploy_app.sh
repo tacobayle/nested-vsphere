@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+echo '------------------------------------------------------------'
+echo "Starting timestamp: $(date)"
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
 source /home/ubuntu/bash/variables.sh
@@ -60,3 +62,35 @@ if [[ ${ips_app} != "null" ]]; then
     govc vm.power -on=true "${folder_app}/${app_basename}${index}"
   done
 fi
+#
+# VM app connectivity
+#
+if [[ ${ips_app} != "null" ]]; then
+  for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
+  do
+    ip_app="${cidr_app_three_octets}.$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+    # ssh check
+    retry=60 ; pause=10 ; attempt=1
+    while true ; do
+      echo "attempt $attempt to verify VM app ${ip_app} is ready"
+      ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q >/dev/null 2>&1
+      if [[ $? -eq 0 ]]; then
+        echo "VM app ${ip_app} is reachable."
+        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+        break
+      else
+        echo "VM app ${ip_app} is not reachable."
+      fi
+      ((attempt++))
+      if [ $attempt -eq $retry ]; then
+        echo "VM app ${ip_app} is not reachable after $attempt attempt"
+      fi
+      sleep $pause
+    done
+    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+  done
+fi
+#
+#
+#
+echo "Ending timestamp: $(date)"
