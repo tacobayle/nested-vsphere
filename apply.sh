@@ -197,15 +197,14 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' | tee -a ${log_file}
   echo "Starting timestamp: $(date)" | tee -a ${log_file}
   echo "Creation of an ESXi hosts on the underlay infrastructure - This should take 10 minutes" | tee -a ${log_file}
-  iso_url=$(jq -c -r .spec.esxi.iso_url $jsonFile)
-  download_file_from_url_to_location "${iso_url}" "/root/$(basename ${iso_url})" "ESXi ISO"
+  download_file_from_url_to_location "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "ESXi ISO"
   if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXI downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
   iso_mount_location="/tmp/esxi_cdrom_mount"
   iso_build_location="/tmp/esxi_cdrom"
   boot_cfg_location="efi/boot/boot.cfg"
   iso_location="/tmp/esxi"
-  xorriso -ecma119_map lowercase -osirrox on -indev "/root/$(basename ${iso_url})" -extract / ${iso_mount_location}
+  xorriso -ecma119_map lowercase -osirrox on -indev "/root/$(basename ${iso_esxi_url})" -extract / ${iso_mount_location}
   echo "Copying source ESXi ISO to Build directory" | tee -a ${log_file}
   rm -fr ${iso_build_location}
   mkdir -p ${iso_build_location}

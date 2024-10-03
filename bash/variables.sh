@@ -59,6 +59,7 @@ forwarders_netplan=$(jq -c -r '.spec.gw.dns_forwarders | join(",")' $jsonFile)
 forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
 networks=$(jq -c -r '.spec.networks' $jsonFile)
 ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
+iso_esxi_url=$(jq -c -r .spec.esxi.iso_url $jsonFile)
 if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then
   ip_nsx=$(jq -c -r .spec.gw.ip $jsonFile)
 fi
