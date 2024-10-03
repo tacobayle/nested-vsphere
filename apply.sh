@@ -177,6 +177,7 @@ if [[ ${operation} == "apply" ]] ; then
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/values_vcenter.yml.template ubuntu@${ip_gw}:/home/ubuntu/templates/values_vcenter.yml.template
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/avi_slack_cs.py.template ubuntu@${ip_gw}:/home/ubuntu/templates/avi_slack_cs.py.template
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/control-script-vault.py ubuntu@${ip_gw}:/home/ubuntu/python/control-script-vault.py
+          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/configure_avi.sh ubuntu@${ip_gw}:/home/ubuntu/avi/configure_avi.sh
           echo "Gw ${gw_name} is ready." > ${log_file} 2>&1
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break

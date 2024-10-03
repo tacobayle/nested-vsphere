@@ -92,7 +92,21 @@ vault_pki_intermediate_role_max_ttl=$(jq -c -r '.vault.pki_intermediate.role.max
 # vcenter url
 #
 iso_vcenter_url=$(jq -c -r .spec.vsphere.iso_url $jsonFile)
-
+#
+# App variables
+#
+prefix_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
+gw_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+app_basename=$(jq -c -r '.app_basename' $jsonFile)
+app_apt_packages=$(jq -c -r '.app_apt_packages' $jsonFile)
+docker_registry_repo_default_app=$(jq -c -r '.docker_registry_repo_default_app' $jsonFile)
+docker_registry_repo_waf=$(jq -c -r '.docker_registry_repo_waf' $jsonFile)
+folder_app=$(jq -c -r '.folder_app' $jsonFile)
+app_cpu=$(jq -c -r '.app_cpu' $jsonFile)
+app_memory=$(jq -c -r '.app_memory' $jsonFile)
+ips_app=$(jq -c -r '.spec.avi.app.ips' $jsonFile)
+app_tcp_default=$(jq -c -r '.app_tcp_default' $jsonFile)
+app_tcp_waf=$(jq -c -r '.app_tcp_waf' $jsonFile)
 #
 # Avi variables
 #
@@ -246,22 +260,73 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   contexts='[]'
   additional_subnets='[]'
   service_engine_groups=$(jq -c -r '.service_engine_groups' $jsonFile)
+  ips_app_full=$(echo ${ips_app} | jq '. | map("'${cidr_app_three_octets}'." + .)')
+  pools="[]"
+  virtual_services_http="[]"
+  virtual_services_dns="[]"
+  pool='{
+              "name": "pool1",
+              "default_server_port": '${app_tcp_default}',
+              "type": "V4",
+              "avi_app_server_ips": '${ips_app_full}'
+            }'
+  pools=$(echo ${pools} | jq '. += ['${pool}']')
+  pool='{
+              "name": "pool2",
+              "default_server_port": '${app_tcp_waf}',
+              "type": "V4",
+              "avi_app_server_ips": '${ips_app_full}'
+            }'
+  pools=$(echo ${pools} | jq '. += ['${pool}']')
+  virtual_service_http='{
+                     "name": "app-avi",
+                     "type": "V4",
+                     "cidr": "'${cidr_vip}'",
+                     "network_ref": "AVI-VIP",
+                     "pool_ref": "pool1",
+                     "se_group_ref": "private",
+                     "services": [
+                                   {
+                                     "port": 80,
+                                     "enable_ssl": false
+                                    },
+                                    {
+                                      "port": 443,
+                                      "enable_ssl": true
+                                    }
+                     ]
+                   }'
+  virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['${virtual_service_http}']')
+  virtual_service_http='{
+                     "name": "app-waf",
+                     "type": "V4",
+                     "cidr": "'${cidr_vip}'",
+                     "network_ref": "AVI-VIP",
+                     "pool_ref": "pool2",
+                     "se_group_ref": "private",
+                     "services": [
+                                   {
+                                     "port": 80,
+                                     "enable_ssl": false
+                                    },
+                                    {
+                                      "port": 443,
+                                      "enable_ssl": true
+                                    }
+                     ]
+                   }'
+  virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['${virtual_service_http}']')
+  virtual_service_dns='{
+                         "name": "app-dns",
+                         "type": "V4",
+                         "cidr": "'${cidr_vip}'",
+                         "network_ref": "AVI-VIP",
+                         "se_group_ref": "Default-Group",
+                         "services": [{"port": 53}]
+                       }'
+  virtual_services_dns=$(echo ${virtual_services_dns} | jq '. += ['${virtual_service_dns}']')
+  virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
 fi
-#
-# App variables
-#
-ips_app=$(jq -c -r '.spec.avi.app.ips' $jsonFile)
-prefix_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
-gw_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
-app_basename=$(jq -c -r '.app_basename' $jsonFile)
-app_apt_packages=$(jq -c -r '.app_apt_packages' $jsonFile)
-docker_registry_repo_default_app=$(jq -c -r '.docker_registry_repo_default_app' $jsonFile)
-docker_registry_repo_waf=$(jq -c -r '.docker_registry_repo_waf' $jsonFile)
-app_tcp_default=$(jq -c -r '.app_tcp_default' $jsonFile)
-app_tcp_waf=$(jq -c -r '.app_tcp_waf' $jsonFile)
-folder_app=$(jq -c -r '.folder_app' $jsonFile)
-app_cpu=$(jq -c -r '.app_cpu' $jsonFile)
-app_memory=$(jq -c -r '.app_memory' $jsonFile)
 #
 # NSX variables
 #

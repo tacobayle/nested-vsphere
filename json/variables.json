@@ -190,13 +190,45 @@
     {
       "name": "Default-Group",
       "ha_mode": "HA_MODE_SHARED_PAIR",
-      "min_scaleout_per_vs": 2,
+      "min_scaleout_per_vs": 1,
       "vcenter_folder": "seg-Default-Group",
       "buffer_se": 0,
       "extra_shared_config_memory": 0,
       "vcpus_per_se": 2,
       "memory_per_se": 2048,
       "disk_per_se": 25,
+      "realtime_se_metrics": {
+        "enabled": true,
+        "duration": 0
+      }
+    },
+    {
+      "name": "private",
+      "ha_mode": "HA_MODE_SHARED_PAIR",
+      "algo": "PLACEMENT_ALGO_PACKED",
+      "min_scaleout_per_vs": 2,
+      "vcenter_folder": "seg-private",
+      "buffer_se": 0,
+      "extra_shared_config_memory": 0,
+      "vcpus_per_se": 2,
+      "memory_per_se": 2048,
+      "disk_per_se": 25,
+      "realtime_se_metrics": {
+        "enabled": true,
+        "duration": 0
+      }
+    },
+    {
+      "name": "public",
+      "ha_mode": "HA_MODE_SHARED_PAIR",
+      "algo": "PLACEMENT_ALGO_PACKED",
+      "min_scaleout_per_vs": 2,
+      "vcenter_folder": "seg-public",
+      "buffer_se": 0,
+      "extra_shared_config_memory": 0,
+      "vcpus_per_se": 3,
+      "memory_per_se": 4096,
+      "disk_per_se": 50,
       "realtime_se_metrics": {
         "enabled": true,
         "duration": 0
