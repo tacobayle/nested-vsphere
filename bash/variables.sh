@@ -89,6 +89,11 @@ vault_pki_intermediate_role_name=$(jq -c -r '.vault.pki_intermediate.role.name' 
 vault_pki_intermediate_role_allow_subdomains=$(jq -c -r '.vault.pki_intermediate.role.allow_subdomains' $jsonFile)
 vault_pki_intermediate_role_max_ttl=$(jq -c -r '.vault.pki_intermediate.role.max_ttl' $jsonFile)
 #
+# vcenter url
+#
+iso_vcenter_url=$(jq -c -r .spec.vsphere.iso_url $jsonFile)
+
+#
 # Avi variables
 #
 folder_avi=$(jq -c -r '.avi_folder' $jsonFile)
