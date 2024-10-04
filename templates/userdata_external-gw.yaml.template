@@ -14,6 +14,26 @@ hostname: ${hostname}
 write_files:
   - content: |
       #!/bin/bash
+      run_cmd() {
+        retry=30
+        pause=10
+        attempt=0
+        echo "############################################################################################"
+        while [ $attempt -ne $retry ]; do
+          if eval "$@"; then
+            echo "$1 PASSED"
+            break
+          else
+            echo "$1 FAILED"
+          fi
+          ((attempt++))
+          sleep $pause
+          if [ $attempt -eq $retry ]; then
+            echo "$1 FAILED after $retry retries" | tee /tmp/cloudInitFailed.log
+            exit
+          fi
+        done
+      }
       # retrieve the network interface names
       ifaceFirstName=`ip -o link show | awk -F': ' '{print $2}' | head -2 | tail -1`
       macFirst=`ip -o link show | awk -F'link/ether ' '{print $2}' | awk -F' ' '{print $1}' | head -2 | tail -1`
@@ -43,6 +63,7 @@ write_files:
       #
       # apt install
       #
+      run_cmd 'wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg; test $(ls -l /usr/share/keyrings/hashicorp-archive-keyring.gpg | awk '"'"'{print $5}'"'"') -gt 0'
       wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
       apt update

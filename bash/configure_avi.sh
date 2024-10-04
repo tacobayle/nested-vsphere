@@ -6,7 +6,7 @@ source /home/ubuntu/bash/variables.sh
 #
 # ansible collection install vmware.alb
 #
-ansible-galaxy collection install vmware.alb
+/home/ubuntu/.local/bin/ansible-galaxy collection install vmware.alb
 #
 # creating a content library and folder for seg
 #
