@@ -1,7 +1,5 @@
 #!/bin/bash
 #
-echo '------------------------------------------------------------'
-echo "Starting timestamp: $(date)"
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
 source /home/ubuntu/bash/variables.sh
@@ -90,7 +88,3 @@ if [[ ${ips_app} != "null" ]]; then
     echo "Ending timestamp: $(date)" > ${log_file} 2>&1
   done
 fi
-#
-#
-#
-echo "Ending timestamp: $(date)"

@@ -302,12 +302,21 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" > ${log_file} 2>&1
   fi
   #
-  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == "vsphere-avi" ]]; then
     echo '------------------------------------------------------------' > ${log_file} 2>&1
     echo "Starting timestamp: $(date)" > ${log_file} 2>&1
     echo "Creation of Avi apps  - This should take about 10 minutes" > ${log_file} 2>&1
     echo "running the following command from the gw: /home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+  fi
+  #
+  if [[ ${kind} == "vsphere-avi" ]]; then
+    echo '------------------------------------------------------------' > ${log_file} 2>&1
+    echo "Starting timestamp: $(date)" > ${log_file} 2>&1
+    echo "Configuration of Avi - This should take about 45 minutes" > ${log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" > ${log_file} 2>&1
   fi
 fi

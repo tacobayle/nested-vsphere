@@ -67,6 +67,7 @@ echo '    controller:' | tee -a hosts_avi
 echo '      hosts:' | tee -a hosts_avi
 echo '        '${ip_avi}':' | tee -a hosts_avi
 ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/values_vcenter.yml
+exit
 #
 # traffic gen
 #
