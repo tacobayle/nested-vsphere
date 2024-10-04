@@ -7,7 +7,7 @@
   "K8s_version_short": "v1.28",
   "directories": ["json", "esxi", "bash","vcenter","yaml-files", ".kube", "avi", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "tanzu", "unmanaged_k8s_clusters", "templates", "bin", "app", "python", ".ssh"],
   "apt_packages": ["python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso", "expect", "iptables-persistent"],
-  "pip3_packages": ["ansible==2.10.7", "avisdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors", "pyvmomi"],
+  "pip3_packages": ["ansible-core==2.12.5", "ansible==5.7.1", "avisdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors", "pyvmomi"],
   "yaml_folder": "yaml-files",
   "yaml_links": [
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/mixed-protocols-app/mixed-protocols-svc-app.yml",
@@ -187,6 +187,8 @@
   "avi_content_library_name": "content_library_avi_se",
   "avi_subdomain" : "app",
   "avi_config_repo": "https://github.com/tacobayle/ansibleAviConfig",
+  "playbook_vcenter": "vcenter.yml",
+  "tag_vcenter": "v2.25",
   "service_engine_groups": [
     {
       "name": "Default-Group",

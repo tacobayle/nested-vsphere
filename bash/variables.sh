@@ -18,30 +18,37 @@ folder=$(jq -c -r .spec.folder $jsonFile)
 gw_name="${deployment_name}-gw"
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
 cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_mgmt_prefix=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
 if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 cidr_vmotion=$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_vmotion_prefix=$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
 if [[ ${cidr_vmotion} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_vmotion_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 cidr_vsan=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_vsan_prefix=$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
 if [[ ${cidr_vsan} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_vsan_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 cidr_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_app_prefix=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
 if [[ ${cidr_app} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_app_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 cidr_vip=$(jq -c -r --arg arg "AVI-VIP" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_vip_prefix=$(jq -c -r --arg arg "AVI-VIP" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
 if [[ ${cidr_vip} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_vip_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 cidr_tanzu=$(jq -c -r --arg arg "TANZU" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_tanzu_prefix=$(jq -c -r --arg arg "TANZU" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
 if [[ ${cidr_tanzu} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_tanzu_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
 cidr_se_mgmt=$(jq -c -r --arg arg "AVI-SE-MGMT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_se_mgmt_prefix=$(jq -c -r --arg arg "AVI-SE-MGMT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
 if [[ ${cidr_se_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_se_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 fi
@@ -222,7 +229,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   networks_avi='[
               {
                 "avi_ipam_pool": "'${cidr_se_mgmt_three_octets}'.'${avi_ipam_first}'-'${cidr_se_mgmt_three_octets}'.'${avi_ipam_last}'",
-                "cidr": "'${cidr_se_mgmt}'",
+                "cidr": "'${cidr_se_mgmt_prefix}'",
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": true,
@@ -231,7 +238,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
               },
               {
                 "avi_ipam_pool": "'${cidr_vip_three_octets}'.'${avi_ipam_first}'-'${cidr_vip_three_octets}'.'${avi_ipam_last}'",
-                "cidr": "'${cidr_vip}'",
+                "cidr": "'${cidr_vip_prefix}'",
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": false,
@@ -240,7 +247,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
               },
               {
                 "avi_ipam_pool": "'${cidr_se_mgmt_three_octets}'.'${avi_ipam_first}'-'${cidr_se_mgmt_three_octets}'.'${avi_ipam_last}'",
-                "cidr": "'${cidr_app}'",
+                "cidr": "'${cidr_app_prefix}'",
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": false,
@@ -249,7 +256,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
               },
               {
                 "avi_ipam_pool": "'${cidr_tanzu_three_octets}'.'${avi_ipam_first}'-'${cidr_tanzu_three_octets}'.'${avi_ipam_last}'",
-                "cidr": "'${cidr_tanzu}'",
+                "cidr": "'${cidr_tanzu_prefix}'",
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": false,
@@ -281,7 +288,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   virtual_service_http='{
                      "name": "app-avi",
                      "type": "V4",
-                     "cidr": "'${cidr_vip}'",
+                     "cidr": "'${cidr_vip_prefix}'",
                      "network_ref": "AVI-VIP",
                      "pool_ref": "pool1",
                      "se_group_ref": "private",
@@ -300,7 +307,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   virtual_service_http='{
                      "name": "app-waf",
                      "type": "V4",
-                     "cidr": "'${cidr_vip}'",
+                     "cidr": "'${cidr_vip_prefix}'",
                      "network_ref": "AVI-VIP",
                      "pool_ref": "pool2",
                      "se_group_ref": "private",
@@ -319,7 +326,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   virtual_service_dns='{
                          "name": "app-dns",
                          "type": "V4",
-                         "cidr": "'${cidr_vip}'",
+                         "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "AVI-VIP",
                          "se_group_ref": "Default-Group",
                          "services": [{"port": 53}]
@@ -327,8 +334,8 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   virtual_services_dns=$(echo ${virtual_services_dns} | jq '. += ['$(echo $virtual_service_dns | jq -c -r .)']')
   virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
   avi_config_repo=$(jq -c -r '.avi_config_repo' $jsonFile)
-  playbook="vcenter.yml"
-  tag="v2.01"
+  playbook=$(jq -c -r '.playbook_vcenter' $jsonFile)
+  tag=$(jq -c -r '.tag_vcenter' $jsonFile)
 fi
 #
 # NSX variables

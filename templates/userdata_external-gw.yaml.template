@@ -235,10 +235,6 @@ write_files:
       done
       cd -
       #
-      # ansible collection install vmware.alb
-      #
-      sudo -u ubuntu ansible-galaxy collection install vmware.alb
-      #
       # Patching DNS to localhost
       #
       mv /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.patching_dns
