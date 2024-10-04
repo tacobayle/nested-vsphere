@@ -43,6 +43,8 @@ write_files:
       #
       # apt install
       #
+      wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
       apt update
       apt install -y jq
       packages='${packages}'
@@ -245,10 +247,8 @@ write_files:
       #
       sudo -u ubuntu ssh-keygen -t rsa -N "" -f /home/ubuntu/.ssh/id_rsa
       #
-      # vault install and config
+      # vault config
       #
-      wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
       apt update && apt install vault
       mv /etc/vault.d/vault.hcl /etc/vault.d/vault.hcl.ori
       export VAULT_ADDR="https://127.0.0.1:8200"

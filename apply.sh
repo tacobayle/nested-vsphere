@@ -37,7 +37,7 @@ source /nested-vsphere/bash/variables.sh
 rm -f ${log_file}
 #
 #
-echo "Starting timestamp: $(date)" > ${log_file} 2>&1
+echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
 source /nested-vsphere/bash/govc/load_govc_external.sh
 govc about
 if [ $? -ne 0 ] ; then touch /root/govc.error ; exit ; fi
@@ -46,26 +46,26 @@ list_gw=$(govc find -json vm -name "${gw_name}")
 #
 if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' | tee ${log_file}
-  echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-  echo "Creation of a folder on the underlay infrastructure - This should take less than a minute" > ${log_file} 2>&1
+  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+  echo "Creation of a folder on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
-    echo "ERROR: unable to create folder ${folder}: it already exists" > ${log_file} 2>&1
+    echo "ERROR: unable to create folder ${folder}: it already exists" >> ${log_file} 2>&1
   else
-    govc folder.create /${vsphere_dc}/vm/${folder} > ${log_file} 2>&1
+    govc folder.create /${vsphere_dc}/vm/${folder} >> ${log_file} 2>&1
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vsphere external folder '${folder}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
   #
-  echo '------------------------------------------------------------' > ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-  echo "Creation of an external gw on the underlay infrastructure - This should take 10 minutes" > ${log_file} 2>&1
+  echo '------------------------------------------------------------' >> ${log_file} 2>&1
+  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+  echo "Creation of an external gw on the underlay infrastructure - This should take 10 minutes" >> ${log_file} 2>&1
   # ova download
   download_file_from_url_to_location "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
   if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
   if [[ ${list_gw} != "null" ]] ; then
-    echo "ERROR: unable to create VM ${gw_name}: it already exists" > ${log_file} 2>&1
+    echo "ERROR: unable to create VM ${gw_name}: it already exists" >> ${log_file} 2>&1
     exit
   else
     IFS="." read -r -a octets <<< "$cidr_mgmt"
@@ -124,12 +124,12 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${network_ref}@${network_ref_gw}@" \
         -e "s/\${gw_name}/${gw_name}/" /nested-vsphere/templates/options-gw.json.template | tee "/tmp/options-${gw_name}.json"
     #
-    govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ubuntu_ova_url})" > ${log_file} 2>&1
+    govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ubuntu_ova_url})" >> ${log_file} 2>&1
     govc vm.change -vm "${folder}/${gw_name}" -c $(jq -c -r .gw.cpu $jsonFile) -m $(jq -c -r .gw.memory $jsonFile)
-    govc vm.network.add -vm "${folder}/${gw_name}" -net "${trunk1}" -net.adapter vmxnet3 > ${log_file} 2>&1
+    govc vm.network.add -vm "${folder}/${gw_name}" -net "${trunk1}" -net.adapter vmxnet3 >> ${log_file} 2>&1
     govc vm.disk.change -vm "${folder}/${gw_name}" -size $(jq -c -r .gw.disk $jsonFile)
-    govc vm.power -on=true "${gw_name}" > ${log_file} 2>&1
-    echo "   +++ Updating /etc/hosts..." > ${log_file} 2>&1
+    govc vm.power -on=true "${gw_name}" >> ${log_file} 2>&1
+    echo "   +++ Updating /etc/hosts..." >> ${log_file} 2>&1
     contents=$(cat /etc/hosts | grep -v ${ip_gw})
     echo "${contents}" | tee /etc/hosts > /dev/null
     contents="${ip_gw} gw"
@@ -140,10 +140,10 @@ if [[ ${operation} == "apply" ]] ; then
     # ssh check
     retry=60 ; pause=10 ; attempt=1
     while true ; do
-      echo "attempt $attempt to verify gw ${gw_name} is ready" > ${log_file} 2>&1
+      echo "attempt $attempt to verify gw ${gw_name} is ready" >> ${log_file} 2>&1
       ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q >/dev/null 2>&1
       if [[ $? -eq 0 ]]; then
-        echo "Gw ${gw_name} is reachable." > ${log_file} 2>&1
+        echo "Gw ${gw_name} is reachable." >> ${log_file} 2>&1
         #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
         if [[ $? -eq 0 ]]; then
@@ -179,28 +179,28 @@ if [[ ${operation} == "apply" ]] ; then
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/avi_slack_cs.py.template ubuntu@${ip_gw}:/home/ubuntu/templates/avi_slack_cs.py.template
           scp -o StrictHostKeyChecking=no /nested-vsphere/templates/control-script-vault.py ubuntu@${ip_gw}:/home/ubuntu/python/control-script-vault.py
           scp -o StrictHostKeyChecking=no /nested-vsphere/bash/configure_avi.sh ubuntu@${ip_gw}:/home/ubuntu/avi/configure_avi.sh
-          echo "Gw ${gw_name} is ready." > ${log_file} 2>&1
+          echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break
         else
-          echo "Gw ${gw_name}: cloud init is not finished." > ${log_file} 2>&1
+          echo "Gw ${gw_name}: cloud init is not finished." >> ${log_file} 2>&1
         fi
       fi
       ((attempt++))
       if [ $attempt -eq $retry ]; then
-        echo "Gw ${gw_name} is unreachable after $attempt attempt" > ${log_file} 2>&1
+        echo "Gw ${gw_name} is unreachable after $attempt attempt" >> ${log_file} 2>&1
         exit
       fi
       sleep $pause
     done
-    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   names="${gw_name}"
   #
   #
-  echo '------------------------------------------------------------' > ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-  echo "Creation of an ESXi hosts on the underlay infrastructure - This should take 10 minutes" > ${log_file} 2>&1
+  echo '------------------------------------------------------------' >> ${log_file} 2>&1
+  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+  echo "Creation of an ESXi hosts on the underlay infrastructure - This should take 10 minutes" >> ${log_file} 2>&1
   download_file_from_url_to_location "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "ESXi ISO"
   if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXI downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
@@ -209,23 +209,23 @@ if [[ ${operation} == "apply" ]] ; then
   boot_cfg_location="efi/boot/boot.cfg"
   iso_location="/tmp/esxi"
   xorriso -ecma119_map lowercase -osirrox on -indev "/root/$(basename ${iso_esxi_url})" -extract / ${iso_mount_location}
-  echo "Copying source ESXi ISO to Build directory" > ${log_file} 2>&1
+  echo "Copying source ESXi ISO to Build directory" >> ${log_file} 2>&1
   rm -fr ${iso_build_location}
   mkdir -p ${iso_build_location}
   cp -r ${iso_mount_location}/* ${iso_build_location}
   rm -fr ${iso_mount_location}
-  echo "Modifying ${iso_build_location}/${boot_cfg_location}" > ${log_file} 2>&1
+  echo "Modifying ${iso_build_location}/${boot_cfg_location}" >> ${log_file} 2>&1
   echo "kernelopt=runweasel ks=cdrom:/KS_CUST.CFG" | tee -a ${iso_build_location}/${boot_cfg_location}
   #
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${deployment_name}-${esxi_basename}${esxi}"
     if [[ $(govc find -json vm | jq '[.[] | select(. == "vm/'${folder}'/'${name_esxi}'")] | length') -eq 1 ]]; then
-      echo "ERROR: unable to create nested ESXi ${name_esxi}: it already exists" > ${log_file} 2>&1
+      echo "ERROR: unable to create nested ESXi ${name_esxi}: it already exists" >> ${log_file} 2>&1
     else
       net=$(jq -c -r .spec.esxi.nics[0] $jsonFile)
       ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
-      echo "+++ Building custom ESXi ISO for ESXi${esxi}" > ${log_file} 2>&1
+      echo "+++ Building custom ESXi ISO for ESXi${esxi}" >> ${log_file} 2>&1
       rm -f ${iso_build_location}/ks_cust.cfg
       rm -f "${iso_location}-${esxi}.iso"
       sed -e "s/\${nested_esxi_root_password}/${GENERIC_PASSWORD}/" \
@@ -244,10 +244,10 @@ if [[ ${operation} == "apply" ]] ; then
           -e "s/\${hostname}/${name_esxi}/" \
           -e "s/\${domain}/${domain}/" \
           -e "s/\${gateway}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)/" /nested-vsphere/templates/ks_cust.cfg.template | tee ${iso_build_location}/ks_cust.cfg > /dev/null
-          echo "Modifying ${iso_build_location}/ks_cust.cfg" > ${log_file} 2>&1
-      echo "Building new ISO for ESXi ${esxi}" > ${log_file} 2>&1
+          echo "Modifying ${iso_build_location}/ks_cust.cfg" >> ${log_file} 2>&1
+      echo "Building new ISO for ESXi ${esxi}" >> ${log_file} 2>&1
       xorrisofs -relaxed-filenames -J -R -o "${iso_location}-${esxi}.iso" -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efiboot.img -no-emul-boot ${iso_build_location}
-      echo "Uploading new ISO for ESXi ${esxi} to datastore" > ${log_file} 2>&1
+      echo "Uploading new ISO for ESXi ${esxi} to datastore" >> ${log_file} 2>&1
       govc datastore.upload --ds=$(jq -c -r .spec.vsphere_underlay.datastore $jsonFile) --dc=$(jq -c -r .spec.vsphere_underlay.datacenter $jsonFile) "${iso_location}-${esxi}.iso" ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXi '${esxi}' uploaded "}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       names="${names} ${name_esxi}"
@@ -263,114 +263,114 @@ if [[ ${operation} == "apply" ]] ; then
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${esxi}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     fi
   done
-  echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   # affinity rule
   if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
-    echo '------------------------------------------------------------' > ${log_file} 2>&1
-    echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-    echo "Creation of a affinity rule on the underlay infrastructure - This should take less than a minute" > ${log_file} 2>&1
+    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Creation of a affinity rule on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
     govc cluster.rule.create -name "${deployment_name}-affinity-rule" -enable -affinity ${names}
-    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
-  echo '------------------------------------------------------------' > ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-  echo "ESXI reachability check and customization (SSD) - This should take 2 minutes per nested ESXi" > ${log_file} 2>&1
+  echo '------------------------------------------------------------' >> ${log_file} 2>&1
+  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+  echo "ESXI reachability check and customization (SSD) - This should take 2 minutes per nested ESXi" >> ${log_file} 2>&1
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${esxi_basename}${esxi}"
-    echo "running the following command from the gw: /home/ubuntu/esxi/esxi_customization-$esxi.sh" > ${log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file}
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
   done
-  echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
-  echo '------------------------------------------------------------' > ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-  echo "Creation of VCSA  - This should take about 45 minutes" > ${log_file} 2>&1
-  echo "running the following command from the gw: /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file} 2>&1
+  echo '------------------------------------------------------------' >> ${log_file} 2>&1
+  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+  echo "Creation of VCSA  - This should take about 45 minutes" >> ${log_file} 2>&1
+  echo "running the following command from the gw: /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-  echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
-    echo '------------------------------------------------------------' > ${log_file} 2>&1
-    echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-    echo "Creation of Avi ctrl  - This should take about 20 minutes" > ${log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file} 2>&1
+    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Creation of Avi ctrl  - This should take about 20 minutes" >> ${log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
   if [[ ${kind} == "vsphere-avi" ]]; then
-    echo '------------------------------------------------------------' > ${log_file} 2>&1
-    echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-    echo "Creation of Avi apps  - This should take about 10 minutes" > ${log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file} 2>&1
+    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Creation of Avi apps  - This should take about 10 minutes" >> ${log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
   if [[ ${kind} == "vsphere-avi" ]]; then
-    echo '------------------------------------------------------------' > ${log_file} 2>&1
-    echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-    echo "Configuration of Avi - This should take about 45 minutes" > ${log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" > ${log_file} 2>&1
+    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Configuration of Avi - This should take about 45 minutes" >> ${log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
 fi
 #
 #
 #
 if [[ ${operation} == "destroy" ]] ; then
-  echo '------------------------------------------------------------' > ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" > ${log_file} 2>&1
+  echo '------------------------------------------------------------' >> ${log_file} 2>&1
+  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${deployment_name}-${esxi_basename}${esxi}"
-    echo "Deletion of a nested ESXi ${name_esxi} on the underlay infrastructure - This should take less than a minute" > ${log_file} 2>&1
+    echo "Deletion of a nested ESXi ${name_esxi} on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
     if [[ $(govc find -json vm | jq '[.[] | select(. == "vm/'${folder}'/'${name_esxi}'")] | length') -eq 1 ]]; then
       govc vm.power -off=true "${folder}/${name_esxi}"
       govc vm.destroy "${folder}/${name_esxi}"
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' destroyed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     else
-      echo "ERROR: unable to delete ESXi ${name_esxi}: it is already gone" > ${log_file} 2>&1
+      echo "ERROR: unable to delete ESXi ${name_esxi}: it is already gone" >> ${log_file} 2>&1
     fi
   done
-  echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
   #
-  echo '------------------------------------------------------------' > ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-  echo "Deletion of a VM on the underlay infrastructure - This should take less than a minute" > ${log_file} 2>&1
+  echo '------------------------------------------------------------' >> ${log_file} 2>&1
+  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+  echo "Deletion of a VM on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
   if [[ ${list_gw} != "null" ]] ; then
-    govc vm.power -off=true "${gw_name}" > ${log_file} 2>&1
-    govc vm.destroy "${gw_name}" > ${log_file} 2>&1
+    govc vm.power -off=true "${gw_name}" >> ${log_file} 2>&1
+    govc vm.destroy "${gw_name}" >> ${log_file} 2>&1
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Gw destroyed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   else
-    echo "ERROR: unable to delete VM ${gw_name}: it does not exists" > ${log_file} 2>&1
+    echo "ERROR: unable to delete VM ${gw_name}: it does not exists" >> ${log_file} 2>&1
   fi
-  echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
   #
   if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
-    echo '------------------------------------------------------------' > ${log_file} 2>&1
-    echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-    echo "Deletion of a affinity rule on the underlay infrastructure - This should take less than a minute" > ${log_file} 2>&1
+    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Deletion of a affinity rule on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
     govc cluster.rule.remove -name "${deployment_name}-affinity-rule"
-    echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
   #
-  echo '------------------------------------------------------------' > ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" > ${log_file} 2>&1
-  echo "Deletion of a folder on the underlay infrastructure - This should take less than a minute" > ${log_file} 2>&1
+  echo '------------------------------------------------------------' >> ${log_file} 2>&1
+  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+  echo "Deletion of a folder on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
-    govc object.destroy /${vsphere_dc}/vm/${folder} > ${log_file} 2>&1
+    govc object.destroy /${vsphere_dc}/vm/${folder} >> ${log_file} 2>&1
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vsphere external folder '${folder}' removed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   else
-    echo "ERROR: unable to delete folder ${folder}: it does not exist" > ${log_file} 2>&1
+    echo "ERROR: unable to delete folder ${folder}: it does not exist" >> ${log_file} 2>&1
   fi
-  echo "Ending timestamp: $(date)" > ${log_file} 2>&1
+  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
 fi
