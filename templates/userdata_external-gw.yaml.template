@@ -249,7 +249,6 @@ write_files:
       #
       # vault config
       #
-      apt update && apt install vault
       mv /etc/vault.d/vault.hcl /etc/vault.d/vault.hcl.ori
       export VAULT_ADDR="https://127.0.0.1:8200"
       vault_config='
