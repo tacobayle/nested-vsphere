@@ -251,7 +251,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": false,
-                "name": "AVI-SE-MGMT",
+                "name": "AVI-APP-BACKEND",
                 "type": "V4"
               },
               {
