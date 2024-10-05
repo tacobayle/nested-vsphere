@@ -246,7 +246,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                 "type": "V4"
               },
               {
-                "avi_ipam_pool": "'${cidr_se_mgmt_three_octets}'.'${avi_ipam_first}'-'${cidr_se_mgmt_three_octets}'.'${avi_ipam_last}'",
+                "avi_ipam_pool": "'${cidr_app_three_octets}'.'${avi_ipam_first}'-'${cidr_se_mgmt_three_octets}'.'${avi_ipam_last}'",
                 "cidr": "'${cidr_app_prefix}'",
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
