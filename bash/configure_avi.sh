@@ -66,7 +66,7 @@ echo '  children:' | tee -a hosts_avi
 echo '    controller:' | tee -a hosts_avi
 echo '      hosts:' | tee -a hosts_avi
 echo '        '${ip_avi}':' | tee -a hosts_avi
-ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/values_vcenter.yml
+/home/ubuntu/.local/bin/ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/values_vcenter.yml
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl '${ip_app}' has been configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 exit
 #
