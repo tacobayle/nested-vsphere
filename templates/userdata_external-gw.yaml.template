@@ -172,8 +172,8 @@ write_files:
       #
       if [[ ${ip_avi_dns} != ${ip_gw} ]]; then
         echo "app-dns   IN            A       ${ip_avi_dns}" | tee -a /var/lib/bind/db.${domain}
-        echo "$ORIGIN ${avi_subdomain}.${domain}." | tee -a /var/lib/bind/db.${domain}
-        echo "$TTL 1D" | tee -a /var/lib/bind/db.${domain}
+        echo "\$ORIGIN ${avi_subdomain}.${domain}." | tee -a /var/lib/bind/db.${domain}
+        echo "\$TTL 1D" | tee -a /var/lib/bind/db.${domain}
         echo "@         IN            NS      app-dns.${domain}." | tee -a /var/lib/bind/db.${domain}
       fi
       #
