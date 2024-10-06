@@ -192,10 +192,10 @@
   "service_engine_groups": [
     {
       "name": "Default-Group",
-      "ha_mode": "HA_MODE_SHARED_PAIR",
+      "buffer_se": 0,
+      "ha_mode": "HA_MODE_SHARED",
       "min_scaleout_per_vs": 1,
       "vcenter_folder": "seg-Default-Group",
-      "buffer_se": 0,
       "extra_shared_config_memory": 0,
       "vcpus_per_se": 2,
       "memory_per_se": 2048,

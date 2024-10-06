@@ -158,10 +158,10 @@ write_files:
       EOT
       #
       if [[ ${ip_nsx} != ${ip_gw} ]]; then
-      echo "${nsx_manager_name}       IN            A       ${ip_nsx}" | tee -a /var/lib/bind/db.${domain}
+        echo "${nsx_manager_name}       IN            A       ${ip_nsx}" | tee -a /var/lib/bind/db.${domain}
       fi
       if [[ ${ip_avi} != ${ip_gw} ]]; then
-      echo "${avi_ctrl_name}       IN            A       ${ip_avi}" | tee -a /var/lib/bind/db.${domain}
+        echo "${avi_ctrl_name}       IN            A       ${ip_avi}" | tee -a /var/lib/bind/db.${domain}
       fi
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
@@ -169,6 +169,13 @@ write_files:
         echo "${esxi_basename}$count_esxi      IN            A       ${cidr_mgmt_three_octets}.${ip_esxi}" | tee -a /var/lib/bind/db.${domain}
         ((count_esxi++))
       done
+      #
+      if [[ ${ip_avi_dns} != ${ip_gw} ]]; then
+        echo "app-dns   IN            A       ${ip_avi_dns}" | tee -a /var/lib/bind/db.${domain}
+        echo "$ORIGIN ${avi_subdomain}.${domain}." | tee -a /var/lib/bind/db.${domain}
+        echo "$TTL 1D" | tee -a /var/lib/bind/db.${domain}
+        echo "@         IN            NS      app-dns.${domain}." | tee -a /var/lib/bind/db.${domain}
+      fi
       #
       sudo tee /var/lib/bind/db.${reverse_mgmt} > /dev/null <<EOT
       \$ORIGIN .

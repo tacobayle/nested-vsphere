@@ -84,6 +84,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${domain}/${domain}/g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
         -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
+        -e "s/\${ip_avi_dns}/${ip_avi_dns}/" \
+        -e "s/\${avi_subdomain}/${avi_subdomain}/" \
         -e "s/\${ips_esxi}/${ips_esxi}/" \
         -e "s/\${vcsa_name}/${vcsa_name}/" \
         -e "s/\${esxi_basename}/${esxi_basename}/" \

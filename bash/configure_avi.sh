@@ -68,7 +68,6 @@ echo '      hosts:' | tee -a hosts_avi
 echo '        '${ip_avi}':' | tee -a hosts_avi
 /home/ubuntu/.local/bin/ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/values_vcenter.yml
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl '${ip_app}' has been configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-exit
 #
 # traffic gen
 #
@@ -76,4 +75,4 @@ sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
     -e "s/\${avi_username}/admin/" /home/ubuntu/templates/traffic_gen.sh.template | tee /home/ubuntu/avi/traffic_gen.sh
 chmod u+x /home/ubuntu/avi/traffic_gen.sh
-(crontab -l 2>/dev/null; echo \"* * * * * /home/ubuntu/avi/traffic_gen.sh\") | crontab -
+crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/avi/traffic_gen.sh" | crontab -
