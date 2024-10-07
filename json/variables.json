@@ -120,23 +120,19 @@
   ],
   "port_groups_vsphere_avi": [
     {
-      "name": "AVI-SE-MGMT",
+      "name": "avi-se-mgmt",
       "vds_ref": "vds1"
     },
     {
-      "name": "AVI-APP",
+      "name": "avi-app-backend",
       "vds_ref": "vds1"
     },
     {
-      "name": "AVI-APP-BACKEND",
+      "name": "avi-vip",
       "vds_ref": "vds1"
     },
     {
-      "name": "AVI-VIP",
-      "vds_ref": "vds1"
-    },
-    {
-      "name": "TANZU",
+      "name": "tanzu",
       "vds_ref": "vds1"
     }
   ],

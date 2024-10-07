@@ -84,8 +84,8 @@ iso_vcenter_url=$(jq -c -r .spec.vsphere.iso_url $jsonFile)
 #
 # App variables
 #
-prefix_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
-gw_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+prefix_app=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
+gw_app=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 app_basename=$(jq -c -r '.app_basename' $jsonFile)
 app_apt_packages=$(jq -c -r '.app_apt_packages' $jsonFile)
 docker_registry_repo_default_app=$(jq -c -r '.docker_registry_repo_default_app' $jsonFile)
@@ -205,32 +205,32 @@ avi_content_library_name=$(jq -c -r '.avi_content_library_name' $jsonFile)
 avi_ipam_first=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
 if [[ ${kind} == "vsphere-avi" ]]; then
-  gw_avi_se=$(jq -c -r --arg arg "AVI-SE-MGMT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  gw_avi_se=$(jq -c -r --arg arg "avi-se-mgmt" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   #
-  cidr_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-  cidr_app_prefix=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
+  cidr_app=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+  cidr_app_prefix=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
   if [[ ${cidr_app} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
     cidr_app_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
   fi
-  cidr_vip=$(jq -c -r --arg arg "AVI-VIP" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-  cidr_vip_prefix=$(jq -c -r --arg arg "AVI-VIP" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
+  cidr_vip=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+  cidr_vip_prefix=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
   if [[ ${cidr_vip} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
     cidr_vip_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
   fi
-  cidr_tanzu=$(jq -c -r --arg arg "TANZU" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-  cidr_tanzu_prefix=$(jq -c -r --arg arg "TANZU" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
+  cidr_tanzu=$(jq -c -r --arg arg "tanzu" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+  cidr_tanzu_prefix=$(jq -c -r --arg arg "tanzu" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
   if [[ ${cidr_tanzu} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
     cidr_tanzu_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
   fi
-  cidr_se_mgmt=$(jq -c -r --arg arg "AVI-SE-MGMT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
-  cidr_se_mgmt_prefix=$(jq -c -r --arg arg "AVI-SE-MGMT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
+  cidr_se_mgmt=$(jq -c -r --arg arg "avi-se-mgmt" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+  cidr_se_mgmt_prefix=$(jq -c -r --arg arg "avi-se-mgmt" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
   if [[ ${cidr_se_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
     cidr_se_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
   fi
   #
-  network_ref_app="AVI-APP-BACKEND"
+  network_ref_app="avi-app-backend"
   ip_avi_dns="${cidr_vip_three_octets}.${avi_ipam_first}"
-  ipam='{"networks": ["AVI-SE-MGMT", "AVI-APP-BACKEND", "AVI-VIP", "TANZU"]}'
+  ipam='{"networks": ["avi-se-mgmt", "avi-app-backend", "avi-vip", "tanzu"]}'
   networks_avi='[
               {
                 "avi_ipam_pool": "'${cidr_se_mgmt_three_octets}'.'${avi_ipam_first}'-'${cidr_se_mgmt_three_octets}'.'${avi_ipam_last}'",
@@ -238,7 +238,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": true,
-                "name": "AVI-SE-MGMT",
+                "name": "avi-se-mgmt",
                 "type": "V4"
               },
               {
@@ -247,7 +247,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": false,
-                "name": "AVI-VIP",
+                "name": "avi-vip",
                 "type": "V4"
               },
               {
@@ -256,7 +256,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": false,
-                "name": "AVI-APP-BACKEND",
+                "name": "avi-app-backend",
                 "type": "V4"
               },
               {
@@ -265,7 +265,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                 "dhcp_enabled": false,
                 "exclude_discovered_subnets": true,
                 "management": false,
-                "name": "TANZU",
+                "name": "tanzu",
                 "type": "V4"
               }
             ]'
@@ -294,7 +294,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                      "name": "app-avi",
                      "type": "V4",
                      "cidr": "'${cidr_vip_prefix}'",
-                     "network_ref": "AVI-VIP",
+                     "network_ref": "avi-vip",
                      "pool_ref": "pool1",
                      "se_group_ref": "private",
                      "services": [
@@ -313,7 +313,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                      "name": "app-waf",
                      "type": "V4",
                      "cidr": "'${cidr_vip_prefix}'",
-                     "network_ref": "AVI-VIP",
+                     "network_ref": "avi-vip",
                      "pool_ref": "pool2",
                      "se_group_ref": "private",
                      "services": [
@@ -332,7 +332,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                          "name": "app-dns",
                          "type": "V4",
                          "cidr": "'${cidr_vip_prefix}'",
-                         "network_ref": "AVI-VIP",
+                         "network_ref": "avi-vip",
                          "se_group_ref": "Default-Group",
                          "services": [{"port": 53}]
                        }'
@@ -365,11 +365,11 @@ supervisor_count_ip=$(jq -r '.spec.tanzu.supervisor_count_ip' $jsonFile)
 workload_starting_ip_last_octet=$(jq -r '.spec.tanzu.workload_starting_ip' $jsonFile)
 workload_count_ip=$(jq -r '.spec.tanzu.workload_count_ip' $jsonFile)
 if [[ ${kind} == "vsphere-avi" ]]; then
-  supervisor_network="TANZU"
-  worker_network="AVI-APP-BACKEND"
+  supervisor_network="tanzu"
+  worker_network="avi-app-backend"
   supervisor_starting_ip="${cidr_tanzu_three_octets}.${supervisor_starting_ip_last_octet}"
   workload_starting_ip="${cidr_app_three_octets}.${workload_starting_ip_last_octet}"
-  ip_gw_tanzu=$(jq -c -r --arg arg "TANZU" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
-  ip_gw_backend=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  ip_gw_tanzu=$(jq -c -r --arg arg "tanzu" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  ip_gw_backend=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 fi
 tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)

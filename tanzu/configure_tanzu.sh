@@ -68,7 +68,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   # Retrieve Network details of tanzu_worker_dvportgroup dvportgroup
   #
   retrieve_network_id_json_output="/home/ubuntu/tanzu/retrieve_network_id.json"
-  /bin/bash /nestedVsphere8/bash/vcenter/retrieve_network_id.sh \
+  /bin/bash /home/ubuntu/vcenter/retrieve_network_id.sh \
     "${api_host}" \
     "${ssoDomain}" \
     "${GENERIC_PASSWORD}" \
@@ -83,7 +83,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   if [ ! -s /home/ubuntu/tanzu/avi-ca.cert ] ; then exit ; fi
   avi_cert=$(jq -sR . /home/ubuntu/tanzu/avi-ca.cert)
   #
-  # create sypervisor cluster
+  # create supervisor cluster
   #
   /bin/bash /home/ubuntu/vcenter/create_supervisor_cluster_vds.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
     "${ip_gw}" \
