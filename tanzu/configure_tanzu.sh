@@ -27,7 +27,7 @@ create_subscribed_content_library_json_output="/home/ubuntu/tanzu/tanzu_content_
   "$(jq -c -r .tanzu.content_library.automatic_sync_enabled $jsonFile)" \
   "$(jq -c -r .tanzu.content_library.on_demand $jsonFile)" \
   "$(jq -c -r .tanzu.content_library.name $jsonFile)" \
-  "$(jq -c -r .tanzu.supervisor_cluster.datastore_ref $jsonFile)" \
+  "vsanDatastore" \
   "${create_subscribed_content_library_json_output}"
 content_library_id=$(jq -c -r .content_library_id ${create_subscribed_content_library_json_output})
 #
