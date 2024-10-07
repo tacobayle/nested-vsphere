@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+IFS=$'\n'
+#
+export KUBECTL_VSPHERE_PASSWORD=${kubectl_password}
+#
+/home/ubuntu/bin/kubectl-vsphere login --insecure-skip-tls-verify --vsphere-username administrator@${sso_domain_name} --server=https://${api_server_cluster_endpoint}

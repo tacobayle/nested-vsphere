@@ -6,10 +6,10 @@ log_file="/tmp/vcsa.log"
 source /home/ubuntu/bash/variables.sh
 echo '------------------------------------------------------------'
 echo "Creation of VCSA  - This should take about 45 minutes"
-download_file_from_url_to_location "${iso_vcenter_url}" "/home/ubuntu/$(basename ${iso_vcenter_url})" "VCSA ISO"
+download_file_from_url_to_location "${iso_vcenter_url}" "/home/ubuntu/bin/$(basename ${iso_vcenter_url})" "VCSA ISO"
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 echo "ISO VCSA downloaded"
-xorriso -ecma119_map lowercase -osirrox on -indev "/home/ubuntu/$(basename ${iso_vcenter_url})" -extract / /tmp/vcenter_cdrom_mount
+xorriso -ecma119_map lowercase -osirrox on -indev "/home/ubuntu/bin/$(basename ${iso_vcenter_url})" -extract / /tmp/vcenter_cdrom_mount
 cp -r /tmp/vcenter_cdrom_mount/vcsa-cli-installer/templates/install/vCSA_with_cluster_on_ESXi.json /home/ubuntu/json/
 rm -fr /tmp/vcenter_cdrom
 mkdir -p /tmp/vcenter_cdrom
@@ -57,7 +57,7 @@ do
 done
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vCenter host https://'${vcsa_name}'.'${domain}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 echo "vCenter host https://${vcsa_name}.${domain} reachable"
-rm -fr "/home/ubuntu/$(basename ${iso_vcenter_url})"
+rm -fr "/home/ubuntu/bin/$(basename ${iso_vcenter_url})"
 rm -fr /tmp/vcenter_cdrom_mount
 token=$(/bin/bash /home/ubuntu/vcenter/create_vcenter_api_session.sh "${vsphere_nested_username}" "${ssoDomain}" "${vsphere_nested_password}" "${api_host}")
 vcenter_api 6 10 "PUT" $token '{"enabled":true}' "${api_host}" "api/appliance/access/ssh"

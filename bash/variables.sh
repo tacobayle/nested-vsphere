@@ -37,6 +37,7 @@ disk_capacity=$(jq -c -r '.disks.capacity' $jsonFile)
 disk_cache=$(jq -c -r '.disks.cache' $jsonFile)
 esxi_basename=$(jq -c -r '.esxi_basename' $jsonFile)
 ip_vcsa=$(jq -c -r '.spec.vsphere.ip' $jsonFile)
+folders_to_copy=$(jq -c -r '.folders_to_copy' $jsonFile)
 ip_gw=$(jq -c -r '.spec.gw.ip' $jsonFile)
 ip_avi_dns=$(jq -c -r '.spec.gw.ip' $jsonFile)
 network_ref_gw=$(jq -c -r .spec.gw.network_ref $jsonFile)
@@ -103,11 +104,10 @@ if [[ $(jq -c -r .spec.avi.ip $jsonFile) != "null" ]]; then
   ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .spec.avi.ip $jsonFile)"
   ip_avi_last_octet=$(jq -c -r .spec.avi.ip $jsonFile)
 fi
-gw_avi=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
-gw_avi_se=$(jq -c -r --arg arg "AVI-SE-MGMT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
+gw_avi=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 avi_version=$(jq -c -r .spec.avi.version $jsonFile)
 import_sslkeyandcertificate_ca='[{"name": "'${vault_pki_intermediate_name}'",
                                   "cert": {"path": "'${vault_pki_intermediate_cert_path_signed}'"}},
@@ -205,6 +205,8 @@ avi_content_library_name=$(jq -c -r '.avi_content_library_name' $jsonFile)
 avi_ipam_first=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
 if [[ ${kind} == "vsphere-avi" ]]; then
+  gw_avi_se=$(jq -c -r --arg arg "AVI-SE-MGMT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  #
   cidr_app=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
   cidr_app_prefix=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
   if [[ ${cidr_app} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
@@ -343,13 +345,31 @@ fi
 #
 # NSX variables
 #
-folder_nsx=$(jq -c -r '.nsx_folder' $jsonFile)
-if [[ $(jq -c -r .spec.nsx.ip $jsonFile) != "null" ]]; then
-  ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
-  ip_nsx_last_octet=$(jq -c -r .spec.nsx.ip $jsonFile)
+if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+  folder_nsx=$(jq -c -r '.nsx.folder' $jsonFile)
+  if [[ $(jq -c -r .spec.nsx.ip $jsonFile) != "null" ]]; then
+    ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
+    ip_nsx_last_octet=$(jq -c -r .spec.nsx.ip $jsonFile)
+  fi
+  #netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
+  gw_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  nsx_manager_name=$(jq -c -r '.nsx.manager_name' $jsonFile)
+  network_nsx=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
+  nsx_ova_url=$(jq -c -r .spec.nsx.ova_url $jsonFile)
 fi
-#netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
-gw_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
-nsx_manager_name=$(jq -c -r '.nsx_manager_name' $jsonFile)
-network_nsx=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
-nsx_ova_url=$(jq -c -r .spec.nsx.ova_url $jsonFile)
+#
+# Tanzu variables
+#
+supervisor_starting_ip_last_octet=$(jq -r '.spec.tanzu.supervisor_starting_ip' $jsonFile)
+supervisor_count_ip=$(jq -r '.spec.tanzu.supervisor_count_ip' $jsonFile)
+workload_starting_ip_last_octet=$(jq -r '.spec.tanzu.workload_starting_ip' $jsonFile)
+workload_count_ip=$(jq -r '.spec.tanzu.workload_count_ip' $jsonFile)
+if [[ ${kind} == "vsphere-avi" ]]; then
+  supervisor_network="TANZU"
+  worker_network="AVI-APP-BACKEND"
+  supervisor_starting_ip="${cidr_tanzu_three_octets}.${supervisor_starting_ip_last_octet}"
+  workload_starting_ip="${cidr_app_three_octets}.${workload_starting_ip_last_octet}"
+  ip_gw_tanzu=$(jq -c -r --arg arg "TANZU" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  ip_gw_backend=$(jq -c -r --arg arg "AVI-APP-BACKEND" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+fi
+tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)

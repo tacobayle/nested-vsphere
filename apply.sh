@@ -164,23 +164,11 @@ if [[ ${operation} == "apply" ]] ; then
             chmod u+x /root/esxi_customization-$esxi.sh
             scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
           done
+          echo $folders_to_copy | jq -c -r .[] | while read folder
+          do
+            scp -o StrictHostKeyChecking=no -r /nested-vsphere/${folder} ubuntu@${ip_gw}:/home/ubuntu
+          done
           scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
-          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/vcsa.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/vcsa.sh
-          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/deploy_avi.sh ubuntu@${ip_gw}:/home/ubuntu/avi/deploy_avi.sh
-          scp -o StrictHostKeyChecking=no /nested-vsphere/ansible/vmk.yaml ubuntu@${ip_gw}:/home/ubuntu/vcenter/vmk.yaml
-          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/functions.sh ubuntu@${ip_gw}:/home/ubuntu/bash/functions.sh
-          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/create_vcenter_api_session.sh ubuntu@${ip_gw}:/home/ubuntu/vcenter/create_vcenter_api_session.sh
-          scp -o StrictHostKeyChecking=no /nested-vsphere/json/avi_spec.json ubuntu@${ip_gw}:/home/ubuntu/json/avi_spec.json
-          scp -o StrictHostKeyChecking=no /nested-vsphere/json/nsx_spec.json ubuntu@${ip_gw}:/home/ubuntu/json/nsx_spec.json
-          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/variables.sh ubuntu@${ip_gw}:/home/ubuntu/bash/variables.sh
-          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/userdata_app.yaml.template ubuntu@${ip_gw}:/home/ubuntu/templates/userdata_app.yaml.template
-          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/traffic_gen.sh.template ubuntu@${ip_gw}:/home/ubuntu/templates/traffic_gen.sh.template
-          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/options-app.json.template ubuntu@${ip_gw}:/home/ubuntu/templates/options-app.json.template
-          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/deploy_app.sh ubuntu@${ip_gw}:/home/ubuntu/app/deploy_app.sh
-          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/values_vcenter.yml.template ubuntu@${ip_gw}:/home/ubuntu/templates/values_vcenter.yml.template
-          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/avi_slack_cs.py.template ubuntu@${ip_gw}:/home/ubuntu/templates/avi_slack_cs.py.template
-          scp -o StrictHostKeyChecking=no /nested-vsphere/templates/control-script-vault.py ubuntu@${ip_gw}:/home/ubuntu/python/control-script-vault.py
-          scp -o StrictHostKeyChecking=no /nested-vsphere/bash/configure_avi.sh ubuntu@${ip_gw}:/home/ubuntu/avi/configure_avi.sh
           echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break
@@ -321,6 +309,15 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
+  #
+#  if [[ ${kind} == "vsphere-avi" ]]; then
+#    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+#    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+#    echo "Configuration of Tanzu - This should take about 45 minutes" >> ${log_file} 2>&1
+#    echo "running the following command from the gw: /home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+#    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+#    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+#  fi
 fi
 #
 #

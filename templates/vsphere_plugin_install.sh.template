@@ -1,0 +1,4 @@
+#!/bin/bash
+curl -k https://${api_server_cluster_endpoint}/wcp/plugin/linux-amd64/vsphere-plugin.zip -o /home/ubuntu/bin/vsphere-plugin.zip
+unzip -o /home/ubuntu/bin/vsphere-plugin.zip
+mv /home/ubuntu/bin/vsphere-plugin.zip /tmp/vsphere-plugin.zip

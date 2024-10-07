@@ -5,7 +5,8 @@
     "disk": "40G"
   },
   "K8s_version_short": "v1.28",
-  "directories": ["json", "esxi", "bash","vcenter","yaml-files", ".kube", "avi", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "tanzu", "unmanaged_k8s_clusters", "templates", "bin", "app", "python", ".ssh"],
+  "directories": ["esxi","yaml-files", ".kube", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "unmanaged_k8s_clusters", "templates", "bin", "python", ".ssh"],
+  "folders_to_copy": ["vcenter", "nsx", "avi", "app", "tanzu", "templates", "bash", "json"],
   "apt_packages": ["vault", "python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso", "expect", "iptables-persistent"],
   "pip3_packages": ["ansible-core==2.12.5", "ansible==5.7.1", "avisdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors", "pyvmomi"],
   "yaml_folder": "yaml-files",
@@ -39,7 +40,7 @@
   "vault": {
     "control_script": {
       "name": "vault_control_script",
-      "path": "/home/ubuntu/python/control-script-vault.py"
+      "path": "/home/ubuntu/templates/control-script-vault.py"
     },
     "certificate_mgmt_profile": {
       "name": "vault_cert_profile"
@@ -247,9 +248,139 @@
   "app_tcp_waf" : 8080,
   "app_cpu": 2,
   "app_memory": 2048,
-  "nsx_folder": "nsx-manager",
-  "nsx_manager_name": "nsx-manager-01",
+  "nsx": {
+    "folder": "nsx-manager",
+    "manager_name": "nsx-manager-01",
+    "config" : {
+      "edge_node": {
+        "size": "medium",
+        "basename": "edge-0",
+        "description": "number of edge deployed based on .vsphere_underlay.networks.vsphere.management.nsx_edge_nested_ips"
+      },
+      "edge_clusters":
+      [
+        {
+          "display_name": "edge-cluster-01",
+          "members_name": [
+            "edge-01",
+            "edge-02"
+          ]
+        }
+      ],
+      "tier0s":
+      [
+        {
+          "display_name": "tier0",
+          "edge_cluster_name": "edge-cluster-01"
+        }
+      ],
+      "tier1s":
+      [
+        {
+          "tier0": "tier0",
+          "display_name": "tier1-A",
+          "edge_cluster_name": "edge-cluster-01",
+          "ha_mode": "ACTIVE_STANDBY",
+          "lb": true
+        },
+        {
+          "tier0": "tier0",
+          "display_name": "tier1-B"
+        }
+      ],
+      "segments_overlay":
+      [
+        {
+          "display_name": "segment-mgmt-avi",
+          "tier1": "tier1-A",
+          "cidr": "100.100.11.0/24",
+          "dhcp_ranges": ["100.100.11.50-100.100.11.99"]
+        },
+        {
+          "display_name": "segment-mgmt-tanzu-supervisor",
+          "tier1": "tier1-A",
+          "cidr": "100.100.12.0/24",
+          "tanzu_supervisor_starting_ip": "100.100.12.130",
+          "tanzu_supervisor_count": 5,
+          "dhcp_ranges": ["100.100.12.50-100.100.12.99"]
+        },
+        {
+          "display_name": "segment-server-1",
+          "tier1": "tier1-A",
+          "cidr": "100.100.21.0/24",
+          "dhcp_ranges": ["100.100.21.50-100.100.21.99"],
+          "app_ips": ["100.100.21.11", "100.100.21.12"],
+          "lbaas_private": true
+        },
+        {
+          "display_name": "segment-server-2",
+          "tier1": "tier1-A",
+          "cidr": "100.100.22.0/24",
+          "dhcp_ranges": ["100.100.22.50-100.100.22.99"],
+          "app_ips": ["100.100.22.11"],
+          "lbaas_public": true
+        },
+        {
+          "display_name": "segment-vip-1",
+          "tier1": "tier1-A",
+          "cidr": "100.100.31.0/24",
+          "dhcp_ranges": ["100.100.31.50-100.100.31.99"]
+        },
+        {
+          "display_name": "segment-vip-2",
+          "tier1": "tier1-B",
+          "cidr": "100.100.32.0/24",
+          "dhcp_ranges": ["100.100.32.50-100.100.32.99"]
+        }
+      ]
+    }
+  },
   "tanzu": {
-    "cert": "tanzu-cert"
+    "cert": "tanzu-cert",
+    "supervisor_cluster": {
+      "size": "TINY",
+      "service_cidr": "10.96.0.0/23"
+    },
+    "content_library": {
+      "subscription_url": "https://wp-content.vmware.com/v2/latest/lib.json",
+      "name": "tanzu-cl",
+      "type": "SUBSCRIBED",
+      "automatic_sync_enabled": true,
+      "on_demand": true
+    },
+    "storage_policy_name": "vSAN Default Storage Policy",
+    "vm_classes": [
+      "best-effort-2xlarge",
+      "guaranteed-small",
+      "best-effort-4xlarge",
+      "best-effort-8xlarge",
+      "best-effort-xsmall",
+      "guaranteed-large",
+      "guaranteed-medium",
+      "best-effort-large",
+      "best-effort-medium",
+      "best-effort-xlarge",
+      "guaranteed-2xlarge",
+      "guaranteed-4xlarge",
+      "best-effort-small",
+      "guaranteed-8xlarge",
+      "guaranteed-xlarge",
+      "guaranteed-xsmall"
+    ],
+    "namespaces": [
+      {
+        "name": "tenant-1"
+      },
+      {
+        "name": "tenant-2",
+        "namespace_cidr": "100.100.66.0/23",
+        "namespace_tier0": "tier0",
+        "prefix_per_namespace": "26",
+        "ingress_cidr": "100.100.134.0/24"
+      },
+      {
+        "name": "tenant-3"
+      }
+    ]
   }
 }
