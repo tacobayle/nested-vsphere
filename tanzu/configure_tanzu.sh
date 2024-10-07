@@ -143,14 +143,14 @@ sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
 for ns in $(echo ${tanzu_namespaces} | jq -c -r .[])
 do
   if [[ ${kind} == "vsphere-avi" ]]; then
-    /bin/bash /nestedVsphere8/bash/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+    /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
               "$(jq -r .tanzu.vm_classes $jsonFile)" \
               "${storage_policy_id}" \
               "$(echo $ns | jq -c -r .name)"
   fi
   if [[ ${kind} == "vsphere-nsx-avi" ]]; then
     if $(echo $ns | jq -e '.ingress_cidr' > /dev/null) ; then
-      /bin/bash /nestedVsphere8/bash/vcenter/create_namespaces_nsx_overwrite_network.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+      /bin/bash /home/ubuntu/vcenter/create_namespaces_nsx_overwrite_network.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
                 "$(jq -r .tanzu.vm_classes $jsonFile)" \
                 "${storage_policy_id}" \
                 "$(echo $ns | jq -c -r .name)" \
@@ -162,7 +162,7 @@ do
                 "$(echo $ns | jq -c -r .prefix_per_namespace)"
     fi
   else
-    /bin/bash /nestedVsphere8/bash/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+    /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
               "$(jq -r .tanzu.vm_classes $jsonFile)" \
               "${storage_policy_id}" \
               "$(echo $ns | jq -c -r .name)"
