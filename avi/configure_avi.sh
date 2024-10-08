@@ -33,7 +33,7 @@ sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
     -e "s/\${vsphere_server}/${api_host}/" \
     -e "s/\${external_gw_ip}/${gw_avi}/" \
-    -e "s/\${static_routes}/${avi_static_routes}/" \
+    -e "s@\${static_routes}@$(echo ${avi_static_routes} | jq -c -r .)@" \
     -e "s@\${import_sslkeyandcertificate_ca}@$(echo ${import_sslkeyandcertificate_ca} | jq -c -r '.')@" \
     -e "s@\${certificatemanagementprofile}@$(echo ${certificatemanagementprofile} | jq -c -r '.')@" \
     -e "s@\${alertscriptconfig}@$(echo ${alertscriptconfig} | jq -c -r '.')@" \

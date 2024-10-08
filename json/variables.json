@@ -185,7 +185,7 @@
   "avi_subdomain" : "app",
   "avi_config_repo": "https://github.com/tacobayle/ansibleAviConfig",
   "playbook_vcenter": "vcenter.yml",
-  "tag_vcenter": "v2.26",
+  "tag_vcenter": "v2.27",
   "service_engine_groups": [
     {
       "name": "Default-Group",
