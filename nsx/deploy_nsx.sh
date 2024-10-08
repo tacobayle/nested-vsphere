@@ -64,6 +64,8 @@ else
   govc vm.power -on=true "${nsx_manager_name}" > /dev/null
   echo "NSX Manager deployed"
   if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX Manager deployed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  echo "  +++ pausing for 180 seconds"
+  sleep 180
   #
   # NSX HTTPS check
   #
