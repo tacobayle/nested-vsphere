@@ -16,7 +16,6 @@ vsphere_username: ${vsphere_username}
 vsphere_password: ${vsphere_password}
 vsphere_server: ${vsphere_server}
 external_gw_ip: ${external_gw_ip}
-default_route_se_management: ${external_gw_se_ip}
 import_sslkeyandcertificate_ca: |
   ${import_sslkeyandcertificate_ca}
 certificatemanagementprofile: |
@@ -47,6 +46,8 @@ vcenter:
       id: ${content_library_id}
       name: ${content_library_name}
     dhcp_enabled: false
+    static_routes: |
+      ${static_routes}
     networks: |
       ${networks}
     contexts: |

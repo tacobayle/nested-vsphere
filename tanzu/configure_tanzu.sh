@@ -109,6 +109,45 @@ if [[ ${kind} == "vsphere-avi" ]]; then
     "${cluster_id}"
 fi
 #
+# vsphere-nsx-avi use case
+#
+if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  #
+  # retrieve edge cluster id
+  #
+  retrieve_network_id_json_output="/home/ubuntu/tanzu/retrieve_namespace_edge_cluster_id.json"
+  /bin/bash /home/ubuntu/nsx/get_edge_cluster.sh \
+           "${ip_nsx}" \
+           "${GENERIC_PASSWORD}" \
+           "$(jq -r .nsx.config.edge_clusters[0].display_name $jsonFile)" \
+           "${retrieve_network_id_json_output}"
+  namespace_edge_cluster_id=$(jq -c -r .namespace_edge_cluster_id ${retrieve_network_id_json_output})
+  #
+  # create supervisor cluster
+  #
+  /bin/bash /home/ubuntu/vcenter/create_supervisor_cluster_nsx.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+            "${content_library_id}" \
+            "${storage_policy_id}" \
+            "${ip_gw}" \
+            "$(jq -r .tanzu.supervisor_cluster.size $jsonFile)" \
+            "$(jq -r .tanzu.supervisor_cluster.service_cidr $jsonFile | cut -d"/" -f1)" \
+            "$(jq -r .tanzu.supervisor_cluster.service_cidr $jsonFile | cut -d"/" -f2)" \
+            "$(ip_netmask_by_prefix $(echo ${management_tanzu_cidr} | cut -d"/" -f2) "   ++++++")" \
+            "${management_tanzu_supervisor_starting_ip}" \
+            "$(nextip $(echo ${management_tanzu_cidr} | cut -d"/" -f1 ))" \
+            "${management_tanzu_supervisor_count}" \
+            "${tanzu_supervisor_dvportgroup}" \
+            "$(jq -c -r .vds_network_nsx_overlay_id /root/vds_network_nsx_overlay_id.json)" \
+            "$(jq -r .tanzu.supervisor_cluster.namespace_cidr $jsonFile | cut -d"/" -f1)" \
+            "$(jq -r .tanzu.supervisor_cluster.namespace_cidr $jsonFile | cut -d"/" -f2)" \
+            "$(jq -r .tanzu.supervisor_cluster.namespace_tier0 $jsonFile)" \
+            "${namespace_edge_cluster_id}" \
+            "$(jq -r .tanzu.supervisor_cluster.prefix_per_namespace $jsonFile)" \
+            "$(jq -r .tanzu.supervisor_cluster.ingress_cidr $jsonFile | cut -d"/" -f1)" \
+            "$(jq -r .tanzu.supervisor_cluster.ingress_cidr $jsonFile | cut -d"/" -f2)" \
+            "${cluster_id}"
+fi
+#
 # Wait for supervisor cluster to be running
 #
 /bin/bash /home/ubuntu/vcenter/wait_for_supervisor_cluster.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}"

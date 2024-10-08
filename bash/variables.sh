@@ -206,6 +206,23 @@ avi_ipam_first=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
 if [[ ${kind} == "vsphere-avi" ]]; then
   gw_avi_se=$(jq -c -r --arg arg "avi-se-mgmt" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  gw_avi_vip=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  avi_static_routes='[
+                       {
+                         "vrf_name": "management",
+                         "addr": "0.0.0.0",
+                         "type": "V4",
+                         "mask": "0",
+                         "next_hop": "'${gw_avi_se}'"
+                       },
+                       {
+                         "vrf_name": "global",
+                         "addr": "0.0.0.0",
+                         "type": "V4",
+                         "mask": "0",
+                         "next_hop": "'${gw_avi_vip}'"
+                       }
+                     ]'
   #
   cidr_app=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
   cidr_app_prefix=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
@@ -230,7 +247,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   #
   network_ref_app="avi-app-backend"
   ip_avi_dns="${cidr_vip_three_octets}.${avi_ipam_first}"
-  ipam='{"networks": ["avi-se-mgmt", "avi-app-backend", "avi-vip", "tanzu"]}'
+  ipam='{"networks": ["avi-vip"]}'
   networks_avi='[
               {
                 "avi_ipam_pool": "'${cidr_se_mgmt_three_octets}'.'${avi_ipam_first}'-'${cidr_se_mgmt_three_octets}'.'${avi_ipam_last}'",
@@ -356,6 +373,40 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   nsx_manager_name=$(jq -c -r '.nsx.manager_name' $jsonFile)
   network_nsx=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
   nsx_ova_url=$(jq -c -r .spec.nsx.ova_url $jsonFile)
+  supernet_overlay=$(jq -c -r '.spec.nsx.supernet_overlay' $jsonFile)
+  supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
+  supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
+  segments_overlay="[]"
+  segment_count=0
+  for i in $(seq ${supernet_overlay_third_octet} $((${supernet_overlay_third_octet} + $(jq '.nsx.config.segments_overlay | length' $jsonFile) - 1)))
+  do
+    cidr="${supernet_first_two_octets}.$i.0/24"
+    cidr_three_octets="${supernet_first_two_octets}.$i."
+    segments_overlay=$(echo ${segments_overlay} | jq '. + [{"cidr": "'${cidr}'",
+                                                     "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
+                                                     "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
+                                                     "dhcp_ranges": ["'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f1)'-'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f2)'"]
+                                                     }]')
+
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.tanzu_supervisor_starting_ip' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"tanzu_supervisor_starting_ip": "'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_starting_ip' $jsonFile)'"}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.tanzu_supervisor_count' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"tanzu_supervisor_count": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_count' $jsonFile)'"}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.app_ips' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"app_ips": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].app_ips' $jsonFile)'"}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_private' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"lbaas_private": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_private' $jsonFile)'}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_public' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"lbaas_private": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_public' $jsonFile)'}')
+    fi
+    ((segment_count++))
+  done
+  segment_overlay_file=$(jq -c -r '.nsx.config.segment_overlay_file' $jsonFile)
+  echo ${segments_overlay} | tee ${segment_overlay_file}
 fi
 #
 # Tanzu variables
@@ -371,5 +422,11 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   workload_starting_ip="${cidr_app_three_octets}.${workload_starting_ip_last_octet}"
   ip_gw_tanzu=$(jq -c -r --arg arg "tanzu" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   ip_gw_backend=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+fi
+if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  management_tanzu_segment=$(jq '.nsx.config.segments_overlay[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).display_name' ${segment_overlay_file})
+  management_tanzu_cidr=$(jq '.nsx.config.segments_overlay[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).cidr' ${segment_overlay_file})
+  management_tanzu_supervisor_starting_ip=$(jq '.nsx.config.segments_overlay[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_starting_ip' ${segment_overlay_file})
+  management_tanzu_supervisor_count=$(jq '.nsx.config.segments_overlay[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_count' ${segment_overlay_file})
 fi
 tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)

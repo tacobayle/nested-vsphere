@@ -185,7 +185,7 @@
   "avi_subdomain" : "app",
   "avi_config_repo": "https://github.com/tacobayle/ansibleAviConfig",
   "playbook_vcenter": "vcenter.yml",
-  "tag_vcenter": "v2.25",
+  "tag_vcenter": "v2.26",
   "service_engine_groups": [
     {
       "name": "Default-Group",
@@ -274,61 +274,60 @@
       [
         {
           "tier0": "tier0",
-          "display_name": "tier1-A",
+          "display_name": "tier1-01",
           "edge_cluster_name": "edge-cluster-01",
           "ha_mode": "ACTIVE_STANDBY",
           "lb": true
         },
         {
           "tier0": "tier0",
-          "display_name": "tier1-B"
+          "display_name": "tier1-02"
+        },
+        {
+          "tier0": "tier0",
+          "display_name": "tier1-03"
         }
       ],
       "segments_overlay":
       [
         {
           "display_name": "segment-mgmt-avi",
-          "tier1": "tier1-A",
-          "cidr": "100.100.11.0/24",
-          "dhcp_ranges": ["100.100.11.50-100.100.11.99"]
+          "tier1": "tier1-01",
+          "dhcp_ranges": ["50-99"]
         },
         {
           "display_name": "segment-mgmt-tanzu-supervisor",
-          "tier1": "tier1-A",
-          "cidr": "100.100.12.0/24",
-          "tanzu_supervisor_starting_ip": "100.100.12.130",
+          "tier1": "tier1-01",
+          "tanzu_supervisor_starting_ip": "130",
           "tanzu_supervisor_count": 5,
-          "dhcp_ranges": ["100.100.12.50-100.100.12.99"]
+          "dhcp_ranges": ["50-99"]
         },
         {
           "display_name": "segment-server-1",
-          "tier1": "tier1-A",
-          "cidr": "100.100.21.0/24",
-          "dhcp_ranges": ["100.100.21.50-100.100.21.99"],
-          "app_ips": ["100.100.21.11", "100.100.21.12"],
+          "tier1": "tier1-01",
+          "dhcp_ranges": ["50-99"],
+          "app_ips": ["11", "12"],
           "lbaas_private": true
         },
         {
           "display_name": "segment-server-2",
-          "tier1": "tier1-A",
-          "cidr": "100.100.22.0/24",
-          "dhcp_ranges": ["100.100.22.50-100.100.22.99"],
-          "app_ips": ["100.100.22.11"],
+          "tier1": "tier1-01",
+          "dhcp_ranges": ["50-99"],
+          "app_ips": ["11"],
           "lbaas_public": true
         },
         {
           "display_name": "segment-vip-1",
-          "tier1": "tier1-A",
-          "cidr": "100.100.31.0/24",
-          "dhcp_ranges": ["100.100.31.50-100.100.31.99"]
+          "tier1": "tier1-01",
+          "dhcp_ranges": ["50-99"]
         },
         {
           "display_name": "segment-vip-2",
-          "tier1": "tier1-B",
-          "cidr": "100.100.32.0/24",
-          "dhcp_ranges": ["100.100.32.50-100.100.32.99"]
+          "tier1": "tier1-02",
+          "dhcp_ranges": ["50-99"]
         }
-      ]
+      ],
+      "segment_overlay_file": "/home/ubuntu/nsx/segments_overlay.json"
     }
   },
   "tanzu": {
