@@ -92,22 +92,26 @@ def on_delete(body, **kwargs):
         raise kopf.PermanentError(f'Failed to delete external resource: {e}')
 
 
-#
-# @kopf.on.create('nsx')
-# def on_create(body, **kwargs):
-#     body = body
-#     try:
-#         create_nsx(body)
-#     except requests.RequestException as e:
-#         raise kopf.PermanentError(f'Failed to create external resource: {e}')
-#
-# @kopf.on.delete('nsx')
-# def on_delete(body, **kwargs):
-#     body = body
-#     try:
-#         delete_nsx(body)
-#     except requests.RequestException as e:
-#         raise kopf.PermanentError(f'Failed to delete external resource: {e}')
+
+@kopf.on.create('vsphere-nsx')
+def on_create(body, **kwargs):
+    metadata = body['metadata']
+    spec = body['spec']
+    kind = body['kind']
+    try:
+        create_vsphere(metadata, spec, kind)
+    except requests.RequestException as e:
+        raise kopf.PermanentError(f'Failed to create external resource: {e}')
+
+@kopf.on.delete('vsphere-nsx')
+def on_delete(body, **kwargs):
+    metadata = body['metadata']
+    spec = body['spec']
+    kind = body['kind']
+    try:
+        delete_vsphere(metadata, spec, kind)
+    except requests.RequestException as e:
+        raise kopf.PermanentError(f'Failed to delete external resource: {e}')
 # #
 # @kopf.on.create('nsx-avi')
 # def on_create(body, **kwargs):
