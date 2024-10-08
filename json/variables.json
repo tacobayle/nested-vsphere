@@ -138,15 +138,15 @@
   ],
   "port_groups_nsx": [
     {
-      "name": "NSX-EXTERNAL",
+      "name": "nsx-external",
       "vds_ref": "vds1"
     },
     {
-      "name": "NSX-OVERLAY",
+      "name": "nsx-overlay",
       "vds_ref": "vds1"
     },
     {
-      "name": "NSX-OVERLAY-EDGE",
+      "name": "nsx-overlay-edge",
       "vds_ref": "vds1"
     }
   ],

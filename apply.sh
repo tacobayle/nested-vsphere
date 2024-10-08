@@ -318,6 +318,15 @@ if [[ ${operation} == "apply" ]] ; then
 #    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
 #    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
 #  fi
+  #
+#  if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+#    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+#    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+#    echo "Creation of NSX Manager - This should take about 20 minutes" >> ${log_file} 2>&1
+#    echo "running the following command from the gw: /home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+#    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+#    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+#  fi
 fi
 #
 #

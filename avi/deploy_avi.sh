@@ -30,12 +30,15 @@ else
   echo "Ending timestamp: $(date)"
 fi
 #
-# Avi options
+#
 #
 list_vm=$(govc find -json vm -name "${avi_ctrl_name}")
 if [[ ${list_vm} != "null" ]] ; then
   echo "ERROR: unable to create VM ${avi_ctrl_name}: it already exists"
 else
+  #
+  # Avi options
+  #
   avi_options=$(jq -c -r '.' /home/ubuntu/json/avi_spec.json)
   avi_options=$(echo ${avi_options} | jq '. += {"IPAllocationPolicy": "fixedPolicy"}')
   avi_options=$(echo ${avi_options} | jq '.PropertyMapping[0] += {"Value": "'${ip_avi}'"}')
