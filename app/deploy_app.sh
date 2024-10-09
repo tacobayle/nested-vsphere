@@ -21,7 +21,7 @@ fi
 # content library creation
 #
 govc library.create ubuntu
-govc library.import lbaas "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
+govc library.import ubuntu "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
 #
 # folder creation for app
 #
