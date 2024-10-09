@@ -126,7 +126,7 @@ if [[ ${ips_app_second} != "null" ]]; then
         -e "s/\${vm_name}/${app_basename_second}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-second-${index}.json"
     #
 #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
-    govc library.deploy -options "/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
+    govc library.deploy -options "/home/ubuntu/app/options-app-second-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
     govc vm.change -vm "${folder_app}/${app_basename_second}${index}" -c ${app_cpu} -m ${app_memory}
     govc vm.power -on=true "${folder_app}/${app_basename}${index}"
   done
