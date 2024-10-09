@@ -122,9 +122,9 @@ if [[ ${operation} == "apply" ]] ; then
     #
     sed -e "s#\${public_key}#$(awk '{printf "%s\\n", $0}' /root/.ssh/id_rsa.pub | awk '{length=$0; print substr($0, 1, length-2)}')#" \
         -e "s@\${base64_userdata}@$(base64 /tmp/${gw_name}_userdata.yaml -w 0)@" \
-        -e "s/\${EXTERNAL_GW_PASSWORD}/${GENERIC_PASSWORD}/" \
+        -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s@\${network_ref}@${network_ref_gw}@" \
-        -e "s/\${gw_name}/${gw_name}/" /nested-vsphere/templates/options-gw.json.template | tee "/tmp/options-${gw_name}.json"
+        -e "s/\${vm_name}/${gw_name}/" /nested-vsphere/templates/options-ubuntu.json.template | tee "/tmp/options-${gw_name}.json"
     #
     govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ubuntu_ova_url})" >> ${log_file} 2>&1
     govc vm.change -vm "${folder}/${gw_name}" -c $(jq -c -r .gw.cpu $jsonFile) -m $(jq -c -r .gw.memory $jsonFile)
@@ -283,6 +283,15 @@ if [[ ${operation} == "apply" ]] ; then
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
+  if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Creation of NSX Manager - This should take about 20 minutes" >> ${log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+  fi
+  #
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
@@ -319,14 +328,6 @@ if [[ ${operation} == "apply" ]] ; then
 #    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
 #  fi
   #
-#  if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
-#    echo '------------------------------------------------------------' >> ${log_file} 2>&1
-#    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-#    echo "Creation of NSX Manager - This should take about 20 minutes" >> ${log_file} 2>&1
-#    echo "running the following command from the gw: /home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-#    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-#    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
-#  fi
 fi
 #
 #

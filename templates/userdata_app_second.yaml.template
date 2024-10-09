@@ -47,14 +47,7 @@ write_files:
       # Apache
       #
       mv /var/www/html/index.html /var/www/html/index.html.old
-      echo -e "Hello World - Version 1.0 - Node is $(hostname) - IP is ${ip_app}" | sudo tee /var/www/html/index.html
-      #
-      # Docker
-      #
-      sudo usermod -a -G docker ubuntu
-      docker login --username ${docker_registry_username} --password ${docker_registry_password}
-      docker run -d -p ${app_tcp_default}:80 ${docker_registry_repo_default_app}
-      docker run --name hackazon -d -p ${app_tcp_waf}:80 ${docker_registry_repo_waf} supervisord -n
+      echo -e "Hello World - Version 2.0 - Node is $(hostname) - IP is ${ip_app}" | sudo tee /var/www/html/index.html
       #
       # End of cloud init
       #

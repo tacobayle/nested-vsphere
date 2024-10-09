@@ -84,18 +84,30 @@ iso_vcenter_url=$(jq -c -r .spec.vsphere.iso_url $jsonFile)
 #
 # App variables
 #
-prefix_app=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
-gw_app=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 app_basename=$(jq -c -r '.app_basename' $jsonFile)
+app_basename_second=$(jq -c -r '.app_basename_second' $jsonFile)
 app_apt_packages=$(jq -c -r '.app_apt_packages' $jsonFile)
 docker_registry_repo_default_app=$(jq -c -r '.docker_registry_repo_default_app' $jsonFile)
 docker_registry_repo_waf=$(jq -c -r '.docker_registry_repo_waf' $jsonFile)
 folder_app=$(jq -c -r '.folder_app' $jsonFile)
 app_cpu=$(jq -c -r '.app_cpu' $jsonFile)
 app_memory=$(jq -c -r '.app_memory' $jsonFile)
-ips_app=$(jq -c -r '.spec.avi.app.ips' $jsonFile)
+ips_app=$(jq -c -r '.spec.avi.app.first.ips' $jsonFile)
+ips_app_second=$(jq -c -r '.spec.avi.app.second.ips' $jsonFile)
 app_tcp_default=$(jq -c -r '.app_tcp_default' $jsonFile)
 app_tcp_waf=$(jq -c -r '.app_tcp_waf' $jsonFile)
+folder_client=$(jq -c -r '.folder_client' $jsonFile)
+ips_clients=$(jq -c -r '.spec.avi.client.ips' $jsonFile)
+client_basename=$(jq -c -r '.client_basename' $jsonFile)
+client_cpu=$(jq -c -r '.client_cpu' $jsonFile)
+client_memory=$(jq -c -r '.client_memory' $jsonFile)
+if [[ ${kind} == "vsphere-avi" ]]; then
+  prefix_app=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
+  gw_app=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  prefix_client=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
+  gw_client=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  network_ref_client="avi-vip"
+fi
 #
 # Avi variables
 #
@@ -295,13 +307,20 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   virtual_services_dns="[]"
   pool='{
               "name": "pool1",
-              "default_server_port": '${app_tcp_default}',
+              "default_server_port": 80,
               "type": "V4",
               "avi_app_server_ips": '${ips_app_full}'
             }'
   pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
   pool='{
               "name": "pool2",
+              "default_server_port": '${app_tcp_default}',
+              "type": "V4",
+              "avi_app_server_ips": '${ips_app_full}'
+            }'
+  pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+  pool='{
+              "name": "pool3",
               "default_server_port": '${app_tcp_waf}',
               "type": "V4",
               "avi_app_server_ips": '${ips_app_full}'
@@ -312,7 +331,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                      "type": "V4",
                      "cidr": "'${cidr_vip_prefix}'",
                      "network_ref": "avi-vip",
-                     "pool_ref": "pool1",
+                     "pool_ref": "pool2",
                      "se_group_ref": "private",
                      "services": [
                                    {
@@ -331,7 +350,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
                      "type": "V4",
                      "cidr": "'${cidr_vip_prefix}'",
                      "network_ref": "avi-vip",
-                     "pool_ref": "pool2",
+                     "pool_ref": "pool3",
                      "se_group_ref": "private",
                      "services": [
                                    {

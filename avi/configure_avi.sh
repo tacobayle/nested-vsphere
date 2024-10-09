@@ -17,6 +17,22 @@ do
   govc folder.create /${dc}/vm/${item}
 done
 #
+# Avi HTTPS check
+#
+count=1
+until $(curl --output /dev/null --silent --head -k https://${ip_avi})
+do
+  echo "  +++ Attempt ${count}: Waiting for Avi ctrl at https://${ip_avi} to be reachable..."
+  sleep 10
+  count=$((count+1))
+    if [[ "${count}" -eq 60 ]]; then
+      echo "  +++ ERROR: Unable to connect to Avi ctrl at https://${ip_avi}"
+      exit
+    fi
+done
+echo "Avi ctrl reachable at https://${ip_avi}"
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl reachable at https://'${ip_avi}'"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#
 # templating python control script
 #
 sed -e "s@\${webhook_url}@${SLACK_WEBHOOK_URL_AVI}@" /home/ubuntu/templates/avi_slack_cs.py.template | tee $(jq -c -r .avi_slack.path $jsonFile)
