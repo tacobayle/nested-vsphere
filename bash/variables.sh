@@ -327,6 +327,25 @@ if [[ ${kind} == "vsphere-avi" ]]; then
             }'
   pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
   virtual_service_http='{
+                     "name": "app-hello-world",
+                     "type": "V4",
+                     "cidr": "'${cidr_vip_prefix}'",
+                     "network_ref": "avi-vip",
+                     "pool_ref": "pool1",
+                     "se_group_ref": "private",
+                     "services": [
+                                   {
+                                     "port": 80,
+                                     "enable_ssl": false
+                                    },
+                                    {
+                                      "port": 443,
+                                      "enable_ssl": true
+                                    }
+                     ]
+                   }'
+  virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+  virtual_service_http='{
                      "name": "app-avi",
                      "type": "V4",
                      "cidr": "'${cidr_vip_prefix}'",

@@ -137,7 +137,7 @@ fi
 if [[ ${ips_clients} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
   do
-    ip_client="${cidr_app_three_octets}.$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
+    ip_client="${cidr_vip_three_octets}.$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
     # ssh check
     retry=60 ; pause=10 ; attempt=1
     while true ; do
@@ -153,6 +153,7 @@ if [[ ${ips_clients} != "null" ]]; then
       ((attempt++))
       if [ $attempt -eq $retry ]; then
         echo "VM client ${ip_client} is not reachable after $attempt attempt"
+        break
       fi
       sleep $pause
     done
@@ -177,6 +178,7 @@ if [[ ${ips_app} != "null" ]]; then
         break
       else
         echo "VM app ${ip_app} is not reachable."
+        break
       fi
       ((attempt++))
       if [ $attempt -eq $retry ]; then
@@ -209,6 +211,7 @@ if [[ ${ips_app_second} != "null" ]]; then
       ((attempt++))
       if [ $attempt -eq $retry ]; then
         echo "VM app ${ip_app} is not reachable after $attempt attempt"
+        break
       fi
       sleep $pause
     done

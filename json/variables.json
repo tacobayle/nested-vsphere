@@ -240,7 +240,7 @@
   "app_basename": "app0",
   "app_basename_second": "app1",
   "client_basename": "client0",
-  "app_apt_packages": ["docker.io", "apache2"],
+  "app_apt_packages": ["docker.io", "apache2", "jq"],
   "docker_registry_repo_default_app" : "tacobayle/avi_app",
   "app_tcp_default" : 8080,
   "docker_registry_repo_waf" : "mutzel/all-in-one-hackazon:postinstall",

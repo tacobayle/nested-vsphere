@@ -85,10 +85,28 @@ echo '        '${ip_avi}':' | tee -a hosts_avi
 /home/ubuntu/.local/bin/ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/values_vcenter.yml
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl '${ip_app}' has been configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #
-# traffic gen
+# traffic gen from gw
 #
 sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
-    -e "s/\${avi_username}/admin/" /home/ubuntu/templates/traffic_gen.sh.template | tee /home/ubuntu/avi/traffic_gen.sh
-chmod u+x /home/ubuntu/avi/traffic_gen.sh
-crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/avi/traffic_gen.sh" | crontab -
+    -e "s/\${avi_username}/admin/" /home/ubuntu/templates/traffic_gen_gw.sh.template | tee /home/ubuntu/avi/traffic_gen_gw.sh
+chmod u+x /home/ubuntu/avi/traffic_gen_gw.sh
+crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/avi/traffic_gen_gw.sh" | crontab -
+#
+# traffic gen from clients
+#
+sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
+    -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
+    -e "s/\${avi_username}/admin/" /home/ubuntu/templates/traffic_gen_client.sh.template | tee /home/ubuntu/avi/traffic_gen_client.sh
+chmod u+x /home/ubuntu/avi/traffic_gen_client.sh
+if [[ ${ips_clients} != "null" ]]; then
+  for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
+  do
+    ip_client="${cidr_vip_three_octets}.$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
+    scp -o StrictHostKeyChecking=no /home/ubuntu/json/loopback_ips.json ubuntu@${ip_client}:/home/ubuntu/loopback_ips.json
+    scp -o StrictHostKeyChecking=no /home/ubuntu/json/user_agents.json ubuntu@${ip_client}:/home/ubuntu/user_agents.json
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_client} "jq -c -r '.[]' /home/ubuntu/loopback_ips.json | while read ip ; do sudo ip a add \$ip dev lo: ; done"
+    scp -o StrictHostKeyChecking=no /home/ubuntu/avi/traffic_gen_client.sh ubuntu@${ip_client}:/home/ubuntu/traffic_gen_client.sh
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_client} 'crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/traffic_gen_client.sh" | crontab -'
+  done
+fi
