@@ -430,6 +430,7 @@ fi
 #
 # Tanzu variables
 #
+configure_tanzu=$(jq -r '.spec.tanzu.configure_tanzu' $jsonFile)
 supervisor_starting_ip_last_octet=$(jq -r '.spec.tanzu.supervisor_starting_ip' $jsonFile)
 supervisor_count_ip=$(jq -r '.spec.tanzu.supervisor_count_ip' $jsonFile)
 workload_starting_ip_last_octet=$(jq -r '.spec.tanzu.workload_starting_ip' $jsonFile)
