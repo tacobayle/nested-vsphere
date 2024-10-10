@@ -2,7 +2,6 @@
 #
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
-log_file="/tmp/vcsa.log"
 source /home/ubuntu/bash/variables.sh
 echo '------------------------------------------------------------'
 echo "Creation of VCSA  - This should take about 45 minutes"
@@ -254,5 +253,18 @@ do
     govc host.esxcli vsan storage add --disks "${disk_capacity}" -s "${disk_cache}" > /dev/null
   fi
 done
+#
+# vsan health alarm suppression // required for tanzu
+#
+sed -e "s/\${vsphere_username}/${vsphere_nested_username}/" \
+    -e "s/\${ssoDomain}/${ssoDomain}/" \
+    -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
+    -e "s/\${vsphere_server}/${api_host}/" \
+    -e "s@\${dc}@${dc}@" \
+    -e "s/\${cluster}/${cluster_basename}1/" /home/ubuntu/templates/silence_vsan_expect_script.sh.template | tee /home/ubuntu/vcenter/silence_vsan_expect_script.sh
+#
+chmod u+x /home/ubuntu/vcenter/silence_vsan_expect_script.sh
+/home/ubuntu/vcenter/silence_vsan_expect_script.sh
+#
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vCenter configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 exit
