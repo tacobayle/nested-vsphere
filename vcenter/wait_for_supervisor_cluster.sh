@@ -20,8 +20,7 @@ while true ; do
   echo "attempt ${attempt_tanzu_supervisor} to get supervisor cluster config_status RUNNING and kubernetes_status READY"
   vcenter_api 6 10 "GET" $token '' $api_host "api/vcenter/namespace-management/clusters"
   if [[ $(echo $response_body | jq -c -r .[0].config_status) == "RUNNING" && $(echo $response_body | jq -c -r .[0].kubernetes_status) == "READY" ]]; then
-    echo "supervisor config_status is $(echo $response_body | jq -c -r .[0].config_status) after ${attempt_tanzu_supervisor} attempts of ${pause_tanzu_supervisor} seconds"
-    echo "supervisor kubernetes_status is $(echo $response_body | jq -c -r .[0].kubernetes_status) after ${attempt_tanzu_supervisor} attempts of ${pause_tanzu_supervisor} seconds"
+    echo "supervisor config_status is $(echo $response_body | jq -c -r .[0].config_status) and kubernetes_status is $(echo $response_body | jq -c -r .[0].kubernetes_status) after ${attempt_tanzu_supervisor} attempts of ${pause_tanzu_supervisor} seconds"
     break 2
   fi
   ((attempt_tanzu_supervisor++))
