@@ -199,11 +199,11 @@ do
                 "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f2)" \
                 "$(jq -c -r .nsx.config.tier0s[0].display_name)" \
                 "$(echo $ns | jq -c -r .prefix_per_namespace)"
+    else
+      /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+                "$(jq -r .tanzu.vm_classes $jsonFile)" \
+                "${storage_policy_id}" \
+                "$(echo $ns | jq -c -r .name)"
     fi
-  else
-    /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
-              "$(jq -r .tanzu.vm_classes $jsonFile)" \
-              "${storage_policy_id}" \
-              "$(echo $ns | jq -c -r .name)"
   fi
 done

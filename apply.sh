@@ -137,7 +137,7 @@ if [[ ${operation} == "apply" ]] ; then
     contents="${ip_gw} gw"
     echo "${contents}" | tee -a /etc/hosts > /dev/null
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-    echo "pausing for 120 seconds"
+    echo "pausing for 120 seconds" >> ${log_file} 2>&1
     sleep 120
     # ssh check
     retry=60 ; pause=10 ; attempt=1
