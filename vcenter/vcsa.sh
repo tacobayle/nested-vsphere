@@ -254,7 +254,7 @@ do
   fi
 done
 #
-# vsan health alarm suppression // required for tanzu
+# VSAN health alarm suppression // required for tanzu
 #
 sed -e "s/\${vsphere_username}/${vsphere_nested_username}/" \
     -e "s/\${ssoDomain}/${ssoDomain}/" \
