@@ -159,10 +159,10 @@ fi
 if [[ ${k8s_clusters} != "null" ]]; then
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
-    K8s_version=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].k8s_version')
-    cni=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].cni')
-    cni_version=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].cni_version')
-    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].ips | length'))
+    K8s_version="$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')"
+    cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
+    cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
+    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
     do
       ip_k8s_node="${cidr_vip_three_octets}.$(echo ${k8s_clusters} | jq -c -r .[$(expr ${index} - 1)].ips[$(expr ${index_ip} - 1)])"
       if [[ ${index_ip} -eq 1 ]]; then
@@ -293,12 +293,12 @@ fi
 if [[ ${k8s_clusters} != "null" ]]; then
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
-    K8s_version=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].k8s_version')
-    cni=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].cni')
-    cni_version=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].cni_version')
-    total_node=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].ips | length')
+    K8s_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')
+    cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
+    cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
+    total_node=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length')
     sed -e "s/\${total_node}/${total_node}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh"
-    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].ips | length'))
+    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
     do
       ip_k8s_node="${cidr_vip_three_octets}.$(echo ${k8s_clusters} | jq -c -r .[$(expr ${index} - 1)].ips[$(expr ${index_ip} - 1)])"
       retry=60 ; pause=10 ; attempt=1
@@ -342,7 +342,7 @@ fi
 if [[ ${k8s_clusters} != "null" ]]; then
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
-    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].ips | length'))
+    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
     do
       if [[ ${index_ip} -eq 1 ]]; then
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "/bin/bash /home/ubuntu/K8s_check_${k8s_basename}${index}.sh"
