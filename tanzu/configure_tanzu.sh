@@ -179,51 +179,99 @@ sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
 #
 # Namespace creation
 #
-for ns in $(echo ${tanzu_namespaces} | jq -c -r .[])
-do
-  if [[ ${kind} == "vsphere-avi" ]]; then
-    /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
-              "$(jq -r .tanzu.vm_classes $jsonFile)" \
-              "${storage_policy_id}" \
-              "$(echo $ns | jq -c -r .name)"
-  fi
-  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-    if $(echo $ns | jq -e '.ingress_cidr' > /dev/null) ; then
-      /bin/bash /home/ubuntu/vcenter/create_namespaces_nsx_overwrite_network.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
-                "$(jq -r .tanzu.vm_classes $jsonFile)" \
-                "${storage_policy_id}" \
-                "$(echo $ns | jq -c -r .name)" \
-                "$(echo $ns | jq -c -r .ingress_cidr | cut -d"/" -f1)" \
-                "$(echo $ns | jq -c -r .ingress_cidr | cut -d"/" -f2)" \
-                "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f1)" \
-                "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f2)" \
-                "$(jq -c -r .nsx.config.tier0s[0].display_name)" \
-                "$(echo $ns | jq -c -r .prefix_per_namespace)"
-    else
+if [[ ${configure_tanzu_workload} == "true" ]] ; then
+  for ns in $(echo ${tanzu_namespaces} | jq -c -r .[])
+  do
+    if [[ ${kind} == "vsphere-avi" ]]; then
       /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
                 "$(jq -r .tanzu.vm_classes $jsonFile)" \
                 "${storage_policy_id}" \
                 "$(echo $ns | jq -c -r .name)"
     fi
-  fi
-done
-#
-# tkc creation
-#
-for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
-do
-  namespace=$(echo ${cluster} | jq -c -r .namespace_ref)
-  tkc_name=$(echo ${cluster} | jq -c -r .name)
-  # yaml cluster templating
-  sed -e "s/\${name}/${tkc_name}/" \
-      -e "s/\${namespace_ref}/${namespace}/" \
-      -e "s@\${services_cidrs}@"$(echo ${cluster} | jq -c -r .services_cidrs)"@" \
-      -e "s@\${pods_cidrs}@$(echo ${cluster} | jq -c -r .pods_cidrs)@" \
-      -e "s/\${serviceDomain}/${domain}/" \
-      -e "s/\${k8s_version}/$(echo ${cluster} | jq -c -r .k8s_version)/" \
-      -e "s/\${control_plane_count}/$(echo ${cluster} | jq -c -r .control_plane_count)/" \
-      -e "s/\${cluster_count}/${cluster_count}/" \
-      -e "s/\${workers_count}/$(echo ${cluster} | jq -c -r .workers_count)/" \
-      -e "s/\${vm_class}/$(echo ${cluster} | jq -c -r .vm_class)/" /home/ubuntu/templates/tkc.yml.template | tee /home/ubuntu/tkc/${tkc_name}.yml > /dev/null
-  # to be continued
-done
+    if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+      if $(echo $ns | jq -e '.ingress_cidr' > /dev/null) ; then
+        /bin/bash /home/ubuntu/vcenter/create_namespaces_nsx_overwrite_network.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+                  "$(jq -r .tanzu.vm_classes $jsonFile)" \
+                  "${storage_policy_id}" \
+                  "$(echo $ns | jq -c -r .name)" \
+                  "$(echo $ns | jq -c -r .ingress_cidr | cut -d"/" -f1)" \
+                  "$(echo $ns | jq -c -r .ingress_cidr | cut -d"/" -f2)" \
+                  "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f1)" \
+                  "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f2)" \
+                  "$(jq -c -r .nsx.config.tier0s[0].display_name)" \
+                  "$(echo $ns | jq -c -r .prefix_per_namespace)"
+      else
+        /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+                  "$(jq -r .tanzu.vm_classes $jsonFile)" \
+                  "${storage_policy_id}" \
+                  "$(echo $ns | jq -c -r .name)"
+      fi
+    fi
+  done
+  #
+  # tkc creation
+  #
+  cluster_count=1
+  for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
+  do
+    namespace=$(echo ${cluster} | jq -c -r .namespace_ref)
+    tkc_name=$(echo ${cluster} | jq -c -r .name)
+    # yaml cluster templating
+    sed -e "s/\${name}/${tkc_name}/" \
+        -e "s/\${namespace_ref}/${namespace}/" \
+        -e "s@\${services_cidrs}@"$(echo ${cluster} | jq -c -r .services_cidrs)"@" \
+        -e "s@\${pods_cidrs}@$(echo ${cluster} | jq -c -r .pods_cidrs)@" \
+        -e "s/\${serviceDomain}/${domain}/" \
+        -e "s/\${k8s_version}/$(echo ${cluster} | jq -c -r .k8s_version)/" \
+        -e "s/\${control_plane_count}/$(echo ${cluster} | jq -c -r .control_plane_count)/" \
+        -e "s/\${cluster_count}/${cluster_count}/" \
+        -e "s/\${workers_count}/$(echo ${cluster} | jq -c -r .workers_count)/" \
+        -e "s/\${vm_class}/$(echo ${cluster} | jq -c -r .vm_class)/" /home/ubuntu/templates/tkc.yml.template | tee /home/ubuntu/tkc/${tkc_name}.yml > /dev/null
+    # bash cluster create templating
+    sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
+        -e "s/\${sso_domain_name}/${ssoDomain}/" \
+        -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
+        -e "s/\${namespace_ref}/${namespace}/" \
+        -e "s@\${yaml_path}@/home/ubuntu/tkc/${tkc_name}.yml@" \
+        -e "s/\${cluster_name}/${tkc_name}/" /home/ubuntu/templates/tkc_wo_antrea_wo_clusterbootstrap.sh.template | tee /home/ubuntu/tkc/${tkc_name}_create.sh > /dev/null
+    # bash cluster create templating
+    sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
+        -e "s/\${sso_domain_name}/${ssoDomain}/" \
+        -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
+        -e "s/\${namespace_ref}/${namespace}/" \
+        -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tkc_destroy.sh.template | tee /home/ubuntu/tkc/${tkc_name}_destroy.sh > /dev/null
+    # bash auth tkc templating
+    sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
+        -e "s/\${sso_domain_name}/${ssoDomain}/" \
+        -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
+        -e "s/\${namespace_ref}/${namespace}/" \
+        -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tanzu_auth_tkc.sh.template | tee /home/ubuntu/tkc/tanzu_auth_${tkc_name}.sh > /dev/null
+    # bash create exec
+    /bin/bash /home/ubuntu/tkc/${tkc_name}_create.sh
+    # ako values templating
+    serviceEngineGroupName="Default-Group"
+    shardVSSize="SMALL"
+    serviceType="NodePortLocal" # needs to be configured before cluster creation
+    cniPlugin="antrea"
+    disableStaticRouteSync="true" # needs to be true if NodePortLocal is enabled
+    if [[ ${kind} == "vsphere-avi" ]]; then
+      nsxtT1LR="''"
+      avi_cloud_name="Default-Cloud"
+    fi
+    sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
+        -e "s/\${clusterName}/${tkc_name}/" \
+        -e "s/\${cniPlugin}/${cniPlugin}/" \
+        -e "s@\${nsxtT1LR}@${nsxtT1LR}@" \
+        -e "s/\${networkName}/${network_ref_vip}/" \
+        -e "s@\${cidr}@${cidr_vip}@" \
+        -e "s/\${serviceType}/${serviceType}/" \
+        -e "s/\${shardVSSize}/${shardVSSize}/" \
+        -e "s/\${serviceEngineGroupName}/${serviceEngineGroupName}/" \
+        -e "s/\${controllerVersion}/${avi_version}/" \
+        -e "s/\${cloudName}/${avi_cloud_name}/" \
+        -e "s/\${controllerHost}/${ip_avi}/" \
+        -e "s/\${tenant}/$(echo ${cluster} | jq -c -r .avi_tenant_name)/" \
+        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values.yml.1.12.1.template | tee /home/ubuntu/tkc/ako_${tkc_name}_values.yml > /dev/null
+    ((cluster_count++))
+  done
+fi

@@ -10,6 +10,44 @@ sed -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
     -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
     -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh"
 #
+# ako values templating
+#
+serviceEngineGroupName="Default-Group"
+shardVSSize="SMALL"
+serviceType="ClusterIP"
+cniPlugin="antrea"
+disableStaticRouteSync="false" # needs to be true if NodePortLocal is enabled
+if [[ ${k8s_clusters} != "null" ]]; then
+  for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
+  do
+    K8s_version="$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')"
+    cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
+    if [[ ${cni} == "antrea" ]]; then
+      disableStaticRouteSync="true"
+      serviceType="NodePortLocal"
+    fi
+    cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
+    if [[ ${kind} == "vsphere-avi" ]]; then
+      nsxtT1LR="''"
+      avi_cloud_name="Default-Cloud"
+    fi
+    sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
+        -e "s/\${clusterName}/${k8s_basename}${index}/" \
+        -e "s/\${cniPlugin}/${cni}/" \
+        -e "s@\${nsxtT1LR}@${nsxtT1LR}@" \
+        -e "s/\${networkName}/${network_ref_vip}/" \
+        -e "s@\${cidr}@${cidr_vip}@" \
+        -e "s/\${serviceType}/${serviceType}/" \
+        -e "s/\${shardVSSize}/${shardVSSize}/" \
+        -e "s/\${serviceEngineGroupName}/${serviceEngineGroupName}/" \
+        -e "s/\${controllerVersion}/${avi_version}/" \
+        -e "s/\${cloudName}/${avi_cloud_name}/" \
+        -e "s/\${controllerHost}/${ip_avi}/" \
+        -e "s/\${tenant}/${k8s_basename}${index}/" \
+        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values.yml.1.12.1.template | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null
+  done
+fi
+#
 # Ubuntu download
 #
 download_file_from_url_to_location "${ubuntu_ova_url}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"

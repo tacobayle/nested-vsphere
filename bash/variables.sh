@@ -109,8 +109,18 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   gw_client=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   network_ref_vip="avi-vip"
 fi
-k8s_clusters=$(jq -c -r '.spec.k8s_clusters' $jsonFile)
 k8s_basename=$(jq -c -r '.k8s_basename' $jsonFile)
+k8s_clusters=$(jq -c -r '.spec.k8s_clusters' $jsonFile)
+for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
+do
+  tenants=$(echo $tenants | jq -c -r '. += [{"name": "'${k8s_basename}${index}'",
+                                               "local": true,
+                                               "config_settings" : {
+                                                 "tenant_vrf": false,
+                                                 "se_in_provider_context": '$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].se_in_provider_context')',
+                                                 "tenant_access_to_provider_se": true
+                                               }}]')
+done
 k8s_basename_vm=$(jq -c -r '.k8s_basename_vm' $jsonFile)
 k8s_node_cpu=$(jq -c -r '.k8s_node_cpu' $jsonFile)
 k8s_node_memory=$(jq -c -r '.k8s_node_memory' $jsonFile)
@@ -514,7 +524,8 @@ fi
 #
 # Tanzu variables
 #
-configure_tanzu=$(jq -r '.spec.tanzu.configure_tanzu' $jsonFile)
+configure_tanzu_supervisor=$(jq -r '.spec.tanzu.configure_tanzu_supervisor' $jsonFile)
+configure_tanzu_workload=$(jq -r '.spec.tanzu.configure_tanzu_workload' $jsonFile)
 supervisor_starting_ip_last_octet=$(jq -r '.spec.tanzu.supervisor_starting_ip' $jsonFile)
 supervisor_count_ip=$(jq -r '.spec.tanzu.supervisor_count_ip' $jsonFile)
 workload_starting_ip_last_octet=$(jq -r '.spec.tanzu.workload_starting_ip' $jsonFile)
@@ -535,3 +546,13 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
 fi
 tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)
 tkc_clusters=$(jq -c -r '.tanzu.tkc_clusters' $jsonFile)
+for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
+do
+  tenants=$(echo $tenants | jq -c -r '. += [{"name": "'$(echo ${cluster} | jq -c -r .avi_tenant_name)'",
+                                               "local": true,
+                                               "config_settings" : {
+                                                 "tenant_vrf": false,
+                                                 "se_in_provider_context": '$(echo ${cluster} | jq -c -r .se_in_provider_context)',
+                                                 "tenant_access_to_provider_se": true
+                                               }}]')
+done

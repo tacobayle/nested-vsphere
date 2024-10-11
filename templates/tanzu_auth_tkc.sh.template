@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+export KUBECTL_VSPHERE_PASSWORD=${kubectl_password}
+#
+/home/ubuntu/bin/kubectl-vsphere login --insecure-skip-tls-verify --vsphere-username administrator@${sso_domain_name} --server=https://${api_server_cluster_endpoint} --tanzu-kubernetes-cluster-namespace ${namespace_ref} --tanzu-kubernetes-cluster-name ${name}
+/home/ubuntu/bin/kubectl config use-context ${name}

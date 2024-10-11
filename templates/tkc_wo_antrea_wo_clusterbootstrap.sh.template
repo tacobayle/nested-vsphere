@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+export KUBECTL_VSPHERE_PASSWORD=${kubectl_password}
+#
+/home/ubuntu/bin/kubectl-vsphere login --insecure-skip-tls-verify --vsphere-username administrator@${sso_domain_name} --server=https://${api_server_cluster_endpoint}
+/home/ubuntu/bin/kubectl config use-context ${namespace_ref}
+/home/ubuntu/bin/kubectl apply -f ${yaml_path}
+#
+# Wait for tkc cluster to be Provisioned
+#
+retry_tanzu_tkc=61
+pause_tanzu_tkc=120
+attempt_tanzu_tkc=1
+while true ; do
+  echo "attempt $attempt_tanzu_tkc to get tkc cluster config_status Provisioned"
+  tkc_status=$(/home/ubuntu/bin/kubectl get clusters ${cluster_name} -o json | jq -c -r .status.phase)
+  if [[ ${tkc_status} == "Provisioned" ]]; then
+    echo "tkc cluster ${cluster_name} is ${tkc_status} after $attempt_tanzu_tkc attempts"
+    break 2
+  fi
+  ((attempt_tanzu_tkc++))
+  if [ $attempt_tanzu_tkc -eq $retry_tanzu_tkc ]; then
+    echo "Unable to get tkc cluster Provisioned after $attempt_tanzu_tkc"
+    exit 255
+  fi
+  sleep $pause_tanzu_tkc
+done

@@ -394,36 +394,38 @@
       {
         "name": "ns1-cluster-1-provider",
         "namespace_ref": "ns1",
-        "k8s_version": "v1.28.8---vmware.1-fips.1-tkg.2",
+        "k8s_version": "v1.29.4---vmware.3-fips.1-tkg.1",
         "control_plane_count": 1,
         "vm_class": "best-effort-small",
         "workers_count": 1,
         "services_cidrs": ["10.97.0.0/24"],
         "pods_cidrs": ["10.245.0.0/21"],
         "avi_tenant_name": "ns1",
-        "avi_tenant_type": "provider-mode"
+        "se_in_provider_context": true
       },
       {
         "name": "ns2-cluster-1-tenant",
         "namespace_ref": "ns2",
-        "k8s_version": "v1.28.8---vmware.1-fips.1-tkg.2",
+        "k8s_version": "v1.29.4---vmware.3-fips.1-tkg.1",
         "control_plane_count": 1,
         "vm_class": "best-effort-small",
         "workers_count": 1,
         "services_cidrs": ["10.97.0.0/24"],
         "pods_cidrs": ["10.245.0.0/21"],
         "avi_tenant_name": "ns2",
-        "avi_tenant_type": "tenant-mode"
+        "se_in_provider_context": false
       },
       {
         "name": "ns3-cluster-1",
         "namespace_ref": "ns3",
-        "k8s_version": "v1.28.8---vmware.1-fips.1-tkg.2",
+        "k8s_version": "v1.29.4---vmware.3-fips.1-tkg.1",
         "control_plane_count": 1,
         "vm_class": "best-effort-small",
         "workers_count": 1,
         "services_cidrs": ["10.97.0.0/24"],
-        "pods_cidrs": ["10.245.0.0/21"]
+        "pods_cidrs": ["10.245.0.0/21"],
+        "avi_tenant_name": "ns3",
+        "se_in_provider_context": true
       }
     ]
   }
