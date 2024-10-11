@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+/home/ubuntu/bin/kubectl create secret docker-registry docker --docker-server=docker.io --docker-username=${docker_registry_username} --docker-password=${docker_registry_password} --docker-email=${docker_registry_email}
+/home/ubuntu/bin/kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"docker\"}]}"
+/home/ubuntu/bin/kubectl create ns avi-system
+/home/ubuntu/bin/kubectl create secret docker-registry docker --docker-server=docker.io --docker-username=${docker_registry_username} --docker-password=${docker_registry_password} --docker-email=${docker_registry_email} -n avi-system
+/home/ubuntu/bin/kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"docker\"}]}" -n avi-system
+/home/ubuntu/bin/kubectl label --overwrite ns avi-system pod-security.kubernetes.io/enforce=privileged
+/home/ubuntu/bin/kubectl label --overwrite ns default pod-security.kubernetes.io/enforce=privileged

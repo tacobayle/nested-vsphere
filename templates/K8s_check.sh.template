@@ -1,0 +1,33 @@
+#!/bin/bash
+retry=30
+pause=30
+attempt=0
+echo "############################################################################################"
+while [ $attempt -ne $retry ]; do
+  IFS=$'\n'
+  nodes_ready=0
+  for status_node in $(kubectl get nodes -o json  2> /dev/null | jq -c .items[] | jq -c .status.conditions)
+    do
+      IFS=$'\n'
+      for status in $(echo $status_node | jq  -c .[])
+        do
+          if [[ $(echo $status | jq -r .type) == "Ready" ]] ; then
+            if [[ $(echo $status | jq -r .status) == "True" ]] ; then
+              ((nodes_ready++))
+            else
+              echo "One of the Node is not ready"
+            fi
+          fi
+        done
+    done
+  if [ $nodes_ready -eq "${total_node}" ] ; then
+    echo "Amount of nodes READY: $nodes_ready - PASSED"
+    exit
+  else
+    echo "Amount of nodes READY: $nodes_ready, expected: ${total_node} - RETRY"
+    ((attempt++))
+    sleep $pause
+  fi
+done
+echo "ERROR: unable to get all the nodes READY after $attempt attempts"
+exit

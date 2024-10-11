@@ -69,6 +69,7 @@ sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s@\${additional_subnets}@$(echo ${additional_subnets} | jq -c -r '.')@" \
     -e "s@\${service_engine_groups}@$(echo ${service_engine_groups} | jq -c -r '.')@" \
     -e "s@\${pools}@$(echo ${pools} | jq -c -r '.')@" \
+    -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
     -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_vcenter.yml.template | tee /home/ubuntu/avi/values_vcenter.yml
 #
 # starting ansible configuration

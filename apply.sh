@@ -28,6 +28,7 @@ variables_json=$(echo ${variables_json} | jq '. += {"GENERIC_PASSWORD": "'${GENE
 variables_json=$(echo ${variables_json} | jq '. += {"AVI_OLD_PASSWORD": "'${AVI_OLD_PASSWORD}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_USERNAME": "'${DOCKER_REGISTRY_USERNAME}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_PASSWORD": "'${DOCKER_REGISTRY_PASSWORD}'"}')
+variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_EMAIL": "'${DOCKER_REGISTRY_EMAIL}'"}')
 echo ${variables_json} | jq . | tee $jsonFile > /dev/null
 #
 # source the variables
@@ -304,7 +305,7 @@ if [[ ${operation} == "apply" ]] ; then
   if [[ ${kind} == "vsphere-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-    echo "Creation of Avi VMs app and client  - This should take about 10 minutes" >> ${log_file} 2>&1
+    echo "Creation of Avi VMs app, client and k8s clusters  - This should take about 10 minutes" >> ${log_file} 2>&1
     echo "running the following command from the gw: /home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1

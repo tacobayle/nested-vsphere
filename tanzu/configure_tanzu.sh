@@ -207,3 +207,23 @@ do
     fi
   fi
 done
+#
+# tkc creation
+#
+for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
+do
+  namespace=$(echo ${cluster} | jq -c -r .namespace_ref)
+  tkc_name=$(echo ${cluster} | jq -c -r .name)
+  # yaml cluster templating
+  sed -e "s/\${name}/${tkc_name}/" \
+      -e "s/\${namespace_ref}/${namespace}/" \
+      -e "s@\${services_cidrs}@"$(echo ${cluster} | jq -c -r .services_cidrs)"@" \
+      -e "s@\${pods_cidrs}@$(echo ${cluster} | jq -c -r .pods_cidrs)@" \
+      -e "s/\${serviceDomain}/${domain}/" \
+      -e "s/\${k8s_version}/$(echo ${cluster} | jq -c -r .k8s_version)/" \
+      -e "s/\${control_plane_count}/$(echo ${cluster} | jq -c -r .control_plane_count)/" \
+      -e "s/\${cluster_count}/${cluster_count}/" \
+      -e "s/\${workers_count}/$(echo ${cluster} | jq -c -r .workers_count)/" \
+      -e "s/\${vm_class}/$(echo ${cluster} | jq -c -r .vm_class)/" /home/ubuntu/templates/tkc.yml.template | tee /home/ubuntu/tkc/${tkc_name}.yml > /dev/null
+  # to be continued
+done

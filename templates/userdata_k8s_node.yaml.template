@@ -1,0 +1,183 @@
+#cloud-config
+users:
+  - default
+
+ssh_pwauth: True
+
+chpasswd:
+  list: |
+    ubuntu:${password}
+  expire: False
+
+hostname: ${hostname}
+
+write_files:
+  - content: |
+      #!/bin/bash
+      # retrieve the network interface names
+      ifaceFirstName=`ip -o link show | awk -F': ' '{print $2}' | head -2 | tail -1`
+      macFirst=`ip -o link show | awk -F'link/ether ' '{print $2}' | awk -F' ' '{print $1}' | head -2 | tail -1`
+      hostname=${hostname}
+      echo "${ip} $hostname" | tee -a /etc/hosts
+      cp /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.old
+      echo "network:" | tee /etc/netplan/50-cloud-init.yaml
+      echo "    ethernets:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "        $ifaceFirstName:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            dhcp4: false" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            addresses: [${ip}/${prefix}]" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            match:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "                macaddress: $macFirst" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            set-name: $ifaceFirstName" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            gateway4: ${default_gw}" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            nameservers:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "              addresses: [${forwarders_netplan}]" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
+      netplan apply
+      #
+      # apt install
+      #
+      apt update
+      apt install -y jq
+      packages='${packages}'
+      echo $packages | jq -c -r .[] | while read package
+      do
+        apt install -y $package
+      done
+      #
+      #
+      #
+      run_cmd() {
+        retry=10
+        pause=60
+        attempt=0
+        echo "############################################################################################"
+        while [ $attempt -ne $retry ]; do
+          if eval "$@"; then
+            echo "$1 PASSED"
+            break
+          else
+            echo "$1 FAILED"
+          fi
+          ((attempt++))
+          sleep $pause
+          if [ $attempt -eq $retry ]; then
+            echo "$1 FAILED after $retry retries" | tee /tmp/cloudInitFailed.log
+            exit 255
+          fi
+        done
+      }
+      #
+      #
+      #
+      run_cmd 'rm -f /tmp/signing.asc; wget https://baltocdn.com/helm/signing.asc -O /tmp/signing.asc; test $(ls -l /tmp/signing.asc | awk '"'"'{print $5}'"'"') -gt 0'
+      run_cmd 'apt-key add /tmp/signing.asc'
+      run_cmd 'rm -f /tmp/gpg; wget https://download.docker.com/linux/ubuntu/gpg -O /tmp/gpg; test $(ls -l /tmp/gpg | awk '"'"'{print $5}'"'"') -gt 0'
+      run_cmd 'apt-key add /tmp/gpg'
+      run_cmd '! add-apt-repository "deb https://baltocdn.com/helm/stable/debian/ all main" | grep Err:'
+      run_cmd '! add-apt-repository  "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | grep Err:'
+      K8s_version="${K8s_version}"
+      K8s_version_short=${K8s_version:0:5}
+      K8s_version=${K8s_version:1}
+      run_cmd 'curl -fsSL https://pkgs.k8s.io/core:/stable:/'$K8s_version_short'/deb/Release.key | gpg --dearmor -o /tmp/kubernetes-apt-keyring.gpg; test $(ls -l /tmp/kubernetes-apt-keyring.gpg | awk '"'"'{print $5}'"'"') -gt 0'
+      run_cmd 'echo "deb [signed-by=/tmp/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/'$K8s_version_short'/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list'
+      run_cmd 'apt update'
+      run_cmd 'apt-get install -y docker-ce=${docker_version}; ls /usr/bin/docker'
+      run_cmd 'apt-get install -y kubeadm='$K8s_version' kubectl='$K8s_version' kubelet='$K8s_version'; ls /usr/bin/kubeadm /usr/bin/kubectl /usr/bin/kubelet'
+      run_cmd 'apt-get install -y helm; ls /usr/bin/helm'
+      #
+      #
+      #
+      bash -c cat << EOF > /etc/containerd/config.toml
+      version = 2
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+        runtime_type = "io.containerd.runc.v2"
+        [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+          SystemdCgroup = true
+      EOF
+      #
+      #
+      #
+      systemctl restart containerd docker
+      usermod -a -G docker ubuntu
+      if [[ ${node_type} == "master" ]]; then
+        kubeadm config images pull
+        kubeadm init --pod-network-cidr=${pod_cidr}
+        mkdir -p /home/ubuntu/.kube
+        cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+        chown ubuntu:ubuntu /home/ubuntu/.kube/config
+        echo "alias k=kubectl" | tee -a /home/ubuntu/.profile
+        echo "source <(kubectl completion bash | sed s/kubectl/k/g)" | tee -a /home/ubuntu/.profile
+        export KUBECONFIG=/etc/kubernetes/admin.conf
+      fi
+      #
+      # docker login if docker_registry_username and docker_registry_password are defined
+      #
+      docker_registry_username=${docker_registry_username}
+      docker_registry_password=${docker_registry_password}
+      if [[ -z "$docker_registry_username" || -z "$docker_registry_password" ]]; then
+        echo "docker_registry_username and docker_registry_password are not defined"
+      else
+        ping -c 1 foo
+        while [ $? -ne 0 ] ; do sleep 5 ; docker login --username $docker_registry_username --password $docker_registry_password ; done
+      fi
+      #
+      # Download docker images
+      #
+      run_cmd "docker pull tacobayle/busybox-v1; docker image ls | grep tacobayle/busybox-v1"
+      run_cmd "docker pull tacobayle/busybox-v2; docker image ls | grep tacobayle/busybox-v1"
+      run_cmd "docker pull tacobayle/busybox-v3; docker image ls | grep tacobayle/busybox-v1"
+      #
+      # CNI download images
+      #
+      if [[ ${node_type} == "master" ]]; then
+        cni=${cni}
+        if [ "$cni" == "cilium" ] ; then
+          CILIUM_CLI_VERSION=${cni_version}
+          CLI_ARCH=amd64
+          if [ "$(uname -m)" = "aarch64" ]; then CLI_ARCH=arm64; fi
+          curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
+          sha256sum --check cilium-linux-${CLI_ARCH}.tar.gz.sha256sum
+          tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
+          rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
+          cilium install
+        fi
+        if [ "$cni" == "antrea" ] ; then
+          run_cmd 'wget -O /tmp/antrea.yml.without_nodeportlocal https://github.com/vmware-tanzu/antrea/releases/download/${cni_version}/antrea.yml; test $(ls -l /tmp/antrea.yml.without_nodeportlocal | awk '"'"'{print $5}'"'"') -gt 0'
+          cp /tmp/antrea.yml.without_nodeportlocal /tmp/antrea.yml
+          sed -i -e "s/    #  NodePortLocal: false/      NodePortLocal: true/g" /tmp/antrea.yml
+          run_cmd 'kubectl apply -f /tmp/antrea.yml'
+        fi
+        if [ "$cni" == "calico" ] ; then
+          docker pull docker.io/calico/node:${cni_version}
+          docker pull docker.io/calico/pod2daemon-flexvol:${cni_version}
+          docker pull docker.io/calico/typha:${cni_version}
+          docker pull docker.io/calico/cni:${cni_version}
+          docker pull docker.io/calico/kube-controllers:${cni_version}
+          docker pull docker.io/calico/csi:${cni_version}
+          docker pull docker.io/calico/apiserver:${cni_version}
+          docker pull docker.io/calico/node-driver-registrar:${cni_version}
+          kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/${cni_version}/manifests/tigera-operator.yaml
+          kubectl replace -f https://raw.githubusercontent.com/projectcalico/calico/${cni_version}/manifests/tigera-operator.yaml
+          curl https://raw.githubusercontent.com/projectcalico/calico/${cni_version}/manifests/custom-resources.yaml -O
+          kubectl create -f custom-resources.yaml
+          kubectl replace -f custom-resources.yaml
+        fi
+        #
+        # K8s generate join command
+        #
+        kubeadm token create --print-join-command | tee /home/ubuntu/join-command
+        sudo chown ubuntu:ubuntu /home/ubuntu/join-command
+      fi
+      #
+      # End of cloud init
+      #
+      echo "cloud init done" | tee /tmp/cloudInitDone.log
+    path: /opt/bootstrap.sh
+    permissions: 0755
+
+  - content: |
+      ubuntu ALL=(ALL) NOPASSWD:ALL
+    path: /etc/sudoers.d/ubuntu
+
+runcmd:
+  - /opt/bootstrap.sh

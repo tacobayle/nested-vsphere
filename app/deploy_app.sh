@@ -4,6 +4,12 @@ source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
 source /home/ubuntu/bash/variables.sh
 #
+# k8s templating k8s script config
+#
+sed -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
+    -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
+    -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh"
+#
 # Ubuntu download
 #
 download_file_from_url_to_location "${ubuntu_ova_url}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
@@ -45,6 +51,22 @@ else
   echo "Ending timestamp: $(date)"
 fi
 #
+# folder creation for k8s cluster
+#
+list_folder=$(govc find -json . -type f)
+echo "Creation of a folder for k8s clusters"
+if [[ ${k8s_clusters} != "null" ]]; then
+  for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
+  do
+    if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${k8s_basename}${index}'")' >/dev/null ) ; then
+      echo "ERROR: unable to create folder ${k8s_basename}${index}: it already exists"
+    else
+      govc folder.create /${dc}/vm/${k8s_basename}${index}
+      echo "Ending timestamp: $(date)"
+    fi
+  done
+fi
+#
 # Client VM creations first group // vsphere-avi use case)
 #
 if [[ ${ips_clients} != "null" ]]; then
@@ -62,7 +84,7 @@ if [[ ${ips_clients} != "null" ]]; then
     sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
         -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_client${index}.yaml -w 0)@" \
         -e "s/\${password}/${GENERIC_PASSWORD}/" \
-        -e "s@\${network_ref}@${network_ref_client}@" \
+        -e "s@\${network_ref}@${network_ref_vip}@" \
         -e "s/\${vm_name}/${client_basename}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-client-${index}.json"
     #
 #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
@@ -132,6 +154,53 @@ if [[ ${ips_app_second} != "null" ]]; then
   done
 fi
 #
+# VM k8s_clusters
+#
+if [[ ${k8s_clusters} != "null" ]]; then
+  for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
+  do
+    K8s_version=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].k8s_version')
+    cni=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].cni')
+    cni_version=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].cni_version')
+    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].ips | length'))
+    do
+      ip_k8s_node="${cidr_vip_three_octets}.$(echo ${k8s_clusters} | jq -c -r .[$(expr ${index} - 1)].ips[$(expr ${index_ip} - 1)])"
+      if [[ ${index_ip} -eq 1 ]]; then
+        node_type="master"
+      else
+        node_type="worker"
+      fi
+      sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s/\${hostname}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}/" \
+          -e "s/\${ip}/${ip_k8s_node}/" \
+          -e "s/\${prefix}/${prefix_client}/" \
+          -e "s/\${packages}/${k8s_apt_packages}/" \
+          -e "s/\${default_gw}/${gw_client}/" \
+          -e "s/\${forwarders_netplan}/${gw_client}/" \
+          -e "s/\${docker_version}/${docker_version}/" \
+          -e "s/\${node_type}/${node_type}/" \
+          -e "s@\${pod_cidr}@${pod_cidr}@" \
+          -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
+          -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
+          -e "s/\${cni}/${cni}/" \
+          -e "s/\${cni_version}/${cni_version}/" \
+          -e "s/\${K8s_version}/${K8s_version}/" /home/ubuntu/templates/userdata_k8s_node.yaml.template | tee /home/ubuntu/app/userdata_${k8s_basename}${index}_node${index_ip}.yaml
+      #
+      sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
+          -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_${k8s_basename}${index}_node${index_ip}.yaml -w 0)@" \
+          -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s@\${network_ref}@${network_ref_vip}@" \
+          -e "s/\${vm_name}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}.json"
+      #
+  #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
+      govc library.deploy -options "/home/ubuntu/app/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}.json" -folder "${k8s_basename}${index}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
+      govc vm.change -vm "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}" -c ${k8s_node_cpu} -m ${k8s_node_memory}
+      govc vm.disk.change -vm "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}" -size ${k8s_node_disk}
+      govc vm.power -on=true "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}"
+    done
+  done
+fi
+#
 # VM client connectivity
 #
 if [[ ${ips_clients} != "null" ]]; then
@@ -178,11 +247,11 @@ if [[ ${ips_app} != "null" ]]; then
         break
       else
         echo "VM app ${ip_app} is not reachable."
-        break
       fi
       ((attempt++))
       if [ $attempt -eq $retry ]; then
         echo "VM app ${ip_app} is not reachable after $attempt attempt"
+        break
       fi
       sleep $pause
     done
@@ -216,5 +285,68 @@ if [[ ${ips_app_second} != "null" ]]; then
       sleep $pause
     done
     echo "Ending timestamp: $(date)"
+  done
+fi
+#
+# VM k8s_clusters check and config
+#
+if [[ ${k8s_clusters} != "null" ]]; then
+  for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
+  do
+    K8s_version=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].k8s_version')
+    cni=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].cni')
+    cni_version=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].cni_version')
+    total_node=$(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].ips | length')
+    sed -e "s/\${total_node}/${total_node}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh"
+    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].ips | length'))
+    do
+      ip_k8s_node="${cidr_vip_three_octets}.$(echo ${k8s_clusters} | jq -c -r .[$(expr ${index} - 1)].ips[$(expr ${index_ip} - 1)])"
+      retry=60 ; pause=10 ; attempt=1
+      while true ; do
+        echo "attempt $attempt to verify VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is ready"
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" -q >/dev/null 2>&1
+        if [[ $? -eq 0 ]]; then
+          echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} is reachable."
+          ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
+          if [[ $? -eq 0 ]]; then
+            echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} cloud init done."
+            if [[ ${index_ip} -eq 1 ]]; then
+              echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} is a master - transfer join command file to external gw /home/ubuntu/k8s/join-command-${k8s_basename}${index}"
+              scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/join-command" "/home/ubuntu/k8s/join-command-${k8s_basename}${index}"
+              scp -o StrictHostKeyChecking=no "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh" ubuntu@${ip_k8s_node}:/home/ubuntu/K8s_check_${k8s_basename}${index}.sh
+            else
+              echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} is a worker - transfer join command file to worker and execute it to join the cluster ${k8s_basename}${index}"
+              scp -o StrictHostKeyChecking=no "/home/ubuntu/k8s/join-command-${k8s_basename}${index}" "ubuntu@${ip_k8s_node}:/home/ubuntu/join-command-${k8s_basename}${index}"
+              ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "sudo /bin/bash /home/ubuntu/join-command-${k8s_basename}${index}"
+            fi
+            break
+          else
+            echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app}: cloud init is not finished." >> ${log_file} 2>&1
+          fi
+        else
+          echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip} is not reachable."
+        fi
+        ((attempt++))
+        if [ $attempt -eq $retry ]; then
+          echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip} is not reachable after $attempt attempt"
+          break
+        fi
+        sleep $pause
+      done
+    done
+  done
+fi
+#
+# VM k8s_clusters final check
+#
+if [[ ${k8s_clusters} != "null" ]]; then
+  for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
+  do
+    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.[$(expr ${index} - 1)].ips | length'))
+    do
+      if [[ ${index_ip} -eq 1 ]]; then
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "/bin/bash /home/ubuntu/K8s_check_${k8s_basename}${index}.sh"
+      fi
+    done
   done
 fi

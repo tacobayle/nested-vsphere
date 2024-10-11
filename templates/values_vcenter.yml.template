@@ -58,5 +58,7 @@ vcenter:
       ${service_engine_groups}
     pools: |
       ${pools}
+    pool_groups: |
+      ${pool_groups}
     virtual_services: |
       ${virtual_services}

@@ -33,6 +33,8 @@ write_files:
       echo "              addresses: [${forwarders_netplan}]" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
       netplan apply
+      tc qdisc add dev $ifaceFirstName root netem delay 100ms
+      sleep 20
       #
       # apt install
       #
