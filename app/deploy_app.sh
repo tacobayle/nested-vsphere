@@ -15,7 +15,6 @@ sed -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
 serviceEngineGroupName="Default-Group"
 shardVSSize="SMALL"
 serviceType="ClusterIP"
-cniPlugin="antrea"
 disableStaticRouteSync="false" # needs to be true if NodePortLocal is enabled
 if [[ ${k8s_clusters} != "null" ]]; then
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
@@ -36,7 +35,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
         -e "s/\${cniPlugin}/${cni}/" \
         -e "s@\${nsxtT1LR}@${nsxtT1LR}@" \
         -e "s/\${networkName}/${network_ref_vip}/" \
-        -e "s@\${cidr}@${cidr_vip}@" \
+        -e "s@\${cidr}@${cidr_vip_full}@" \
         -e "s/\${serviceType}/${serviceType}/" \
         -e "s/\${shardVSSize}/${shardVSSize}/" \
         -e "s/\${serviceEngineGroupName}/${serviceEngineGroupName}/" \

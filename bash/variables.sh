@@ -111,16 +111,6 @@ if [[ ${kind} == "vsphere-avi" ]]; then
 fi
 k8s_basename=$(jq -c -r '.k8s_basename' $jsonFile)
 k8s_clusters=$(jq -c -r '.spec.k8s_clusters' $jsonFile)
-for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
-do
-  tenants=$(echo $tenants | jq -c -r '. += [{"name": "'${k8s_basename}${index}'",
-                                               "local": true,
-                                               "config_settings" : {
-                                                 "tenant_vrf": false,
-                                                 "se_in_provider_context": '$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].se_in_provider_context')',
-                                                 "tenant_access_to_provider_se": true
-                                               }}]')
-done
 k8s_basename_vm=$(jq -c -r '.k8s_basename_vm' $jsonFile)
 k8s_node_cpu=$(jq -c -r '.k8s_node_cpu' $jsonFile)
 k8s_node_memory=$(jq -c -r '.k8s_node_memory' $jsonFile)
@@ -226,6 +216,16 @@ else
   tenants=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.tenants $jsonFile)'')
   tenants=$(echo ${tenants} | jq '. += '$(jq -c -r '.tenants' $jsonFile)'')
 fi
+for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
+do
+  tenants=$(echo $tenants | jq -c -r '. += [{"name": "'${k8s_basename}${index}'",
+                                               "local": true,
+                                               "config_settings" : {
+                                                 "tenant_vrf": false,
+                                                 "se_in_provider_context": '$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].se_in_provider_context')',
+                                                 "tenant_access_to_provider_se": true
+                                               }}]')
+done
 if [[ $(jq -c -r '.spec.avi.users' $jsonFile) == "null" ]]; then
   users=$(jq -c -r '.users' $jsonFile)
 else
@@ -261,6 +261,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   if [[ ${cidr_app} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
     cidr_app_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
   fi
+  cidr_vip_full=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
   cidr_vip=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
   cidr_vip_prefix=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
   if [[ ${cidr_vip} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
