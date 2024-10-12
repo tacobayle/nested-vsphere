@@ -176,6 +176,7 @@ sed -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" /home
 sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
     -e "s/\${sso_domain_name}/${ssoDomain}/" \
     -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" /home/ubuntu/templates/tanzu_auth_supervisor.sh.template | tee /home/ubuntu/tanzu/tanzu_auth_supervisor.sh > /dev/null
+    chmod u+x /home/ubuntu/tanzu/tanzu_auth_supervisor.sh
 #
 # Namespace creation
 #
@@ -246,6 +247,7 @@ if [[ ${configure_tanzu_workload} == "true" ]] ; then
         -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
         -e "s/\${namespace_ref}/${namespace}/" \
         -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tanzu_auth_tkc.sh.template | tee /home/ubuntu/tkc/tanzu_auth_${tkc_name}.sh > /dev/null
+    chmod u+x /home/ubuntu/tkc/tanzu_auth_${tkc_name}.sh
     # bash create exec
     /bin/bash /home/ubuntu/tkc/${tkc_name}_create.sh
     # ako values templating
@@ -263,7 +265,7 @@ if [[ ${configure_tanzu_workload} == "true" ]] ; then
         -e "s/\${cniPlugin}/${cniPlugin}/" \
         -e "s@\${nsxtT1LR}@${nsxtT1LR}@" \
         -e "s/\${networkName}/${network_ref_vip}/" \
-        -e "s@\${cidr}@${cidr_vip}@" \
+        -e "s@\${cidr}@${cidr_vip_full}@" \
         -e "s/\${serviceType}/${serviceType}/" \
         -e "s/\${shardVSSize}/${shardVSSize}/" \
         -e "s/\${serviceEngineGroupName}/${serviceEngineGroupName}/" \
