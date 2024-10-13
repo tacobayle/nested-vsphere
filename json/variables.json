@@ -169,6 +169,143 @@
         "se_in_provider_context": true,
         "tenant_access_to_provider_se": true
       }
+    },
+    {
+      "name": "dev",
+      "local": true,
+      "config_settings" : {
+        "tenant_vrf": false,
+        "se_in_provider_context": true,
+        "tenant_access_to_provider_se": true
+      }
+    },
+    {
+      "name": "preprod",
+      "local": true,
+      "config_settings" : {
+        "tenant_vrf": false,
+        "se_in_provider_context": true,
+        "tenant_access_to_provider_se": true
+      }
+    },
+    {
+      "name": "prod",
+      "local": true,
+      "config_settings" : {
+        "tenant_vrf": false,
+        "se_in_provider_context": false,
+        "tenant_access_to_provider_se": false
+      }
+    }
+  ],
+  "roles": [
+    {
+      "allow_unlabelled_access": false,
+      "filters": [
+        {
+          "enabled": true,
+          "match_label": {
+            "key": "app",
+            "values": [
+              "blue"
+            ]
+          },
+          "match_operation": "ROLE_FILTER_EQUALS"
+        }
+      ],
+      "name": "role-blue",
+      "privileges": [
+        {
+          "resource": "PERMISSION_VIRTUALSERVICE",
+          "type": "WRITE_ACCESS"
+        },
+        {
+          "resource": "PERMISSION_POOL",
+          "type": "WRITE_ACCESS"
+        },
+        {
+          "resource": "PERMISSION_POOLGROUP",
+          "type": "WRITE_ACCESS"
+        }
+      ]
+    },
+    {
+      "allow_unlabelled_access": false,
+      "filters": [
+        {
+          "enabled": true,
+          "match_label": {
+            "key": "app",
+            "values": [
+              "green"
+            ]
+          },
+          "match_operation": "ROLE_FILTER_EQUALS"
+        }
+      ],
+      "name": "role-green",
+      "privileges": [
+        {
+          "resource": "PERMISSION_VIRTUALSERVICE",
+          "type": "WRITE_ACCESS"
+        },
+        {
+          "resource": "PERMISSION_POOL",
+          "type": "WRITE_ACCESS"
+        },
+        {
+          "resource": "PERMISSION_POOLGROUP",
+          "type": "WRITE_ACCESS"
+        }
+      ]
+    },
+    {
+      "allow_unlabelled_access": false,
+      "filters": [
+        {
+          "enabled": true,
+          "match_label": {
+            "key": "app",
+            "values": [
+              "orange"
+            ]
+          },
+          "match_operation": "ROLE_FILTER_EQUALS"
+        }
+      ],
+      "name": "role-orange",
+      "privileges": [
+        {
+          "resource": "PERMISSION_VIRTUALSERVICE",
+          "type": "WRITE_ACCESS"
+        },
+        {
+          "resource": "PERMISSION_POOL",
+          "type": "WRITE_ACCESS"
+        },
+        {
+          "resource": "PERMISSION_POOLGROUP",
+          "type": "WRITE_ACCESS"
+        }
+      ]
+    },
+    {
+      "allow_unlabelled_access": true,
+      "name": "role-ops",
+      "privileges": [
+        {
+          "resource": "PERMISSION_VIRTUALSERVICE",
+          "type": "READ_ACCESS"
+        },
+        {
+          "resource": "PERMISSION_POOL",
+          "type": "READ_ACCESS"
+        },
+        {
+          "resource": "PERMISSION_POOLGROUP",
+          "type": "READ_ACCESS"
+        }
+      ]
     }
   ],
   "users": [
@@ -178,6 +315,106 @@
       "is_superuser": true,
       "default_tenant_ref": "",
       "access": [],
+      "user_profile_ref": "/api/useraccountprofile?name=Default-User-Account-Profile"
+    },
+    {
+      "access": [
+        {
+          "role_ref": "/api/role?name=role-blue",
+          "tenant_ref": "/api/tenant?name=dev",
+          "all_tenants": false
+        },
+        {
+          "role_ref": "/api/role?name=role-blue",
+          "tenant_ref": "/api/tenant?name=preprod",
+          "all_tenants": false
+        },
+        {
+          "role_ref": "/api/role?name=role-blue",
+          "tenant_ref": "/api/tenant?name=prod",
+          "all_tenants": false
+        }
+
+      ],
+      "username": "blue",
+      "name": "blue",
+      "is_superuser": false,
+      "default_tenant_ref": "/api/tenant?name=dev",
+      "user_profile_ref": "/api/useraccountprofile?name=Default-User-Account-Profile"
+    },
+    {
+      "access": [
+        {
+          "role_ref": "/api/role?name=role-green",
+          "tenant_ref": "/api/tenant?name=dev",
+          "all_tenants": false
+        },
+        {
+          "role_ref": "/api/role?name=role-green",
+          "tenant_ref": "/api/tenant?name=preprod",
+          "all_tenants": false
+        },
+        {
+          "role_ref": "/api/role?name=role-green",
+          "tenant_ref": "/api/tenant?name=prod",
+          "all_tenants": false
+        }
+
+      ],
+      "username": "green",
+      "name": "green",
+      "is_superuser": false,
+      "default_tenant_ref": "/api/tenant?name=dev",
+      "user_profile_ref": "/api/useraccountprofile?name=Default-User-Account-Profile"
+    },
+    {
+      "access": [
+        {
+          "role_ref": "/api/role?name=role-orange",
+          "tenant_ref": "/api/tenant?name=dev",
+          "all_tenants": false
+        },
+        {
+          "role_ref": "/api/role?name=role-orange",
+          "tenant_ref": "/api/tenant?name=preprod",
+          "all_tenants": false
+        },
+        {
+          "role_ref": "/api/role?name=role-orange",
+          "tenant_ref": "/api/tenant?name=prod",
+          "all_tenants": false
+        }
+
+      ],
+      "username": "orange",
+      "name": "orange",
+      "is_superuser": false,
+      "default_tenant_ref": "/api/tenant?name=dev",
+      "user_profile_ref": "/api/useraccountprofile?name=Default-User-Account-Profile"
+    },
+    {
+      "access": [
+        {
+          "role_ref": "/api/role?name=role-ops",
+          "tenant_ref": "/api/tenant?name=dev",
+          "all_tenants": false
+        },
+        {
+          "role_ref": "/api/role?name=role-ops",
+          "tenant_ref": "/api/tenant?name=preprod",
+          "all_tenants": false
+        },
+        {
+          "role_ref": "/api/role?name=role-ops",
+          "tenant_ref": "/api/tenant?name=prod",
+          "all_tenants": false
+        }
+
+      ],
+      "username": "ops",
+      "name": "ops",
+      "is_superuser": false,
+      "default_tenant_ref": "/api/tenant?name=prod",
       "user_profile_ref": "/api/useraccountprofile?name=Default-User-Account-Profile"
     }
   ],
@@ -192,6 +429,7 @@
       "buffer_se": 0,
       "ha_mode": "HA_MODE_SHARED",
       "min_scaleout_per_vs": 1,
+      "max_vs_per_se": 100,
       "vcenter_folder": "seg-Default-Group",
       "extra_shared_config_memory": 0,
       "vcpus_per_se": 2,
@@ -207,6 +445,7 @@
       "ha_mode": "HA_MODE_SHARED_PAIR",
       "algo": "PLACEMENT_ALGO_PACKED",
       "min_scaleout_per_vs": 2,
+      "max_vs_per_se": 100,
       "vcenter_folder": "seg-private",
       "buffer_se": 0,
       "extra_shared_config_memory": 0,
@@ -223,6 +462,7 @@
       "ha_mode": "HA_MODE_SHARED_PAIR",
       "algo": "PLACEMENT_ALGO_PACKED",
       "min_scaleout_per_vs": 2,
+      "max_vs_per_se": 100,
       "vcenter_folder": "seg-public",
       "buffer_se": 0,
       "extra_shared_config_memory": 0,
@@ -232,6 +472,262 @@
       "realtime_se_metrics": {
         "enabled": true,
         "duration": 0
+      }
+    }
+  ],
+  "applicationprofile" : [
+    {
+      "name": "http_rate_limit_request_from_client",
+      "type": "APPLICATION_PROFILE_TYPE_HTTP",
+      "http_profile": {
+        "allow_dots_in_header_name": false,
+        "client_body_timeout": 30000,
+        "client_header_timeout": 10000,
+        "client_max_body_size": 0,
+        "client_max_header_size": 12,
+        "client_max_request_size": 48,
+        "collect_client_tls_fingerprint": false,
+        "connection_multiplexing_enabled": true,
+        "detect_ntlm_app": true,
+        "disable_keepalive_posts_msie6": true,
+        "disable_sni_hostname_check": false,
+        "enable_chunk_merge": true,
+        "enable_fire_and_forget": false,
+        "enable_request_body_buffering": false,
+        "enable_request_body_metrics": false,
+        "fwd_close_hdr_for_bound_connections": true,
+        "hsts_enabled": false,
+        "hsts_max_age": 365,
+        "hsts_subdomains_enabled": true,
+        "http2_profile": {
+          "enable_http2_server_push": false,
+          "http2_initial_window_size": 64,
+          "max_http2_concurrent_pushes_per_connection": 10,
+          "max_http2_concurrent_streams_per_connection": 128,
+          "max_http2_control_frames_per_connection": 1000,
+          "max_http2_empty_data_frames_per_connection": 1000,
+          "max_http2_header_field_size": 4096,
+          "max_http2_queued_frames_to_client_per_connection": 1000,
+          "max_http2_requests_per_connection": 1000
+        }
+      },
+      "dos_rl_profile": {
+        "dos_profile": {
+          "thresh_period": 5
+        },
+        "rl_profile": {
+          "client_ip_requests_rate_limit": {
+            "action": {
+              "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_429",
+              "type": "RL_ACTION_CLOSE_CONN"
+            },
+            "explicit_tracking": false,
+            "fine_grain": false,
+            "rate_limiter": {
+              "burst_sz": 0,
+              "count": 10,
+              "period": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "http_rate_limit_request_per_cookie",
+      "type": "APPLICATION_PROFILE_TYPE_HTTP",
+      "http_profile": {
+        "allow_dots_in_header_name": false,
+        "client_body_timeout": 30000,
+        "client_header_timeout": 10000,
+        "client_max_body_size": 0,
+        "client_max_header_size": 12,
+        "client_max_request_size": 48,
+        "collect_client_tls_fingerprint": false,
+        "connection_multiplexing_enabled": true,
+        "detect_ntlm_app": true,
+        "disable_keepalive_posts_msie6": true,
+        "disable_sni_hostname_check": false,
+        "enable_chunk_merge": true,
+        "enable_fire_and_forget": false,
+        "enable_request_body_buffering": false,
+        "enable_request_body_metrics": false,
+        "fwd_close_hdr_for_bound_connections": true,
+        "hsts_enabled": false,
+        "hsts_max_age": 365,
+        "hsts_subdomains_enabled": true,
+        "http2_profile": {
+          "enable_http2_server_push": false,
+          "http2_initial_window_size": 64,
+          "max_http2_concurrent_pushes_per_connection": 10,
+          "max_http2_concurrent_streams_per_connection": 128,
+          "max_http2_control_frames_per_connection": 1000,
+          "max_http2_empty_data_frames_per_connection": 1000,
+          "max_http2_header_field_size": 4096,
+          "max_http2_queued_frames_to_client_per_connection": 1000,
+          "max_http2_requests_per_connection": 1000
+        }
+      },
+      "dos_rl_profile": {
+        "dos_profile": {
+          "thresh_period": 5
+        },
+        "rl_profile": {
+          "http_header_rate_limits": [
+            {
+              "action": {
+                "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_429",
+                "type": "RL_ACTION_CLOSE_CONN"
+              },
+              "explicit_tracking": false,
+              "fine_grain": false,
+              "http_cookie": "shop_session-id",
+              "rate_limiter": {
+                "burst_sz": 0,
+                "count": 20,
+                "period": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "httppolicyset": [
+    {
+      "http_request_policy": {
+        "rules": [
+          {
+            "match": {
+              "path": {
+                "match_criteria": "CONTAINS",
+                "match_str": [
+                  "hello",
+                  "world"
+                ]
+              }
+            },
+            "name": "Rule 1",
+            "rewrite_url_action": {
+              "path": {
+                "tokens": [
+                  {
+                    "str_value": "index.html",
+                    "type": "URI_TOKEN_TYPE_STRING"
+                  }
+                ],
+                "type": "URI_PARAM_TYPE_TOKENIZED"
+              },
+              "query": {
+                "keep_query": true
+              }
+            },
+            "switching_action": {
+              "action": "HTTP_SWITCHING_SELECT_POOL",
+              "pool_ref": "/api/pool?name=pool1",
+              "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
+            }
+          },
+          {
+            "match": {
+              "path": {
+                "match_criteria": "CONTAINS",
+                "match_str": [
+                  "avi"
+                ]
+              }
+            },
+            "name": "Rule 2",
+            "rewrite_url_action": {
+              "path": {
+                "tokens": [
+                  {
+                    "str_value": "",
+                    "type": "URI_TOKEN_TYPE_STRING"
+                  }
+                ],
+                "type": "URI_PARAM_TYPE_TOKENIZED"
+              },
+              "query": {
+                "keep_query": true
+              }
+            },
+            "switching_action": {
+              "action": "HTTP_SWITCHING_SELECT_POOL",
+              "pool_ref": "/api/pool?name=pool2",
+              "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
+            }
+          }
+        ]
+      },
+      "name": "http-request-policy-content-switching"
+    },
+    {
+      "name": "http-request-header",
+      "http_request_policy" : {
+        "rules": [
+          {
+            "name": "Rule 1",
+            "index": 1,
+            "enable": true,
+            "log": true,
+            "all_headers": true,
+            "hdr_action": [
+              {
+                "action": "HTTP_REPLACE_HDR",
+                "hdr": {
+                  "name": "X-MyHeader-ToBeReplaced",
+                  "value": {
+                    "val": "NSX-ALB",
+                    "is_sensitive": false
+                  }
+                },
+                "hdr_index": 1
+              },
+              {
+                "action": "HTTP_REMOVE_HDR",
+                "hdr": {
+                  "name": "X-MyHeader-ToBeDeleted"
+                },
+                "hdr_index": 2
+              },
+              {
+                "action": "HTTP_ADD_HDR",
+                "hdr": {
+                  "name": "X-MyHeader-ToBeAdded",
+                  "value": {
+                    "val": "avi",
+                    "is_sensitive": false
+                  }
+                },
+                "hdr_index": 3
+              }
+            ]
+          }
+        ]
+      },
+      "http_response_policy": {
+        "rules": [
+          {
+            "name": "Rule 1",
+            "index": 1,
+            "enable": true,
+            "log": true,
+            "all_headers": true,
+            "hdr_action": [
+              {
+                "action": "HTTP_ADD_HDR",
+                "hdr": {
+                  "name": "Content-Security-Policy",
+                  "value": {
+                    "val": "policy",
+                    "is_sensitive": false
+                  }
+                },
+                "hdr_index": 1
+              }
+            ]
+          }
+        ]
       }
     }
   ],

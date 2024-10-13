@@ -210,6 +210,24 @@ sslkeyandcertificate='[
                           }
                          }
                       ]'
+if [[ $(jq -c -r '.spec.avi.applicationprofile' $jsonFile) == "null" ]]; then
+  applicationprofile=$(jq -c -r '.applicationprofile' $jsonFile)
+else
+  applicationprofile=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.applicationprofile $jsonFile)'')
+  applicationprofile=$(echo ${applicationprofile} | jq '. += '$(jq -c -r '.applicationprofile' $jsonFile)'')
+fi
+if [[ $(jq -c -r '.spec.avi.httppolicyset' $jsonFile) == "null" ]]; then
+  httppolicyset=$(jq -c -r '.httppolicyset' $jsonFile)
+else
+  httppolicyset=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.httppolicyset $jsonFile)'')
+  httppolicyset=$(echo ${httppolicyset} | jq '. += '$(jq -c -r '.httppolicyset' $jsonFile)'')
+fi
+if [[ $(jq -c -r '.spec.avi.roles' $jsonFile) == "null" ]]; then
+  roles=$(jq -c -r '.roles' $jsonFile)
+else
+  roles=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.roles $jsonFile)'')
+  roles=$(echo ${roles} | jq '. += '$(jq -c -r '.roles' $jsonFile)'')
+fi
 if [[ $(jq -c -r '.spec.avi.tenants' $jsonFile) == "null" ]]; then
   tenants=$(jq -c -r '.tenants' $jsonFile)
 else
@@ -369,6 +387,96 @@ pool='{
             "avi_app_server_ips": '${ips_app_second_full}'
           }'
 pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "blue-dev-Pool",
+            "tenant_ref": "dev",
+            "markers": [{"key": "app", "values": ["blue"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "blue-preprod-Pool",
+            "tenant_ref": "preprod",
+            "markers": [{"key": "app", "values": ["blue"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "blue-prod-Pool",
+            "tenant_ref": "prod",
+            "markers": [{"key": "app", "values": ["blue"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "orange-dev-Pool",
+            "tenant_ref": "dev",
+            "markers": [{"key": "app", "values": ["orange"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "orange-preprod-Pool",
+            "tenant_ref": "preprod",
+            "markers": [{"key": "app", "values": ["orange"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "orange-prod-Pool",
+            "tenant_ref": "prod",
+            "markers": [{"key": "app", "values": ["orange"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "green-dev-Pool",
+            "tenant_ref": "dev",
+            "markers": [{"key": "app", "values": ["green"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "green-preprod-Pool",
+            "tenant_ref": "preprod",
+            "markers": [{"key": "app", "values": ["green"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
+pool='{
+            "name": "green-prod-Pool",
+            "tenant_ref": "prod",
+            "markers": [{"key": "app", "values": ["green"]}],
+            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+            "default_server_port": 80,
+            "type": "V4",
+            "avi_app_server_ips": '${ips_app_full}'
+          }'
+pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
 pool_groups='
 [
   {
@@ -443,6 +551,56 @@ virtual_service_http='{
                  }'
 virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
 virtual_service_http='{
+                   "name": "app-content-switching",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "pool2",
+                   "http_policies" : [
+                     {
+                       "http_policy_set_ref": "/api/httppolicyset?name=http-request-policy-content-switching",
+                       "index": 11
+                     }
+                   ],
+                   "se_group_ref": "private",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "app-security",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "pool1",
+                   "http_policies" : [
+                     {
+                       "http_policy_set_ref": "/api/httppolicyset?name=http-request-header",
+                       "index": 11
+                     }
+                   ],
+                   "se_group_ref": "private",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
                    "name": "app-migration",
                    "type": "V4",
                    "cidr": "'${cidr_vip_prefix}'",
@@ -461,9 +619,196 @@ virtual_service_http='{
                    ]
                  }'
 virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-
-virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
-
+virtual_service_http='{
+                   "name": "blue-dev",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "blue-dev-Pool",
+                   "tenant_ref": "dev",
+                   "markers": [{"key": "app", "values": ["blue"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "blue-preprod",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "blue-preprod-Pool",
+                   "tenant_ref": "preprod",
+                   "markers": [{"key": "app", "values": ["blue"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "blue-prod",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "blue-prod-Pool",
+                   "tenant_ref": "prod",
+                   "markers": [{"key": "app", "values": ["blue"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "green-dev",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "green-dev-Pool",
+                   "tenant_ref": "dev",
+                   "markers": [{"key": "app", "values": ["green"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "green-preprod",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "green-preprod-Pool",
+                   "tenant_ref": "preprod",
+                   "markers": [{"key": "app", "values": ["green"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "green-prod",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "green-prod-Pool",
+                   "tenant_ref": "prod",
+                   "markers": [{"key": "app", "values": ["green"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "orange-dev",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "orange-dev-Pool",
+                   "tenant_ref": "dev",
+                   "markers": [{"key": "app", "values": ["orange"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "orange-preprod",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "orange-preprod-Pool",
+                   "tenant_ref": "preprod",
+                   "markers": [{"key": "app", "values": ["orange"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+virtual_service_http='{
+                   "name": "orange-prod",
+                   "type": "V4",
+                   "cidr": "'${cidr_vip_prefix}'",
+                   "network_ref": "'${network_ref_vip}'",
+                   "pool_ref": "orange-prod-Pool",
+                   "tenant_ref": "prod",
+                   "markers": [{"key": "app", "values": ["orange"]}],
+                   "se_group_ref": "Default-Group",
+                   "services": [
+                                 {
+                                   "port": 80,
+                                   "enable_ssl": false
+                                  },
+                                  {
+                                    "port": 443,
+                                    "enable_ssl": true
+                                  }
+                   ]
+                 }'
+virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
+#
 virtual_service_dns='{
                        "name": "app-dns",
                        "type": "V4",
@@ -473,6 +818,8 @@ virtual_service_dns='{
                        "services": [{"port": 53}]
                      }'
 virtual_services_dns=$(echo ${virtual_services_dns} | jq '. += ['$(echo $virtual_service_dns | jq -c -r .)']')
+#
+virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
 #
 # NSX variables
 #

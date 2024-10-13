@@ -57,6 +57,9 @@ sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s@\${alertconfig}@$(echo ${alertconfig} | jq -c -r '.')@" \
     -e "s@\${sslkeyandcertificate}@$(echo ${sslkeyandcertificate} | jq -c -r '.')@" \
     -e "s@\${sslkeyandcertificate_ref}@${tanzu_cert_name}@" \
+    -e "s@\${applicationprofile}@$(echo ${applicationprofile} | jq -c -r '.')@" \
+    -e "s@\${httppolicyset}@$(echo ${httppolicyset} | jq -c -r '.')@" \
+    -e "s@\${roles}@$(echo ${roles} | jq -c -r '.')@" \
     -e "s@\${tenants}@$(echo ${tenants} | jq -c -r '.')@" \
     -e "s@\${users}@$(echo ${users} | jq -c -r '.')@" \
     -e "s@\${domain}@${avi_subdomain}.${domain}@" \
