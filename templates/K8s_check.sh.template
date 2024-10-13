@@ -22,6 +22,7 @@ while [ $attempt -ne $retry ]; do
     done
   if [ $nodes_ready -eq "${total_node}" ] ; then
     echo "Amount of nodes READY: $nodes_ready - PASSED"
+    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', ${deployment_name}: k8s cluster ${clusterName} is ready"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     exit
   else
     echo "Amount of nodes READY: $nodes_ready, expected: ${total_node} - RETRY"

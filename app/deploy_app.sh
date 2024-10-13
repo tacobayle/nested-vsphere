@@ -334,7 +334,10 @@ if [[ ${k8s_clusters} != "null" ]]; then
     cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
     cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
     total_node=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length')
-    sed -e "s/\${total_node}/${total_node}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh"
+    sed -e "s/\${total_node}/${total_node}/" \
+        -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
+        -e "s@\${deployment_name}@${deployment_name}@" \
+        -e "s/\${clusterName}/${k8s_basename}${index}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh"
     for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
     do
       ip_k8s_node="${cidr_vip_three_octets}.$(echo ${k8s_clusters} | jq -c -r .[$(expr ${index} - 1)].ips[$(expr ${index_ip} - 1)])"
@@ -393,10 +396,10 @@ fi
 # consolidate k8s config files in the external gw
 #
 if [[ ${k8s_clusters} != "null" ]]; then
+  kube_config_json="{\"apiVersion\": \"v1\"}"
+  localFile=/home/ubuntu/.kube/config
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
-    kube_config_json="{\"apiVersion\": \"v1\"}"
-    localFile=/home/ubuntu/.kube/config
     cluster_certificate_authority_data=$(yq -c -r '.clusters[0].cluster."certificate-authority-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
     cluster_server=$(yq -c -r '.clusters[0].cluster.server' /home/ubuntu/k8s/config-${k8s_basename}${index})
     name=${k8s_basename}${index}
@@ -412,7 +415,8 @@ if [[ ${k8s_clusters} != "null" ]]; then
     user_client_key_data=$(yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
     kube_config_json=$(echo ${kube_config_json} | jq '.users += [{"user": {"client-certificate-data": "'$(echo $user_client_certificate_data)'", "client-key-data": "'$(echo $user_client_key_data)'"}, "name": "'$(echo $name)'"}]')
   done
-  echo ${kube_config_json} | yq -y . | tee ${localFile} > /dev/null
+  rm ${localFile}
+  echo ${kube_config_json} | yq -y . | tee -a ${localFile} > /dev/null
   cp ${localFile} /home/ubuntu/k8s/config
   chmod 600 ${localFile}
 fi
