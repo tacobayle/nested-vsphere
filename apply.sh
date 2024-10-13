@@ -125,7 +125,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${base64_userdata}@$(base64 /tmp/${gw_name}_userdata.yaml -w 0)@" \
         -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s@\${network_ref}@${network_ref_gw}@" \
-        -e "s/\${vm_name}/${gw_name}/" /nested-vsphere/templates/options-ubuntu.json.template | tee "/tmp/options-${gw_name}.json"
+        -e "s/\${vm_name}/${gw_name}/" /nested-vsphere/templates/options-ubuntu.json.template > "/tmp/options-${gw_name}.json"
     #
     govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ubuntu_ova_url})" >> ${log_file} 2>&1
     govc vm.change -vm "${folder}/${gw_name}" -c $(jq -c -r .gw.cpu $jsonFile) -m $(jq -c -r .gw.memory $jsonFile)
