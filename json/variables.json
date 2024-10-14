@@ -740,7 +740,7 @@
   "k8s_basename_vm": "node0",
   "k8s_node_cpu": 4,
   "k8s_node_memory": 8192,
-  "k8s_node_disk": 40,
+  "k8s_node_disk": "15G",
   "k8s_apt_packages": ["jq"],
   "docker_version": "5:24.0.2-1~ubuntu.20.04~focal",
   "pod_cidr": "192.168.0.0/16",
