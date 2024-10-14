@@ -104,7 +104,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
   done
 fi
 #
-# Client VM creations first group // vsphere-avi use case)
+# Client VMs client creation // vsphere-avi use case)
 #
 if [[ ${ips_clients} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
@@ -131,7 +131,7 @@ if [[ ${ips_clients} != "null" ]]; then
   done
 fi
 #
-# App VM creations first group // vsphere-avi use case)
+# App VMs creation first group // vsphere-avi use case)
 #
 if [[ ${ips_app} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
@@ -164,7 +164,7 @@ if [[ ${ips_app} != "null" ]]; then
   done
 fi
 #
-# App VM creations second group // vsphere-avi use case)
+# App VMs creation second group // vsphere-avi use case)
 #
 if [[ ${ips_app_second} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
@@ -191,7 +191,7 @@ if [[ ${ips_app_second} != "null" ]]; then
   done
 fi
 #
-# VM k8s_clusters
+# VM k8s_clusters creation
 #
 if [[ ${k8s_clusters} != "null" ]]; then
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
@@ -335,7 +335,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
     total_node=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length')
     sed -e "s/\${total_node}/${total_node}/" \
-        -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
+        -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@g" \
         -e "s@\${deployment_name}@${deployment_name}@" \
         -e "s/\${clusterName}/${k8s_basename}${index}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh"
     for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
@@ -415,8 +415,8 @@ if [[ ${k8s_clusters} != "null" ]]; then
     user_client_key_data=$(yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
     kube_config_json=$(echo ${kube_config_json} | jq '.users += [{"user": {"client-certificate-data": "'$(echo $user_client_certificate_data)'", "client-key-data": "'$(echo $user_client_key_data)'"}, "name": "'$(echo $name)'"}]')
   done
-  rm ${localFile}
-  echo ${kube_config_json} | yq -y . | tee -a ${localFile} > /dev/null
+  rm -f ${localFile}
+  echo ${kube_config_json} | yq -y . | tee ${localFile} > /dev/null
   cp ${localFile} /home/ubuntu/k8s/config
   chmod 600 ${localFile}
 fi
