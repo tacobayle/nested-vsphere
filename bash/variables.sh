@@ -7,6 +7,7 @@ GENERIC_PASSWORD=$(jq -c -r .GENERIC_PASSWORD $jsonFile)
 AVI_OLD_PASSWORD=$(jq -c -r .AVI_OLD_PASSWORD $jsonFile)
 DOCKER_REGISTRY_USERNAME=$(jq -c -r .DOCKER_REGISTRY_USERNAME $jsonFile)
 DOCKER_REGISTRY_PASSWORD=$(jq -c -r .DOCKER_REGISTRY_PASSWORD $jsonFile)
+NSX_LICENSE=$(jq -c -r .NSX_LICENSE $jsonFile)
 DOCKER_REGISTRY_EMAIL=$(jq -c -r .DOCKER_REGISTRY_EMAIL $jsonFile)
 ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
 vsphere_nested_username="administrator"
@@ -118,6 +119,71 @@ k8s_node_disk=$(jq -c -r '.k8s_node_disk' $jsonFile)
 k8s_apt_packages=$(jq -c -r '.k8s_apt_packages' $jsonFile)
 docker_version=$(jq -c -r '.docker_version' $jsonFile)
 pod_cidr=$(jq -c -r '.pod_cidr' $jsonFile)
+#
+# NSX variables
+#
+if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+  nsx_avi_basename="-"
+  folder_nsx=$(jq -c -r '.nsx.folder' $jsonFile)
+  if [[ $(jq -c -r .spec.nsx.ip $jsonFile) != "null" ]]; then
+    ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
+    ip_nsx_last_octet=$(jq -c -r .spec.nsx.ip $jsonFile)
+  fi
+  #netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
+  gw_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  nsx_manager_name=$(jq -c -r '.nsx.manager_name' $jsonFile)
+  network_nsx=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
+  nsx_ova_url=$(jq -c -r .spec.nsx.ova_url $jsonFile)
+  host_switch_profiles=$(jq -c -r .nsx.config.uplink_profiles $jsonFile)
+  transport_zones=$(jq -c -r .nsx.config.transport_zones $jsonFile)
+  ip_pools=$(jq -c -r .nsx.config.ip_pools $jsonFile)
+  segments=$(jq -c -r .nsx.config.segments $jsonFile)
+  transport_node_profiles=$(jq -c -r .nsx.config.transport_node_profiles $jsonFile)
+  dhcp_servers=$(jq -c -r .nsx.config.dhcp_servers $jsonFile)
+  nsx_groups=$(jq -c -r .nsx.config.nsx_groups $jsonFile)
+  exclusion_list_groups=$(jq -c -r .nsx.config.exclusion_list_groups $jsonFile)
+  nsx_port_group_mgmt=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
+  nsx_port_group_overlay_edge=$(jq -c -r --arg arg "nsx-overlay-edge" '.port_groups_nsx[] | select( .scope == $arg).name' $jsonFile)
+  nsx_port_group_external=$(jq -c -r --arg arg "nsx-external" '.port_groups_nsx[] | select( .scope == $arg).name' $jsonFile)
+  supernet_overlay=$(jq -c -r '.spec.nsx.supernet_overlay' $jsonFile)
+  supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
+  supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
+  segments_overlay="[]"
+  segment_count=0
+  amount_of_segment=$((${supernet_overlay_third_octet} + $(jq '.nsx.config.segments_overlay | length' $jsonFile) - 1))
+  for i in $(seq ${supernet_overlay_third_octet} ${amount_of_segment})
+  do
+    cidr="${supernet_first_two_octets}.$i.0/24"
+    cidr_three_octets="${supernet_first_two_octets}.$i."
+    segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"cidr": "'${cidr}'",
+                                                     "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
+                                                     "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
+                                                     "dhcp_ranges": ["'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f1)'-'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f2)'"]
+                                                     }')
+
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.tanzu_supervisor_starting_ip' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"tanzu_supervisor_starting_ip": "'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_starting_ip' $jsonFile)'"}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.tanzu_supervisor_count' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"tanzu_supervisor_count": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_count' $jsonFile)'"}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.ips_app_first' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"ips_app_first": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].ips_app_first' $jsonFile)'}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.ips_app_second' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"ips_app_second": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].ips_app_second' $jsonFile)'}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_private' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"lbaas_private": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_private' $jsonFile)'}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_public' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"lbaas_private": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_public' $jsonFile)'}')
+    fi
+    ((segment_count++))
+  done
+  segment_overlay_file=$(jq -c -r '.nsx.config.segment_overlay_file' $jsonFile)
+  echo ${segments_overlay} | tee ${segment_overlay_file}
+fi
 #
 # Avi variables
 #
@@ -255,6 +321,14 @@ avi_content_library_name=$(jq -c -r '.avi_content_library_name' $jsonFile)
 avi_ipam_first=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.spec.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
 if [[ ${kind} == "vsphere-avi" ]]; then
+  avi_lsc_se_folder=$(jq -c -r '.avi_lsc_se_folder' $jsonFile)
+  avi_lsc_kernel_version=$(jq -c -r '.avi_lsc_kernel_version' $jsonFile)
+  lsc_ova_url=$(jq -c -r '.spec.avi.lsc.ova_url' $jsonFile)
+  avi_lsc_se_basename=$(jq -c -r '.avi_lsc_se_basename' $jsonFile)
+  avi_lsc_se_cpu=$(jq -c -r '.avi_lsc_se_cpu' $jsonFile)
+  avi_lsc_se_memory=$(jq -c -r '.avi_lsc_se_memory' $jsonFile)
+  avi_lsc_se_disk=$(jq -c -r '.avi_lsc_se_disk' $jsonFile)
+  lsc_ips_last_octet=$(jq -c -r '.spec.avi.lsc.ips' $jsonFile)
   gw_avi_se=$(jq -c -r --arg arg "avi-se-mgmt" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   gw_avi_vip=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   avi_static_routes='[
@@ -295,6 +369,10 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   if [[ ${cidr_se_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
     cidr_se_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
   fi
+  #
+  lsc_ips_mgmt=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_se_mgmt_three_octets}'." + (. | tostring))')
+  lsc_ips_backend=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_app_three_octets}'." + (. | tostring))')
+  lsc_ips_vip=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_vip_three_octets}'." + (. | tostring))')
   #
   network_ref_app="avi-app-backend"
   ip_avi_dns="${cidr_vip_three_octets}.${avi_ipam_first}"
@@ -345,529 +423,769 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   avi_config_repo=$(jq -c -r '.avi_config_repo' $jsonFile)
   playbook=$(jq -c -r '.playbook_vcenter' $jsonFile)
   tag=$(jq -c -r '.tag_vcenter' $jsonFile)
+  supernet_overlay_third_octet=0
+  amount_of_segment=0
+  se_group_ref="private"
 fi
-pools="[]"
-virtual_services_http="[]"
-virtual_services_dns="[]"
-pool='{
-            "name": "pool1",
-            "default_server_port": 80,
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "pool2",
-            "default_server_port": '${app_tcp_default}',
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "pool3",
-            "default_server_port": '${app_tcp_waf}',
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "pg1-pool1-app-v1",
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "pg1-pool2-app-v2",
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_second_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "blue-dev-Pool",
-            "tenant_ref": "dev",
-            "markers": [{"key": "app", "values": ["blue"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "blue-preprod-Pool",
-            "tenant_ref": "preprod",
-            "markers": [{"key": "app", "values": ["blue"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "blue-prod-Pool",
-            "tenant_ref": "prod",
-            "markers": [{"key": "app", "values": ["blue"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "orange-dev-Pool",
-            "tenant_ref": "dev",
-            "markers": [{"key": "app", "values": ["orange"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "orange-preprod-Pool",
-            "tenant_ref": "preprod",
-            "markers": [{"key": "app", "values": ["orange"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "orange-prod-Pool",
-            "tenant_ref": "prod",
-            "markers": [{"key": "app", "values": ["orange"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "green-dev-Pool",
-            "tenant_ref": "dev",
-            "markers": [{"key": "app", "values": ["green"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "green-preprod-Pool",
-            "tenant_ref": "preprod",
-            "markers": [{"key": "app", "values": ["green"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool='{
-            "name": "green-prod-Pool",
-            "tenant_ref": "prod",
-            "markers": [{"key": "app", "values": ["green"]}],
-            "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-            "default_server_port": 80,
-            "type": "V4",
-            "avi_app_server_ips": '${ips_app_full}'
-          }'
-pools=$(echo ${pools} | jq '. += ['$(echo $pool| jq -c -r .)']')
-pool_groups='
-[
-  {
-    "name": "pg1",
-    "members": [
-      {
-        "name": "pg1-pool1-app-v1",
-        "ratio": 70
-      },
-      {
-        "name": "pg1-pool2-app-v2",
-        "ratio": 30
-      }
-    ]
-  }
-]'
-virtual_service_http='{
-                   "name": "app-hello-world",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "pool1",
-                   "se_group_ref": "private",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "app-avi",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "pool2",
-                   "se_group_ref": "private",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "app-waf",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "pool3",
-                   "se_group_ref": "private",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "app-content-switching",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "pool2",
-                   "http_policies" : [
-                     {
-                       "http_policy_set_ref": "/api/httppolicyset?name=http-request-policy-content-switching",
-                       "index": 11
-                     }
-                   ],
-                   "se_group_ref": "private",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "app-security",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "pool1",
-                   "http_policies" : [
-                     {
-                       "http_policy_set_ref": "/api/httppolicyset?name=http-request-header",
-                       "index": 11
-                     }
-                   ],
-                   "se_group_ref": "private",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "app-migration",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_group_ref": "pg1",
-                   "se_group_ref": "private",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "blue-dev",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "blue-dev-Pool",
-                   "tenant_ref": "dev",
-                   "markers": [{"key": "app", "values": ["blue"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "blue-preprod",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "blue-preprod-Pool",
-                   "tenant_ref": "preprod",
-                   "markers": [{"key": "app", "values": ["blue"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "blue-prod",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "blue-prod-Pool",
-                   "tenant_ref": "prod",
-                   "markers": [{"key": "app", "values": ["blue"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "green-dev",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "green-dev-Pool",
-                   "tenant_ref": "dev",
-                   "markers": [{"key": "app", "values": ["green"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "green-preprod",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "green-preprod-Pool",
-                   "tenant_ref": "preprod",
-                   "markers": [{"key": "app", "values": ["green"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "green-prod",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "green-prod-Pool",
-                   "tenant_ref": "prod",
-                   "markers": [{"key": "app", "values": ["green"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "orange-dev",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "orange-dev-Pool",
-                   "tenant_ref": "dev",
-                   "markers": [{"key": "app", "values": ["orange"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "orange-preprod",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "orange-preprod-Pool",
-                   "tenant_ref": "preprod",
-                   "markers": [{"key": "app", "values": ["orange"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
-virtual_service_http='{
-                   "name": "orange-prod",
-                   "type": "V4",
-                   "cidr": "'${cidr_vip_prefix}'",
-                   "network_ref": "'${network_ref_vip}'",
-                   "pool_ref": "orange-prod-Pool",
-                   "tenant_ref": "prod",
-                   "markers": [{"key": "app", "values": ["orange"]}],
-                   "se_group_ref": "Default-Group",
-                   "services": [
-                                 {
-                                   "port": 80,
-                                   "enable_ssl": false
-                                  },
-                                  {
-                                    "port": 443,
-                                    "enable_ssl": true
-                                  }
-                   ]
-                 }'
-virtual_services_http=$(echo ${virtual_services_http} | jq '. += ['$(echo $virtual_service_http | jq -c -r .)']')
 #
-virtual_service_dns='{
-                       "name": "app-dns",
+# pools and vs definitions
+#
+if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
+  pools="[]"
+  virtual_services_http="[]"
+  virtual_services_dns="[]"
+  segment_count=0
+  migration_pool=0
+  content_switching_pool=0
+  multi_tenant_pool=0
+  for i in $(seq ${supernet_overlay_third_octet} ${amount_of_segment})
+  do
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then
+      nsx_segment_pool="false"
+      nsx_segment_vip="false"
+      nsx_dns="false"
+      nsx_app_migration="false"
+      content_switching_vip="false"
+      multi_tenant_vip="false"
+      cidr="${supernet_first_two_octets}.$i.0/24"
+      cidr_three_octets="${supernet_first_two_octets}.$i."
+      tier1_name=$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)
+      cidr_vip_prefix="${supernet_first_two_octets}.$i.0/24"
+      network_ref_vip=$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)
+      if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.ips_app_first' > /dev/null) ; then
+        ips_app_full=$(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].ips_app_first' $jsonFile) | jq '. | map("'${cidr_three_octets}'" + (. | tostring))')
+        nsx_segment_pool="true"
+        ((content_switching_pool++))
+        ((multi_tenant_pool++))
+        ((migration_pool++))
+      fi
+      if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.ips_app_second' > /dev/null) ; then
+        ips_app_second_full=$(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].ips_app_second' $jsonFile) | jq '. | map("'${cidr_three_octets}'" + (. | tostring))')
+        nsx_segment_pool="true"
+      fi
+      virtual_service_dns='{"vrf_ref": "'${tier1_name}'"}'
+      if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_public' > /dev/null) ; then
+        se_group_ref="public"
+        nsx_segment_vip="true"
+      fi
+      if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_private' > /dev/null) ; then
+        se_group_ref="private"
+        nsx_segment_vip="true"
+        nsx_dns="true"
+        content_switching_vip="true"
+        nsx_app_migration="true"
+        multi_tenant_vip="true"
+      fi
+      ((segment_count++))
+    fi
+    #
+    # pool creation
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'pool1",
+                "default_server_port": 80,
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${nsx_segment_pool} == "true" ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'pool2",
+                "default_server_port": '${app_tcp_default}',
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${nsx_segment_pool} == "true" ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'pool3",
+                "default_server_port": '${app_tcp_waf}',
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${nsx_segment_pool} == "true" ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool1-app-v1",
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${migration_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool2-app-v2",
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_second_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${migration_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'blue-dev-Pool",
+                "tenant_ref": "dev",
+                "markers": [{"key": "app", "values": ["blue"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'blue-preprod-Pool",
+                "tenant_ref": "preprod",
+                "markers": [{"key": "app", "values": ["blue"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'blue-prod-Pool",
+                "tenant_ref": "prod",
+                "markers": [{"key": "app", "values": ["blue"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'orange-dev-Pool",
+                "tenant_ref": "dev",
+                "markers": [{"key": "app", "values": ["orange"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'orange-preprod-Pool",
+                "tenant_ref": "preprod",
+                "markers": [{"key": "app", "values": ["orange"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'orange-prod-Pool",
+                "tenant_ref": "prod",
+                "markers": [{"key": "app", "values": ["orange"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'green-dev-Pool",
+                "tenant_ref": "dev",
+                "markers": [{"key": "app", "values": ["green"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'green-preprod-Pool",
+                "tenant_ref": "preprod",
+                "markers": [{"key": "app", "values": ["green"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    pool=$(echo ${pool} | jq '. += {
+                "name": "'${tier1_name}''${nsx_avi_basename}'green-prod-Pool",
+                "tenant_ref": "prod",
+                "markers": [{"key": "app", "values": ["green"]}],
+                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                "default_server_port": 80,
+                "type": "V4",
+                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+              }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_pool} -eq 1 ]] ; then
+      pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+    fi
+    #
+    # httppolicyset
+    #
+    if [[ ${kind} == "vsphere-avi" || ${content_switching_pool} -eq 1 ]] ; then
+      httppolicy='
+      {
+        "http_request_policy": {
+          "rules": [
+            {
+              "match": {
+                "path": {
+                  "match_criteria": "CONTAINS",
+                  "match_str": [
+                    "hello",
+                    "world"
+                  ]
+                }
+              },
+              "name": "Rule 1",
+              "rewrite_url_action": {
+                "path": {
+                  "tokens": [
+                    {
+                      "str_value": "index.html",
+                      "type": "URI_TOKEN_TYPE_STRING"
+                    }
+                  ],
+                  "type": "URI_PARAM_TYPE_TOKENIZED"
+                },
+                "query": {
+                  "keep_query": true
+                }
+              },
+              "switching_action": {
+                "action": "HTTP_SWITCHING_SELECT_POOL",
+                "pool_ref": "/api/pool?name='${tier1_name}''${nsx_avi_basename}'pool1",
+                "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
+              }
+            },
+            {
+              "match": {
+                "path": {
+                  "match_criteria": "CONTAINS",
+                  "match_str": [
+                    "avi"
+                  ]
+                }
+              },
+              "name": "Rule 2",
+              "rewrite_url_action": {
+                "path": {
+                  "tokens": [
+                    {
+                      "str_value": "",
+                      "type": "URI_TOKEN_TYPE_STRING"
+                    }
+                  ],
+                  "type": "URI_PARAM_TYPE_TOKENIZED"
+                },
+                "query": {
+                  "keep_query": true
+                }
+              },
+              "switching_action": {
+                "action": "HTTP_SWITCHING_SELECT_POOL",
+                "pool_ref": "/api/pool?name='${tier1_name}''${nsx_avi_basename}'pool2",
+                "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
+              }
+            }
+          ]
+        },
+        "name": "http-request-policy-content-switching"
+      }'
+      httppolicyset=$(jq '. += [$new_item]' --argjson new_item "${httppolicy}" <<< "${httppolicyset}")
+    fi
+    #
+    # pool group
+    #
+    if [[ ${kind} == "vsphere-avi" || migration_pool -eq 1 ]] ; then
+      pool_groups='
+      [
+        {
+          "name": "pg1",
+          "members": [
+            {
+              "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool1-app-v1",
+              "ratio": 70
+            },
+            {
+              "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool2-app-v2",
+              "ratio": 30
+            }
+          ]
+        }
+      ]'
+    fi
+    #
+    # vs creation
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                     "name": "'${tier1_name}''${nsx_avi_basename}'app-hello-world",
+                     "type": "V4",
+                     "cidr": "'${cidr_vip_prefix}'",
+                     "network_ref": "'${network_ref_vip}'",
+                     "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool1",
+                     "se_group_ref": "'${se_group_ref}'",
+                     "services": [
+                                   {
+                                     "port": 80,
+                                     "enable_ssl": false
+                                    },
+                                    {
+                                      "port": 443,
+                                      "enable_ssl": true
+                                    }
+                     ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${nsx_segment_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'app-avi",
                        "type": "V4",
                        "cidr": "'${cidr_vip_prefix}'",
                        "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool2",
+                       "se_group_ref": "'${se_group_ref}'",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${nsx_segment_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'app-waf",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool3",
+                       "se_group_ref": "'${se_group_ref}'",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${nsx_segment_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'app-security",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool1",
+                       "http_policies" : [
+                         {
+                           "http_policy_set_ref": "/api/httppolicyset?name=http-request-header",
+                           "index": 11
+                         }
+                       ],
+                       "se_group_ref": "'${se_group_ref}'",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${nsx_segment_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'app-migration",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_group_ref": "pg1",
+                       "se_group_ref": "private",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${nsx_app_migration} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                        "name": "'${tier1_name}''${nsx_avi_basename}'app-content-switching",
+                        "type": "V4",
+                        "cidr": "'${cidr_vip_prefix}'",
+                        "network_ref": "'${network_ref_vip}'",
+                        "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool2",
+                        "http_policies" : [
+                          {
+                            "http_policy_set_ref": "/api/httppolicyset?name=http-request-policy-content-switching",
+                            "index": 11
+                          }
+                        ],
+                        "se_group_ref": "private",
+                        "services": [
+                                      {
+                                        "port": 80,
+                                        "enable_ssl": false
+                                       },
+                                       {
+                                         "port": 443,
+                                         "enable_ssl": true
+                                       }
+                        ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${content_switching_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'blue-dev",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-dev-Pool",
+                       "tenant_ref": "dev",
+                       "markers": [{"key": "app", "values": ["blue"]}],
                        "se_group_ref": "Default-Group",
-                       "services": [{"port": 53}]
-                     }'
-virtual_services_dns=$(echo ${virtual_services_dns} | jq '. += ['$(echo $virtual_service_dns | jq -c -r .)']')
-#
-virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
-#
-# NSX variables
-#
-if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
-  folder_nsx=$(jq -c -r '.nsx.folder' $jsonFile)
-  if [[ $(jq -c -r .spec.nsx.ip $jsonFile) != "null" ]]; then
-    ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
-    ip_nsx_last_octet=$(jq -c -r .spec.nsx.ip $jsonFile)
-  fi
-  #netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
-  gw_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
-  nsx_manager_name=$(jq -c -r '.nsx.manager_name' $jsonFile)
-  network_nsx=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
-  nsx_ova_url=$(jq -c -r .spec.nsx.ova_url $jsonFile)
-  supernet_overlay=$(jq -c -r '.spec.nsx.supernet_overlay' $jsonFile)
-  supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
-  supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
-  segments_overlay="[]"
-  segment_count=0
-  for i in $(seq ${supernet_overlay_third_octet} $((${supernet_overlay_third_octet} + $(jq '.nsx.config.segments_overlay | length' $jsonFile) - 1)))
-  do
-    cidr="${supernet_first_two_octets}.$i.0/24"
-    cidr_three_octets="${supernet_first_two_octets}.$i."
-    segments_overlay=$(echo ${segments_overlay} | jq '. + [{"cidr": "'${cidr}'",
-                                                     "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
-                                                     "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
-                                                     "dhcp_ranges": ["'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f1)'-'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f2)'"]
-                                                     }]')
-
-    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.tanzu_supervisor_starting_ip' > /dev/null) ; then
-      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"tanzu_supervisor_starting_ip": "'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_starting_ip' $jsonFile)'"}')
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
     fi
-    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.tanzu_supervisor_count' > /dev/null) ; then
-      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"tanzu_supervisor_count": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_count' $jsonFile)'"}')
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'blue-preprod",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-preprod-Pool",
+                       "tenant_ref": "preprod",
+                       "markers": [{"key": "app", "values": ["blue"]}],
+                       "se_group_ref": "Default-Group",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
     fi
-    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.app_ips' > /dev/null) ; then
-      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"app_ips": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].app_ips' $jsonFile)'"}')
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'blue-prod",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-prod-Pool",
+                       "tenant_ref": "prod",
+                       "markers": [{"key": "app", "values": ["blue"]}],
+                       "se_group_ref": "Default-Group",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
     fi
-    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_private' > /dev/null) ; then
-      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"lbaas_private": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_private' $jsonFile)'}')
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'green-dev",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-dev-Pool",
+                       "tenant_ref": "dev",
+                       "markers": [{"key": "app", "values": ["green"]}],
+                       "se_group_ref": "Default-Group",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
     fi
-    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_public' > /dev/null) ; then
-      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] + {"lbaas_private": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_public' $jsonFile)'}')
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'green-preprod",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-preprod-Pool",
+                       "tenant_ref": "preprod",
+                       "markers": [{"key": "app", "values": ["green"]}],
+                       "se_group_ref": "Default-Group",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
     fi
-    ((segment_count++))
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'green-prod",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-prod-Pool",
+                       "tenant_ref": "prod",
+                       "markers": [{"key": "app", "values": ["green"]}],
+                       "se_group_ref": "Default-Group",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'orange-dev",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-dev-Pool",
+                       "tenant_ref": "dev",
+                       "markers": [{"key": "app", "values": ["orange"]}],
+                       "se_group_ref": "Default-Group",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'orange-preprod",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-preprod-Pool",
+                       "tenant_ref": "preprod",
+                       "markers": [{"key": "app", "values": ["orange"]}],
+                       "se_group_ref": "Default-Group",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'orange-prod",
+                       "type": "V4",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-prod-Pool",
+                       "tenant_ref": "prod",
+                       "markers": [{"key": "app", "values": ["orange"]}],
+                       "se_group_ref": "Default-Group",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+            }')
+    if [[ ${kind} == "vsphere-avi" || ${multi_tenant_vip} == "true" ]] ; then
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    #
+    # dns vs
+    #
+    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_dns="{}" ; fi
+    if [[ ${kind} == "vsphere-avi" || ${nsx_dns} == "true" ]] ; then
+    virtual_service_dns=$(echo ${virtual_service_dns} | jq '. += {
+                           "name": "'${tier1_name}''${nsx_avi_basename}'app-dns",
+                           "type": "V4",
+                           "cidr": "'${cidr_vip_prefix}'",
+                           "network_ref": "'${network_ref_vip}'",
+                           "se_group_ref": "Default-Group",
+                           "services": [{"port": 53}]
+            }')
+    virtual_services_dns=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_dns}" <<< "${virtual_services_dns}")
+    fi
   done
-  segment_overlay_file=$(jq -c -r '.nsx.config.segment_overlay_file' $jsonFile)
-  echo ${segments_overlay} | tee ${segment_overlay_file}
+  #
+  # virtual_services consolidation
+  #
+  virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
 fi
 #
 # Tanzu variables

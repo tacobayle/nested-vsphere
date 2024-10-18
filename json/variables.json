@@ -139,15 +139,18 @@
   "port_groups_nsx": [
     {
       "name": "nsx-external",
-      "vds_ref": "vds1"
+      "vds_ref": "vds1",
+      "scope": "nsx-external"
     },
     {
       "name": "nsx-overlay",
-      "vds_ref": "vds1"
+      "vds_ref": "vds1",
+      "scope": "nsx-overlay"
     },
     {
       "name": "nsx-overlay-edge",
-      "vds_ref": "vds1"
+      "vds_ref": "vds1",
+      "scope": "nsx-overlay-edge"
     }
   ],
   "disks": {
@@ -156,6 +159,12 @@
   },
   "avi_folder": "avi-ctrl",
   "avi_ctrl_name": "avi-ctrl-01",
+  "avi_lsc_se_folder": "lsc-se",
+  "avi_lsc_kernel_version": "4.4.0-21-generic",
+  "avi_lsc_se_basename": "lsc-se0",
+  "avi_lsc_se_cpu": 1,
+  "avi_lsc_se_memory": 2048,
+  "avi_lsc_se_disk": "25G",
   "avi_slack": {
     "name": "avi-slack",
     "path": "/home/ubuntu/python/control-script-avi-slack.py"
@@ -594,74 +603,6 @@
   ],
   "httppolicyset": [
     {
-      "http_request_policy": {
-        "rules": [
-          {
-            "match": {
-              "path": {
-                "match_criteria": "CONTAINS",
-                "match_str": [
-                  "hello",
-                  "world"
-                ]
-              }
-            },
-            "name": "Rule 1",
-            "rewrite_url_action": {
-              "path": {
-                "tokens": [
-                  {
-                    "str_value": "index.html",
-                    "type": "URI_TOKEN_TYPE_STRING"
-                  }
-                ],
-                "type": "URI_PARAM_TYPE_TOKENIZED"
-              },
-              "query": {
-                "keep_query": true
-              }
-            },
-            "switching_action": {
-              "action": "HTTP_SWITCHING_SELECT_POOL",
-              "pool_ref": "/api/pool?name=pool1",
-              "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
-            }
-          },
-          {
-            "match": {
-              "path": {
-                "match_criteria": "CONTAINS",
-                "match_str": [
-                  "avi"
-                ]
-              }
-            },
-            "name": "Rule 2",
-            "rewrite_url_action": {
-              "path": {
-                "tokens": [
-                  {
-                    "str_value": "",
-                    "type": "URI_TOKEN_TYPE_STRING"
-                  }
-                ],
-                "type": "URI_PARAM_TYPE_TOKENIZED"
-              },
-              "query": {
-                "keep_query": true
-              }
-            },
-            "switching_action": {
-              "action": "HTTP_SWITCHING_SELECT_POOL",
-              "pool_ref": "/api/pool?name=pool2",
-              "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
-            }
-          }
-        ]
-      },
-      "name": "http-request-policy-content-switching"
-    },
-    {
       "name": "http-request-header",
       "http_request_policy" : {
         "rules": [
@@ -757,6 +698,129 @@
     "folder": "nsx-manager",
     "manager_name": "nsx-manager-01",
     "config" : {
+      "uplink_profiles":
+      [
+        {
+          "display_name": "uplink-profile-default",
+          "resource_type": "PolicyUplinkHostSwitchProfile",
+          "transport_vlan": 0,
+          "teaming": {
+            "policy": "FAILOVER_ORDER",
+            "active_list": [
+              {
+                "uplink_name": "uplink-1",
+                "uplink_type": "PNIC"
+              }
+            ]
+          }
+        }
+      ],
+      "transport_zones":
+      [
+        {
+          "display_name": "tz_overlay",
+          "transport_type": "OVERLAY"
+        },
+        {
+          "display_name": "tz_vlan",
+          "transport_type": "VLAN"
+        }
+      ],
+      "ip_pools":
+      [
+        {
+          "display_name": "ip_pool_tep_tn",
+          "gateway": "10.8.11.33",
+          "start": "10.8.11.34",
+          "end": "10.8.11.62",
+          "resource_type": "IpAddressPoolStaticSubnet",
+          "cidr": "10.8.11.32/27"
+        },
+        {
+          "display_name": "ip_pool_tep_edge",
+          "gateway": "10.8.11.65",
+          "start": "10.8.11.66",
+          "end": "10.8.11.94",
+          "resource_type": "IpAddressPoolStaticSubnet",
+          "cidr": "10.8.11.64/27"
+        }
+      ],
+      "segments":
+      [
+        {
+          "display_name": "segment-external",
+          "vlan_ids": [0],
+          "transport_zone": "tz_vlan",
+          "description": "Segment configured for tier0 external connectivity",
+          "nsx_external": true
+        }
+      ],
+      "transport_node_profiles":
+      [
+        {
+          "display_name": "tnp-cluster",
+          "description": "descr1",
+          "resource_type": "PolicyHostTransportNodeProfile",
+          "host_switch_spec": {
+            "resource_type": "StandardHostSwitchSpec",
+            "host_switches": [
+              {
+                "host_switch_mode": "STANDARD",
+                "host_switch_vds_name_ref": "vds1",
+                "host_switch_id": "this will be retrieved",
+                "host_switch_name": "nsx-overlay",
+                "host_switch_profile_ids": [
+                  {
+                    "key": "UplinkHostSwitchProfile",
+                    "value": "/infra/host-switch-profiles/uplink-profile-default"
+                  }
+                ],
+                "host_switch_type": "VDS",
+                "ip_assignment_spec": {
+                  "ip_pool_id": "/infra/ip-pools/ip_pool_tep_tn",
+                  "resource_type": "StaticIpPoolSpec"
+                },
+                "transport_zone_endpoints": [
+                  {
+                    "transport_zone_ref": "tz_overlay",
+                    "transport_zone_id": "this will be retrieved",
+                    "transport_zone_profile_ids": []
+                  }
+                ],
+                "uplinks": [
+                  {
+                    "uplink_name": "uplink-1",
+                    "vds_uplink_name": "uplink1"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "dhcp_servers":
+      [
+        {
+          "display_name": "dhcp-0",
+          "server_address": "100.65.222.1/30",
+          "lease_time": 86400
+        }
+      ],
+      "nsx_groups": [
+        {
+          "display_name" : "Avi-se",
+          "expression" : [
+            {
+              "member_type" : "VirtualMachine",
+              "key" : "Name",
+              "operator" : "STARTSWITH",
+              "value" : "Avi-se",
+              "resource_type" : "Condition"
+            }
+          ]
+        }
+      ],
+      "exclusion_list_groups": ["/infra/domains/default/groups/Avi-se"],
       "edge_node": {
         "size": "medium",
         "basename": "edge-0",
@@ -815,25 +879,26 @@
           "display_name": "segment-server-1",
           "tier1": "tier1-01",
           "dhcp_ranges": ["50-99"],
-          "app_ips": ["11", "12"],
-          "lbaas_private": true
+          "ips_app_first": ["11", "12"],
+          "ips_app_second": ["13", "14"]
         },
         {
           "display_name": "segment-server-2",
-          "tier1": "tier1-01",
+          "tier1": "tier1-02",
           "dhcp_ranges": ["50-99"],
-          "app_ips": ["11"],
-          "lbaas_public": true
+          "ips_app_first": ["11"]
         },
         {
           "display_name": "segment-vip-1",
           "tier1": "tier1-01",
-          "dhcp_ranges": ["50-99"]
+          "dhcp_ranges": ["50-99"],
+          "lbaas_private": true
         },
         {
           "display_name": "segment-vip-2",
           "tier1": "tier1-02",
-          "dhcp_ranges": ["50-99"]
+          "dhcp_ranges": ["50-99"],
+          "lbaas_public": true
         }
       ],
       "segment_overlay_file": "/home/ubuntu/nsx/segments_overlay.json"

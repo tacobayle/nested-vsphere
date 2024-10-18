@@ -99,6 +99,7 @@ jq -c -r .vds_switches[] ${jsonFile} | while read vds
 do
   echo "create vds $(echo ${vds} | jq -c -r '.name') with $(echo ${vds} | jq -c -r '.discovery_protocol'), mtu: $(echo ${vds} | jq -c -r '.mtu'), version $(echo ${vds} | jq -c -r '.version')"
   govc dvs.create -mtu $(echo ${vds} | jq -c -r '.mtu') -discovery-protocol $(echo ${vds} | jq -c -r '.discovery_protocol') -product-version=$(echo ${vds} | jq -c -r '.version') $(echo ${vds} | jq -c -r '.name') > /dev/null
+  govc object.collect -json ./network/$(echo ${vds} | jq -c -r '.name') > /home/ubuntu/vcenter/$(echo ${vds} | jq -c -r '.name').json
 done
 #
 jq -c -r .port_groups[] ${jsonFile} | while read port_group
@@ -115,7 +116,7 @@ if [[ ${kind} == "vsphere-avi" ]] ; then
   done
 fi
 #
-if [[ ${kind} == "vsphere-nsx" ]] ; then
+if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]] ; then
   jq -c -r .port_groups_nsx[] ${jsonFile} | while read port_group
   do
     echo "create portgroup $(echo ${port_group} | jq -c -r '.name') in vds $(echo ${port_group} | jq -c -r '.vds_ref') with vlan $(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.name') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)"

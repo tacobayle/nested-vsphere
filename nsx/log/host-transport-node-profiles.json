@@ -1,0 +1,63 @@
+{
+  "result": [
+    {
+      "host_switch_spec": {
+        "host_switches": [
+          {
+            "host_switch_name": "nsx-overlay",
+            "host_switch_id": "50 0d d6 fd 4a e2 94 ca-9f 30 cb f9 50 65 37 0f",
+            "host_switch_type": "VDS",
+            "host_switch_mode": "STANDARD",
+            "host_switch_profile_ids": [
+              {
+                "key": "UplinkHostSwitchProfile",
+                "value": "/infra/host-switch-profiles/d7c21a22-6ba5-455f-b913-82f9e099c56a"
+              }
+            ],
+            "uplinks": [
+              {
+                "vds_uplink_name": "uplink1",
+                "uplink_name": "uplink-1"
+              }
+            ],
+            "is_migrate_pnics": false,
+            "ip_assignment_spec": {
+              "ip_pool_id": "/infra/ip-pools/dca9ac9f-0fe5-42f6-ad27-122f2b24d993",
+              "resource_type": "StaticIpPoolSpec"
+            },
+            "cpu_config": [],
+            "transport_zone_endpoints": [
+              {
+                "transport_zone_id": "/infra/sites/default/enforcement-points/default/transport-zones/tz_overlay",
+                "transport_zone_profile_ids": []
+              }
+            ],
+            "not_ready": false,
+            "portgroup_transport_zone_id": "/infra/sites/default/enforcement-points/default/transport-zones/27dadf43-c813-30b5-bc35-f5fb5d783f4e"
+          }
+        ],
+        "resource_type": "StandardHostSwitchSpec"
+      },
+      "ignore_overridden_hosts": false,
+      "resource_ty pe": "PolicyHostTransportNodeProfile",
+      "id": "735d50f2-d36c-4334-8f24-6dee2ae3f977",
+      "display_name": "tnp-cluster",
+      "description": "descr1",
+      "path": "/infra/host-transport-node-profiles/735d50f2-d36c-4334-8f24-6dee2ae3f977",
+      "relative_path": "735d50f2-d36c-4334-8f24-6dee2ae3f977",
+      "parent_path": "/infra",
+      "unique_id": "735d50f2-d36c-4334-8f24-6dee2ae3f977",
+      "realization_id": "735d50f2-d36c-4334-8f24-6dee2ae3f977",
+      "owner_id": "0dc563fd-5882-4c35-97ef-1c3dbfd3954e",
+      "marked_for_delete": false,
+      "overridden": false,
+      "_system_owned": false,
+      "_protection": "NOT_PROTECTED",
+      "_create_time": 1725176696983,
+      "_create_user": "admin",
+      "_last_modified_time": 1725176696983,
+      "_last_modified_user": "admin",
+      "_revision": 0
+    }
+  ]
+}

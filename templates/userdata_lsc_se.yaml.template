@@ -1,0 +1,46 @@
+#cloud-config
+users:
+  - name: ubuntu
+    lock_passwd: true
+    shell: /bin/bash
+    sudo:  ALL=(ALL) NOPASSWD:ALL
+    chpasswd: {expire: False}
+    ssh_authorized_keys:
+      - ${pubkey}
+
+write_files:
+  - content: |
+      #!/bin/bash
+      sudo apt install -y python
+      # this command displays the last interfaces except the two first ones
+      iface_mgmt=$(ip link | grep -v link | head -2 | tail -1 | awk -F': ' '{print $2}')
+      echo "" | sudo tee -a /etc/# this will consume IP in avi-vip pg
+      echo "auto $iface_mgmt" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "iface $iface_mgmt inet static" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "    address ${ip_mgmt}" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "    netmask ${netmask_mgmt}" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "    gateway ${gw_mgmt}" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "    dns-nameservers ${dns}" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      iface_backend=$(ip link | grep -v link | head -3 | tail -1 | awk -F': ' '{print $2}')
+      echo "auto $iface_backend" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "iface $iface_backend inet static" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "    address ${ip_backend}" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "    netmask ${netmask_backend}" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      iface_vip=$(ip link | grep -v link | head -4 | tail -1 | awk -F': ' '{print $2}')
+      echo "auto $iface_vip" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "iface $iface_vip inet static" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "    address ${ip_vip}" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      echo "    netmask ${netmask_vip}" | sudo tee -a /etc/network/interfaces.d/50-cloud-init.cfg
+      systemctl restart networking
+      sleep 60
+      DEBIAN_FRONTEND=noninteractive apt install --assume-yes linux-image-${kernelVersion}
+      sed -i -e "s/GRUB_DEFAULT=0/GRUB_DEFAULT=\"1>2\"/g" /etc/default/grub
+      update-grub
+      echo "cloud init done" | tee /tmp/cloudInitDone.log
+      sleep 30
+      reboot
+    path: /opt/bootstrap.sh
+    permissions: 0755
+
+runcmd:
+  - /opt/bootstrap.sh

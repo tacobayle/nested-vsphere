@@ -1,0 +1,36 @@
+{
+  "result": [
+    {
+      "teaming": {
+        "policy": "FAILOVER_ORDER",
+        "active_list": [
+          {
+            "uplink_name": "uplink-1",
+            "uplink_type": "PNIC"
+          }
+        ],
+        "rolling_order": false
+      },
+      "transport_vlan": 0,
+      "overlay_encap": "GENEVE",
+      "resource_type": "PolicyUplinkHostSwitchProfile",
+      "id": "d7c21a22-6ba5-455f-b913-82f9e099c56a",
+      "display_name": "uplink-profile-default",
+      "path": "/infra/host-switch-profiles/d7c21a22-6ba5-455f-b913-82f9e099c56a",
+      "relative_path": "d7c21a22-6ba5-455f-b913-82f9e099c56a",
+      "parent_path": "/infra",
+      "unique_id": "d7c21a22-6ba5-455f-b913-82f9e099c56a",
+      "realization_id": "d7c21a22-6ba5-455f-b913-82f9e099c56a",
+      "owner_id": "0dc563fd-5882-4c35-97ef-1c3dbfd3954e",
+      "marked_for_delete": false,
+      "overridden": false,
+      "_system_owned": false,
+      "_protection": "NOT_PROTECTED",
+      "_create_time": 1725176614572,
+      "_create_user": "admin",
+      "_last_modified_time": 1725176614572,
+      "_last_modified_user": "admin",
+      "_revision": 0
+    }
+  ]
+}
