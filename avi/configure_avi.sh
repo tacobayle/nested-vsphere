@@ -40,15 +40,15 @@ sed -e "s@\${webhook_url}@${SLACK_WEBHOOK_URL_AVI}@" /home/ubuntu/templates/avi_
 # templating yaml file
 #
 sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
-    -e "s/\${ntp}/${gw_avi}/" \
-    -e "s/\${dns}/${gw_avi}/" \
+    -e "s/\${ntp}/${ip_gw_mgmt}/" \
+    -e "s/\${dns}/${ip_gw_mgmt}/" \
     -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
     -e "s/\${avi_old_password}/${AVI_OLD_PASSWORD}/" \
     -e "s/\${avi_version}/${avi_version}/" \
     -e "s/\${vsphere_username}/${vsphere_nested_username}@${ssoDomain}/" \
     -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
     -e "s/\${vsphere_server}/${api_host}/" \
-    -e "s/\${external_gw_ip}/${gw_avi}/" \
+    -e "s/\${external_gw_ip}/${ip_gw_mgmt}/" \
     -e "s@\${static_routes}@$(echo ${avi_static_routes} | jq -c -r .)@" \
     -e "s@\${import_sslkeyandcertificate_ca}@$(echo ${import_sslkeyandcertificate_ca} | jq -c -r '.')@" \
     -e "s@\${certificatemanagementprofile}@$(echo ${certificatemanagementprofile} | jq -c -r '.')@" \

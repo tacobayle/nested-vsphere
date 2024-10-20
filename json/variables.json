@@ -822,17 +822,59 @@
       ],
       "exclusion_list_groups": ["/infra/domains/default/groups/Avi-se"],
       "edge_node": {
-        "size": "medium",
-        "basename": "edge-0",
-        "description": "number of edge deployed based on .vsphere_underlay.networks.vsphere.management.nsx_edge_nested_ips"
+        "basename": "edge0",
+        "data_network": "segment2",
+        "host_switch_spec": {
+          "host_switches": [
+            {
+              "host_switch_name": "nsxHostSwitch_overlay",
+              "host_switch_type": "NVDS",
+              "host_switch_mode": "STANDARD",
+              "host_switch_profile_names": [
+                "uplink-profile-default"
+              ],
+              "pnics": [
+                {
+                  "device_name": "fp-eth0",
+                  "uplink_name": "uplink-1"
+                }
+              ],
+              "ip_pool_name": "ip_pool_tep_edge",
+              "transport_zone_names": [
+                "tz_overlay"
+              ]
+            },
+            {
+              "host_switch_name": "nsxHostSwitch_external",
+              "host_switch_type": "NVDS",
+              "host_switch_mode": "STANDARD",
+              "host_switch_profile_names": [
+                "uplink-profile-default"
+              ],
+              "pnics": [
+                {
+                  "device_name": "fp-eth1",
+                  "uplink_name": "uplink-1"
+                }
+              ],
+              "transport_zone_names": [
+                "tz_vlan"
+              ]
+            }
+          ]
+        }
       },
       "edge_clusters":
       [
         {
-          "display_name": "edge-cluster-01",
-          "members_name": [
-            "edge-01",
-            "edge-02"
+          "display_name": "edge-cluster01",
+          "members": [
+            {
+              "display_name": "edge01"
+            },
+            {
+              "display_name": "edge02"
+            }
           ]
         }
       ],
@@ -840,7 +882,7 @@
       [
         {
           "display_name": "tier0",
-          "edge_cluster_name": "edge-cluster-01"
+          "edge_cluster_name": "edge-cluster01"
         }
       ],
       "tier1s":
@@ -848,7 +890,7 @@
         {
           "tier0": "tier0",
           "display_name": "tier1-01",
-          "edge_cluster_name": "edge-cluster-01",
+          "edge_cluster_name": "edge-cluster01",
           "ha_mode": "ACTIVE_STANDBY",
           "lb": true
         },

@@ -20,7 +20,9 @@ folder=$(jq -c -r .spec.folder $jsonFile)
 gw_name="${deployment_name}-gw"
 kind=$(jq -c -r '.kind' $jsonFile)
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
+ip_gw_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 cidr_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+cidr_mgmt_prefix_length=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
 cidr_mgmt_prefix=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile)
 if [[ ${cidr_mgmt} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
   cidr_mgmt_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
@@ -130,7 +132,6 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     ip_nsx_last_octet=$(jq -c -r .spec.nsx.ip $jsonFile)
   fi
   #netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
-  gw_nsx=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   nsx_manager_name=$(jq -c -r '.nsx.manager_name' $jsonFile)
   network_nsx=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
   nsx_ova_url=$(jq -c -r .spec.nsx.ova_url $jsonFile)
@@ -145,6 +146,22 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   nsx_port_group_mgmt=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
   nsx_port_group_overlay_edge=$(jq -c -r --arg arg "nsx-overlay-edge" '.port_groups_nsx[] | select( .scope == $arg).name' $jsonFile)
   nsx_port_group_external=$(jq -c -r --arg arg "nsx-external" '.port_groups_nsx[] | select( .scope == $arg).name' $jsonFile)
+  ips_edge_mgmt=$(jq -c -r '.spec.nsx.edge.ips_mgmt' $jsonFile)
+  if [[ $(jq -c -r '.spec.nsx.edge.size' $jsonFile | tr '[:upper:]' [:lower:]) == "small" ]] ;  then
+    edge_cpu=2 ; edge_memory=4 ; edge_disk=200
+  fi
+  if [[ $(jq -c -r '.spec.nsx.edge.size' $jsonFile | tr '[:upper:]' [:lower:]) == "medium" ]] ;  then
+    edge_cpu=4 ; edge_memory=8 ; edge_disk=200
+  fi
+  if [[ $(jq -c -r '.spec.nsx.edge.size' $jsonFile | tr '[:upper:]' [:lower:]) == "large" ]] ;  then
+    edge_cpu=8 ; edge_memory=32 ; edge_disk=200
+  fi
+  if [[ $(jq -c -r '.spec.nsx.edge.size' $jsonFile | tr '[:upper:]' [:lower:]) == "extra_large" ]] ;  then
+    edge_cpu=16 ; edge_memory=64 ; edge_disk=200
+  fi
+  basename_edge=$(jq -c -r .nsx.config.edge_node.basename $jsonFile)
+  edge_host_switches=$(jq -c -r .nsx.config.edge_node.host_switch_spec.host_switches $jsonFile)
+  edge_clusters=$(jq -c -r .nsx.config.edge_clusters $jsonFile)
   supernet_overlay=$(jq -c -r '.spec.nsx.supernet_overlay' $jsonFile)
   supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
   supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
@@ -195,7 +212,6 @@ fi
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
-gw_avi=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 avi_version=$(jq -c -r .spec.avi.version $jsonFile)
 import_sslkeyandcertificate_ca='[{"name": "'${vault_pki_intermediate_name}'",
                                   "cert": {"path": "'${vault_pki_intermediate_cert_path_signed}'"}},

@@ -49,7 +49,7 @@ else
   nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[9] += {"Value": "NSX Manager"}')
   nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[10] += {"Value": "'${ip_nsx}'"}')
   nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[11] += {"Value": "255.255.255.0"}')
-  nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[12] += {"Value": "'${gw_avi}'"}')
+  nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[12] += {"Value": "'${ip_gw_mgmt}'"}')
   nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[16] += {"Value": "'${ip_gw}'"}')
   nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[17] += {"Value": "'${domain}'"}')
   nsx_options=$(echo ${nsx_options} | jq '.PropertyMapping[18] += {"Value": "'${ip_gw}'"}')
