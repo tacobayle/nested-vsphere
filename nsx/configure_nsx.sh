@@ -3,6 +3,7 @@
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
 source /home/ubuntu/bash/variables.sh
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': starting NSX manager config."}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #
 # check NSX Manager
 #
@@ -36,10 +37,19 @@ done
 echo "NSX Manager ready at https://${ip_nsx}"
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX Manager ready at https://'${ip_nsx}'"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #
-# Upload the license and accept EULA
+# Upload the license
 #
-/bin/bash /home/ubuntu/nsx/set_license.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-            "${NSX_LICENSE}"
+/bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+            "api/v1/licenses" \
+            "POST" \
+            "{\"license_key\": \"${NSX_LICENSE}\"}"
+#
+# Accept EULA
+#
+/bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+            "policy/api/v1/eula/accept" \
+            "POST" \
+            ""
 #
 # host-switch-profiles
 #
@@ -242,6 +252,7 @@ do
     hosts_host_transport_node_state=$(echo $response_body)
     if [[ "$(jq -r .deployment_progress_state.progress ${file_json_output})" == 100 ]] && [[ "$(jq -r .state ${file_json_output})" == "success"  ]] ; then
       echo "  SUCCESS: Host transport node id ${unique_id} progress at 100% and host transport node state success"
+      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Host transport node id '${unique_id}' ready"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       break
     else
       echo "  Waiting for host transport node id ${unique_id} to be ready, attempt: ${attempt} on ${retry}"
@@ -395,6 +406,7 @@ do
     do
       if [[ $(echo ${edge} | jq -r .transport_node_id) == ${item} ]] && [[ $(echo ${edge} | jq -r .state) == "success" ]] ; then
         echo "new edge node id ${item} state is success after ${attempt} attempts of ${pause} seconds"
+        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': edge node '${item}' ready"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
         break
       fi
     done
@@ -420,3 +432,7 @@ do
     transport_node_id=$(jq -c -r --arg arg1 "${display_name}" '.results[] | select(.display_name == $arg1).id' ${file_json_output})
   done
 done
+#
+#
+#
+if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX manager configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
