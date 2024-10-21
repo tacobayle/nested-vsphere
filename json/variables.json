@@ -867,13 +867,13 @@
       "edge_clusters":
       [
         {
-          "display_name": "edge-cluster01",
+          "display_name": "edge-cluster-01",
           "members": [
             {
-              "display_name": "edge01"
+              "display_name": "edge-01"
             },
             {
-              "display_name": "edge02"
+              "display_name": "edge-02"
             }
           ]
         }
@@ -881,26 +881,68 @@
       "tier0s":
       [
         {
-          "display_name": "tier0",
-          "edge_cluster_name": "edge-cluster01"
+          "display_name": "tier0-01",
+          "edge_cluster_name": "edge-cluster-01",
+          "ha_mode": "ACTIVE_STANDBY",
+          "interfaces": [
+            {
+              "edge_name": "edge-01",
+              "segment_name": "segment-external",
+              "type": "EXTERNAL",
+              "display_name": "if-ext-0"
+            },
+            {
+              "edge_name": "edge-02",
+              "segment_name": "segment-external",
+              "type": "EXTERNAL",
+              "display_name": "if-ext-1"
+            }
+          ],
+          "static_routes": [
+            {
+              "display_name": "default-route",
+              "network": "0.0.0.0/0",
+              "next_hops": [
+                {
+                  "ip_address": "172.16.130.100"
+                }
+              ]
+            }
+          ],
+          "ha_vips": [
+            {
+              "interfaces": [
+                "if-ext-0",
+                "if-ext-1"
+              ]
+            }
+          ]
         }
       ],
       "tier1s":
       [
         {
-          "tier0": "tier0",
+          "tier0": "tier0-01",
           "display_name": "tier1-01",
-          "edge_cluster_name": "edge-cluster01",
+          "edge_cluster_name": "edge-cluster-01",
           "ha_mode": "ACTIVE_STANDBY",
-          "lb": true
+          "lb": true,
+          "dhcp_server": "dhcp-0",
+          "route_advertisement_types": [
+            "TIER1_STATIC_ROUTES",
+            "TIER1_CONNECTED",
+            "TIER1_LB_VIP"
+          ]
         },
         {
-          "tier0": "tier0",
-          "display_name": "tier1-02"
-        },
-        {
-          "tier0": "tier0",
-          "display_name": "tier1-03"
+          "tier0": "tier0-01",
+          "display_name": "tier1-02",
+          "dhcp_server": "dhcp-0",
+          "route_advertisement_types": [
+            "TIER1_STATIC_ROUTES",
+            "TIER1_CONNECTED",
+            "TIER1_LB_VIP"
+          ]
         }
       ],
       "segments_overlay":
@@ -908,6 +950,7 @@
         {
           "display_name": "segment-mgmt-avi",
           "tier1": "tier1-01",
+          "transport_zone": "tz_overlay",
           "dhcp_ranges": ["50-99"]
         },
         {
@@ -915,6 +958,7 @@
           "tier1": "tier1-01",
           "tanzu_supervisor_starting_ip": "130",
           "tanzu_supervisor_count": 5,
+          "transport_zone": "tz_overlay",
           "dhcp_ranges": ["50-99"]
         },
         {
@@ -922,24 +966,28 @@
           "tier1": "tier1-01",
           "dhcp_ranges": ["50-99"],
           "ips_app_first": ["11", "12"],
+          "transport_zone": "tz_overlay",
           "ips_app_second": ["13", "14"]
         },
         {
           "display_name": "segment-server-2",
           "tier1": "tier1-02",
           "dhcp_ranges": ["50-99"],
+          "transport_zone": "tz_overlay",
           "ips_app_first": ["11"]
         },
         {
           "display_name": "segment-vip-1",
           "tier1": "tier1-01",
           "dhcp_ranges": ["50-99"],
+          "transport_zone": "tz_overlay",
           "lbaas_private": true
         },
         {
           "display_name": "segment-vip-2",
           "tier1": "tier1-02",
           "dhcp_ranges": ["50-99"],
+          "transport_zone": "tz_overlay",
           "lbaas_public": true
         }
       ],
@@ -985,7 +1033,7 @@
       {
         "name": "ns2",
         "namespace_cidr": "100.100.66.0/23",
-        "namespace_tier0": "tier0",
+        "namespace_tier0": "tier0-01",
         "prefix_per_namespace": "26",
         "ingress_cidr": "100.100.134.0/24"
       },

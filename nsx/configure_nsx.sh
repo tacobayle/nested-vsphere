@@ -421,16 +421,243 @@ done
 #
 # edge cluster creation
 #
+json_data="[]"
+edge_cluster_count=0
+echo ${json_data} | jq . | tee /tmp/tmp.json
 echo ${edge_clusters} | jq -c -r .[] | while read item
 do
-  echo ${item} | jq -c -r .members[] | while read display_name
+  json_data=$(jq '.['${edge_cluster_count}'] += {"display_name": "'$(echo ${item} | jq -c -r .display_name)'"}' /tmp/tmp.json)
+  echo ${json_data} | jq . | tee /tmp/tmp.json
+  echo ${item} | jq -c -r .members[].display_name | while read display_name
   do
     file_json_output="/home/ubuntu/nsx/transport-nodes.json"
     /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                 "api/v1/transport-nodes" \
                 "${file_json_output}"
     transport_node_id=$(jq -c -r --arg arg1 "${display_name}" '.results[] | select(.display_name == $arg1).id' ${file_json_output})
+    json_data=$(jq '.['${edge_cluster_count}'].members += [{"transport_node_id": "'${transport_node_id}'"}]' /tmp/tmp.json)
+    echo ${json_data} | jq . | tee /tmp/tmp.json
   done
+  edge_cluster_count=$((edge_cluster_count+1))
+done
+jq -c -r .[] /tmp/tmp.json | while read item
+do
+  /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "api/v1/edge-clusters" \
+              "POST" \
+              ${item}
+done
+#
+# tier 0 creation
+#
+echo ${tier0s} | jq -c -r .[] | while read item
+do
+  /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/tier-0s/$(echo ${item} | jq -r -c .display_name)" \
+              "PUT" \
+              "{\"display_name\": \"$(echo ${item} | jq -r -c .display_name)\", \"ha_mode\": \"$(echo ${item} | jq -r -c .ha_mode)\"}"
+done
+#
+# tier 0 edge cluster association
+#
+echo ${tier0s} | jq -c -r .[] | while read item
+do
+  file_json_output="/home/ubuntu/nsx/edge-clusters.json"
+  /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "api/v1/edge-clusters" \
+              "${file_json_output}"
+  edge_cluster_id=$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .edge_cluster_name)" '.results[] | select(.display_name == $arg1).id' ${file_json_output})
+  json_data="{\"edge_cluster_path\": \"/infra/sites/default/enforcement-points/default/edge-clusters/${edge_cluster_id}\"}"
+  /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/tier-0s/$(echo ${item} | jq -r -c .display_name)/locale-services/default" \
+              "PUT" \
+              "${json_data}"
+done
+#
+# tier 0 interface config.
+#
+echo ${tier0s} | jq -c -r .[] | while read item
+do
+  if [[ $(echo ${item} | jq 'has("interfaces")') == "true" ]] ; then
+    echo ${item} | jq -c -r .interfaces[] | while read iface
+    do
+      json_data="{\"subnets\" : [ {\"ip_addresses\": [\"${cidr_nsx_external_three_octets}.${tier0_starting_ip}\"], \"prefix_len\" : ${cidr_nsx_external_prefix_length}}]}"
+      tier0_starting_ip=$((tier0_starting_ip+1))
+      json_data=$(echo ${json_data} | jq '. += {"display_name": "'$(echo ${iface} | jq -r .display_name)'"}')
+      file_json_output="/home/ubuntu/nsx/segments.json"
+      /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                  "policy/api/v1/infra/segments" \
+                  "${file_json_output}"
+      segment_path=$(jq -c -r --arg arg1 "$(echo ${iface} | jq -r -c .segment_name)" '.results[] | select(.display_name == $arg1).path' ${file_json_output})
+      json_data=$(echo ${json_data} | jq '. += {"segment_path": "'${segment_path}'"}')
+      file_json_output="/home/ubuntu/nsx/edge-clusters.json"
+      /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                  "api/v1/edge-clusters" \
+                  "${file_json_output}"
+      edge_cluster_id=$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .edge_cluster_name)" '.results[] | select(.display_name == $arg1).id' ${file_json_output})
+      edge_node_id=$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .edge_cluster_name)" --arg arg2 "$(echo ${iface} | jq -r -c .edge_name)" '.results[] | select(.display_name == $arg1).members[] | select(.display_name == $arg2).member_index' ${file_json_output})
+      json_data=$(echo ${json_data} | jq '. += {"edge_path": "/infra/sites/default/enforcement-points/default/edge-clusters/'${edge_cluster_id}'/edge-nodes/'${edge_node_id}'"}')
+      /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                  "policy/api/v1/infra/tier-0s/$(echo ${item} | jq -r -c .display_name)/locale-services/default/interfaces/$(echo ${iface} | jq -r -c .display_name)" \
+                  "PATCH" \
+                  "${json_data}"
+    done
+  fi
+done
+#
+# tier 0 static routes config.
+#
+echo ${tier0s} | jq -c -r .[] | while read item
+do
+  if [[ $(echo ${item} | jq 'has("static_routes")') == "true" ]] ; then
+    echo ${item} | jq -c -r .static_routes[] | while read route
+    do
+      /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                  "policy/api/v1/infra/tier-0s/$(echo ${item} | jq -r -c .display_name)/static-routes/$(echo ${route} | jq -r -c .display_name)" \
+                  "PATCH" \
+                  "${route}"
+    done
+  fi
+done
+#
+# tier 0 ha-vip config.
+#
+echo ${tier0s} | jq -c -r .[] | while read item
+do
+  json_data="{\"display_name\": \"default\", \"ha_vip_configs\": []}"
+  echo ${json_data} | jq . | tee /tmp/tmp.json
+  if [[ $(echo ${item} | jq 'has("ha_vips")') == "true" ]] ; then
+    file_json_output="/home/ubuntu/nsx/edge-clusters.json"
+    /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "api/v1/edge-clusters" \
+                "${file_json_output}"
+    edge_cluster_id=$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .edge_cluster_name)" '.results[] | select(.display_name == $arg1).id' ${file_json_output})
+    json_data=$(jq '. += {"edge_cluster_path": "/infra/sites/default/enforcement-points/default/edge-clusters/'$edge_cluster_id'"}' /tmp/tmp.json)
+    echo ${json_data} | jq . | tee /tmp/tmp.json
+    echo ${item} | jq -c -r .ha_vips[] | while read vip
+    do
+      interfaces="[]"
+      echo ${vip} | jq -c -r .interfaces[] | while read iface
+      do
+        interfaces=$(echo ${interfaces} | jq -c -r '. += ["/infra/tier-0s/'$(echo ${item} | jq -r -c .display_name)'/locale-services/default/interfaces/'${iface}'"]')
+        echo ${interfaces} | jq . | tee /tmp/nsx_interfaces.json
+      done
+      json_data=$(jq -c -r '.ha_vip_configs += [{"enabled": true, "vip_subnets": [{"ip_addresses": [ "'${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}'" ], "prefix_len": '${cidr_nsx_external_prefix_length}'}], "external_interface_paths": '$(jq -c -r . /tmp/nsx_interfaces.json)'}]' /tmp/tmp.json)
+      echo ${json_data} | jq . | tee /tmp/tmp.json
+      tier0_vip_starting_ip=$((tier0_vip_starting_ip+1))
+    done
+    /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "policy/api/v1/infra/tier-0s/$(echo ${item} | jq -r -c .display_name)/locale-services/default" \
+                "PATCH" \
+                "$(jq -c -r . /tmp/tmp.json)"
+  fi
+done
+#
+# BGP config (to be reviewed)
+#
+#for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
+#do
+#  if [[ $(echo $tier0 | jq 'has("bgp")') == "true" ]] ; then
+#    echo "Enabling BGP on tier0 called: $(echo $tier0 | jq -r -c .display_name) with local AS: $(echo $tier0 | jq -r -c .bgp.local_as_num)"
+#    nsx_api 2 2 "PATCH" $cookies_file $headers_file '{"enabled": "true", "local_as_num": "'$(echo $tier0 | jq -r -c .bgp.local_as_num)'", "ecmp": "'$(echo $tier0 | jq -r -c .bgp.ecmp)'"}' "$nsx_nested_ip/policy/api/v1/infra/tier-0s/$(echo $tier0 | jq -r -c .display_name)/locale-services/default/bgp"
+#    echo "retrieving tier0 called: $(echo $tier0 | jq -r -c .display_name) interfaces details"
+#    nsx_api 2 2 "GET" $cookies_file $headers_file '' "$nsx_nested_ip/policy/api/v1/infra/tier-0s/$(echo $tier0 | jq -r -c .display_name)/locale-services/default/interfaces"
+#    tier0_interfaces=$(echo $response_body)
+#    tier0_interfaces_ips="[]"
+#    for interface in $(echo $tier0_interfaces | jq -c -r .results[])
+#    do
+#      tier0_interfaces_ips=$(echo $tier0_interfaces_ips | jq -c -r '. += ['$(echo $interface | jq -c '.subnets[0].ip_addresses[0]')']')
+#    done
+#    nsx_api 2 2 "GET" $cookies_file $headers_file '' "$nsx_nested_ip/policy/api/v1/infra/tier-0s/$(echo $tier0 | jq -r -c .display_name)/locale-services/default/interfaces"
+#    neighbor_count=1
+#    for neighbor in $(echo $tier0 | jq -c -r .bgp.neighbors[])
+#    do
+#      echo "Adding neighbor called: peer$neighbor_count to the tier0 called $(echo $tier0 | jq -r -c .display_name) with remote AS number: $(echo $neighbor | jq -r -c .remote_as_num), with remote neighbor IP: $(echo $neighbor | jq -r -c .neighbor_address), with source IP: $(echo $tier0_interfaces_ips | jq -c -r .))"
+#      nsx_api 1 1 "PUT" $cookies_file $headers_file '{"neighbor_address": "'$(echo $neighbor | jq -r -c .neighbor_address)'", "remote_as_num": "'$(echo $neighbor | jq -r -c .remote_as_num)'", "source_addresses": '$(echo $tier0_interfaces_ips | jq -c -r .)'}' "$nsx_nested_ip/policy/api/v1/infra/tier-0s/$(echo $tier0 | jq -r -c .display_name)/locale-services/default/bgp/neighbors/peer$neighbor_count"
+#      ((neighbor_count++))
+#    done
+#  fi
+#done
+#
+# create tier1s
+#
+echo ${tier1s} | jq -c -r .[] | while read item
+do
+  file_json_output="/home/ubuntu/nsx/tier-0s.json"
+  /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/tier-0s" \
+              "${file_json_output}"
+  tier0_path=$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .tier0)" '.results[] | select(.display_name == $arg1).path' ${file_json_output})
+  file_json_output="/home/ubuntu/nsx/dhcp-server-configs.json"
+  /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/dhcp-server-configs" \
+              "${file_json_output}"
+  dhcp_config_path=$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .dhcp_server)" '.results[] | select(.display_name == $arg1).path' ${file_json_output})
+  if $(echo ${item} | jq -e '.edge_cluster_name' > /dev/null) ; then
+    file_json_output="/home/ubuntu/nsx/edge-clusters.json"
+    /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "api/v1/edge-clusters" \
+                "${file_json_output}"
+    edge_cluster_path="/infra/sites/default/enforcement-points/default/edge-clusters/$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .edge_cluster_name)" '.results[] | select(.display_name == $arg1).path' ${file_json_output})"
+  else
+    edge_cluster_path=""
+  fi
+  json_data='{
+                "display_name": "'$(echo ${item} | jq -c -r .display_name)'",
+                "tier0_path": "'${tier0_path}'",
+                "dhcp_config_paths": ["'${dhcp_config_path}'"],
+                "route_advertisement_types": '$(echo ${item} | jq -c -r .route_advertisement_types)'
+             }'
+  if $(echo ${item} | jq -e '.ha_mode' > /dev/null) ; then
+    json_data=$(echo ${json_data} | jq '. += {"ha_mode": "'$(echo ${item} | jq -c -r .ha_mode)'"}')
+  fi
+  /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/tier-1s/$(echo ${item} | jq -r -c .display_name)" \
+              "PUT" \
+              "${json_data}"
+  if [[ ${edge_cluster_path} != "" ]] ; then
+    json_data='
+      {
+        "display_name": "default",
+        "edge_cluster_path": "'${edge_cluster_path}'"
+      }'
+    /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "policy/api/v1/infra/tier-1s/$(echo ${item} | jq -r -c .display_name)/locale-services/default" \
+                "PUT" \
+                "${json_data}"
+  fi
+done
+#
+# create segments
+#
+echo ${segments_overlay} | jq -c -r .[] | while read item
+do
+  file_json_output="/home/ubuntu/nsx/tier-1s.json"
+  /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/tier-1s" \
+              "${file_json_output}"
+  connectivity_path=$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .tier1)" '.results[] | select(.display_name == $arg1).path' ${file_json_output})
+  file_json_output="/home/ubuntu/nsx/transport-zones.json"
+  /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "api/v1/transport-zones" \
+              "${file_json_output}"
+  transport_zone_path="/infra/sites/default/enforcement-points/default/transport-zones/$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .transport_zone)" '.results[] | select(.display_name == $arg1).id' ${file_json_output})"
+  json_data='
+    {
+      "display_name": "'$(echo ${item} | jq -r -c .display_name)'",
+      "connectivity_path": "'${connectivity_path}'",
+      "transport_zone_path": "'${transport_zone_path}'",
+      "subnets": [
+        {
+          "gateway_address":"'$(echo ${item} | jq -r -c .gateway_address)'",
+          "dhcp_ranges":"'$(echo ${item} | jq -r -c .dhcp_ranges)'"
+        }
+      ]
+    }'
+  /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/segments/$(echo ${item} | jq -r -c .display_name)" \
+              "PUT" \
+              "${json_data}"
 done
 #
 #

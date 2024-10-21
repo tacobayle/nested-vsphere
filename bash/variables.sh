@@ -131,6 +131,11 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .spec.nsx.ip $jsonFile)"
     ip_nsx_last_octet=$(jq -c -r .spec.nsx.ip $jsonFile)
   fi
+  cidr_nsx_external=$(jq -c -r --arg arg "nsx-external" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
+  cidr_nsx_external_prefix_length=$(jq -c -r --arg arg "nsx-external" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
+  if [[ ${cidr_nsx_external} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+    cidr_nsx_external_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+  fi
   #netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
   nsx_manager_name=$(jq -c -r '.nsx.manager_name' $jsonFile)
   network_nsx=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
@@ -162,6 +167,10 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   basename_edge=$(jq -c -r .nsx.config.edge_node.basename $jsonFile)
   edge_host_switches=$(jq -c -r .nsx.config.edge_node.host_switch_spec.host_switches $jsonFile)
   edge_clusters=$(jq -c -r .nsx.config.edge_clusters $jsonFile)
+  tier0s=$(jq -c -r .nsx.config.tier0s $jsonFile)
+  tier0_starting_ip=11
+  tier0_vip_starting_ip=211
+  tier1s=$(jq -c -r .nsx.config.tier1s $jsonFile)
   supernet_overlay=$(jq -c -r '.spec.nsx.supernet_overlay' $jsonFile)
   supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
   supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
@@ -175,6 +184,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"cidr": "'${cidr}'",
                                                      "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
                                                      "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
+                                                     "gateway_address": "'${cidr_three_octets}'1/24",
                                                      "dhcp_ranges": ["'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f1)'-'${cidr_three_octets}''$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f2)'"]
                                                      }')
 
@@ -189,6 +199,9 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.ips_app_second' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"ips_app_second": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].ips_app_second' $jsonFile)'}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.transport_zone' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"transport_zone": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].transport_zone' $jsonFile)'"}')
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_private' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"lbaas_private": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_private' $jsonFile)'}')
