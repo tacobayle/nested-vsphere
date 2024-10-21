@@ -1,0 +1,59 @@
+{
+  "type": "ROUTED",
+  "subnets": [
+    {
+      "gateway_address": "192.168.6.1/24",
+      "dhcp_ranges": [
+        "192.168.6.50-192.168.6.99"
+      ],
+      "dhcp_config": {
+        "options": {
+          "others": [
+            {
+              "code": 42,
+              "values": [
+                "1.1.1.1"
+              ]
+            }
+          ]
+        },
+        "resource_type": "SegmentDhcpV4Config",
+        "lease_time": 86400,
+        "dns_servers": [
+          "1.1.1.1"
+        ]
+      },
+      "network": "192.168.6.0/24"
+    }
+  ],
+  "connectivity_path": "/infra/tier-1s/tier1-02",
+  "transport_zone_path": "/infra/sites/default/enforcement-points/default/transport-zones/91dcb837-e0d4-4b7f-a9e5-369679e3459b",
+  "advanced_config": {
+    "hybrid": false,
+    "multicast": true,
+    "inter_router": false,
+    "local_egress": false,
+    "urpf_mode": "STRICT",
+    "connectivity": "ON"
+  },
+  "admin_state": "UP",
+  "replication_mode": "MTEP",
+  "resource_type": "Segment",
+  "id": "segment-vip-2",
+  "display_name": "segment-vip-2",
+  "path": "/infra/segments/segment-vip-2",
+  "relative_path": "segment-vip-2",
+  "parent_path": "/infra",
+  "unique_id": "52b00ce6-204f-4dd7-ab40-016d02bf3bdb",
+  "realization_id": "52b00ce6-204f-4dd7-ab40-016d02bf3bdb",
+  "owner_id": "46e4b84e-1f47-4a3b-9758-51711fbf1423",
+  "marked_for_delete": false,
+  "overridden": false,
+  "_system_owned": false,
+  "_protection": "NOT_PROTECTED",
+  "_create_time": 1729537150531,
+  "_create_user": "admin",
+  "_last_modified_time": 1729537270613,
+  "_last_modified_user": "admin",
+  "_revision": 2
+}

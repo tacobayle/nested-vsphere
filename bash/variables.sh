@@ -51,6 +51,9 @@ ntp_masters=$(jq -c -r '.spec.gw.ntp_masters' $jsonFile)
 forwarders_netplan=$(jq -c -r '.spec.gw.dns_forwarders | join(",")' $jsonFile)
 forwarders_bind=$(jq -c -r '.spec.gw.dns_forwarders | join(";")' $jsonFile)
 networks=$(jq -c -r '.spec.networks' $jsonFile)
+segments_overlay="[]"
+cidr_nsx_external_three_octets="dummy_value"
+tier0_vip_starting_ip="dummy_value"
 ips_esxi=$(jq -c -r '.spec.esxi.ips' $jsonFile)
 iso_esxi_url=$(jq -c -r .spec.esxi.iso_url $jsonFile)
 if [[ $(jq -c -r '.spec.nsx.ip' $jsonFile) == "null" ]]; then

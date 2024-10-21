@@ -82,6 +82,9 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${ntp_masters}/${ntp_masters}/" \
         -e "s/\${forwarders_netplan}/${forwarders_netplan}/" \
         -e "s@\${networks}@${networks}@" \
+        -e "s@\${segments_overlay}@${segments_overlay}@" \
+        -e "s@\${cidr_nsx_external_three_octets}@${cidr_nsx_external_three_octets}@" \
+        -e "s@\${tier0_vip_starting_ip}@${tier0_vip_starting_ip}@" \
         -e "s/\${forwarders_bind}/${forwarders_bind}/" \
         -e "s/\${domain}/${domain}/g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \

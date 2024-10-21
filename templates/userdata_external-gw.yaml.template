@@ -89,6 +89,15 @@ write_files:
         echo "            id: `echo $net | jq -c -r .vlan_id`" | tee -a /etc/netplan/50-cloud-init.yaml
         echo "            link: $ifaceLastName" | tee -a /etc/netplan/50-cloud-init.yaml
         echo "            addresses: [`echo $net | jq -c -r .gw`/`echo $net | jq -c -r .cidr | cut -f2 -d'/'`]" | tee -a /etc/netplan/50-cloud-init.yaml
+        if [[ $(echo ${net} | jq -c -r '.type') == "nsx-external" ]] ; then
+          segments_overlay='${segments_overlay}'
+          echo "            routes:" | tee -a /etc/netplan/50-cloud-init.yaml
+          echo $segments_overlay | jq -c -r .[] | while read segment
+          do
+            echo "            - to: $(echo $segment | jq -c -r .cidr)" | tee -a /etc/netplan/50-cloud-init.yaml
+            echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
+          done
+        fi
         sudo iptables -t nat -A POSTROUTING -s `echo $net | jq -c -r .cidr` -o $ifaceFirstName -j MASQUERADE
         sudo iptables -A FORWARD -i vlan.`echo $net | jq -c -r .vlan_id` -o $ifaceFirstName -j ACCEPT
       done

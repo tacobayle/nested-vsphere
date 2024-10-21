@@ -649,8 +649,20 @@ do
       "transport_zone_path": "'${transport_zone_path}'",
       "subnets": [
         {
-          "gateway_address":"'$(echo ${item} | jq -r -c .gateway_address)'",
-          "dhcp_ranges":"'$(echo ${item} | jq -r -c .dhcp_ranges)'"
+          "gateway_address": "'$(echo ${item} | jq -r -c .gateway_address)'",
+          "dhcp_ranges": '$(echo ${item} | jq -r -c .dhcp_ranges)',
+          "dhcp_config": {
+            "options": {
+              "others": [
+                {
+                  "code": 42,
+                  "values": ["'${ip_gw}'"]
+                }
+              ]
+            },
+            "resource_type": "SegmentDhcpV4Config",
+            "dns_servers": ["'${ip_gw}'"]
+          }
         }
       ]
     }'
