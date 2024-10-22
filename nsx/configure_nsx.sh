@@ -531,6 +531,7 @@ do
   if [[ $(echo ${item} | jq 'has("static_routes")') == "true" ]] ; then
     echo ${item} | jq -c -r .static_routes[] | while read route
     do
+      route=$(echo ${route} | jq -c -r '.next_hops[0] += {"ip_address": "'${gw_nsx_external}'"}')
       /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                   "policy/api/v1/infra/tier-0s/$(echo ${item} | jq -r -c .display_name)/static-routes/$(echo ${route} | jq -r -c .display_name)" \
                   "PATCH" \

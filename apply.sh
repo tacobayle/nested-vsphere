@@ -315,7 +315,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
-  if [[ ${kind} == "vsphere-avi" ]]; then
+  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
     echo "Creation of Avi VMs app, client and k8s clusters  - This should take about 10 minutes" >> ${log_file} 2>&1

@@ -384,7 +384,7 @@
               "network": "0.0.0.0/0",
               "next_hops": [
                 {
-                  "ip_address": "172.16.130.100"
+                  "ip_address": "dummy"
                 }
               ]
             }
@@ -480,7 +480,7 @@
     "ips_se_lsc": [151, 152],
     "ipam_pool_lsc": "160-179",
     "client": {
-      "ips": [11, 12, 13]
+      "ips": [11, 12]
     },
     "app": {
       "first": {
