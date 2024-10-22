@@ -263,7 +263,7 @@ fi
 folder_avi=$(jq -c -r '.avi_folder' $jsonFile)
   ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .avi.ip_controller $jsonFile)"
   ip_avi_last_octet=$(jq -c -r .avi.ip_controller $jsonFile)
-kube_starting_ip=$(jq -c -r 'avi.kube_starting_ip' $jsonFile)
+kube_starting_ip=$(jq -c -r '.avi.kube_starting_ip' $jsonFile)
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
