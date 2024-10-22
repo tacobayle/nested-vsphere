@@ -474,7 +474,7 @@
           "lbaas_public": true
         }
       ],
-      "segment_overlay_file": "/home/ubuntu/nsx/segments_overlay.json"
+      "segment_overlay_file": "/tmp/segments_overlay.json"
     }
   },
   "avi": {

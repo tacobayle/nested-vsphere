@@ -256,6 +256,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   done
   segment_overlay_file=$(jq -c -r '.nsx.config.segment_overlay_file' $jsonFile)
   echo ${segments_overlay} | tee ${segment_overlay_file}
+  segments_overlay=$(jq -c -r . ${segment_overlay_file})
 fi
 #
 # Avi variables
