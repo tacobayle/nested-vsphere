@@ -55,7 +55,7 @@ if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl
 #
 echo ${host_switch_profiles} | jq -c -r .[] | while read item
 do
-  if [[ $(echo ${item} | jq .display_name) == $(basename $(echo ${transport_node_profiles} | jq -c -r '.[0].host_switch_spec.host_switches[0].host_switch_profile_ids[0].value')) ]]; then
+  if [[ $(echo ${item} | jq -c -r .display_name) == $(basename $(echo ${transport_node_profiles} | jq -c -r '.[0].host_switch_spec.host_switches[0].host_switch_profile_ids[0].value')) ]]; then
     item=$(echo ${item} | jq -c -r '. += {"transport_vlan": '${vlan_id_nsx_overlay}'}')
   fi
   /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
@@ -84,20 +84,20 @@ done
 #
 echo ${ip_pools} | jq -c -r .[] | while read item
 do
-  if [[ $(echo ${item} | jq .display_name) == $(basename $(echo ${transport_node_profiles} | jq -c -r '.[0].host_switch_spec.host_switches[0].ip_assignment_spec.ip_pool_id')) ]]; then
+  if [[ $(echo ${item} | jq -c -r .display_name) == $(basename $(echo ${transport_node_profiles} | jq -c -r '.[0].host_switch_spec.host_switches[0].ip_assignment_spec.ip_pool_id')) ]]; then
     item=$(echo ${item} | jq -c -r '. += {"gateway": "'${gw_nsx_overlay}'"}')
     item=$(echo ${item} | jq -c -r '. += {"start": "'${ip_start_nsx_overlay}'"}')
     item=$(echo ${item} | jq -c -r '. += {"end": "'${ip_end_nsx_overlay}'"}')
     item=$(echo ${item} | jq -c -r '. += {"cidr": "'${cidr_nsx_overlay}'"}')
   fi
-  if [[ $(echo ${pool} | jq .display_name) == $(echo ${edge_node} | jq -c -r '.host_switch_spec.host_switches[0].ip_pool_name.') ]]; then
+  if [[ $(echo ${item} | jq -c -r .display_name) == $(echo ${edge_node} | jq -c -r '.host_switch_spec.host_switches[0].ip_pool_name') ]]; then
     item=$(echo ${item} | jq -c -r '. += {"gateway": "'${gw_nsx_overlay_edge}'"}')
     item=$(echo ${item} | jq -c -r '. += {"start": "'${ip_start_nsx_overlay_edge}'"}')
     item=$(echo ${item} | jq -c -r '. += {"end": "'${ip_end_nsx_overlay_edge}'"}')
     item=$(echo ${item} | jq -c -r '. += {"cidr": "'${cidr_nsx_overlay_edge}'"}')
   fi
   /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-              "policy/api/v1/infra/ip-pools/$(echo ${pool} | jq -c -r '.display_name')" \
+              "policy/api/v1/infra/ip-pools/$(echo ${item} | jq -c -r '.display_name')" \
               "PATCH" \
               "{\"display_name\": \"$(echo ${item} | jq -c -r '.display_name')\"}"
   /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
@@ -110,7 +110,7 @@ do
                 \"allocation_ranges\": [
                   {
                     \"start\": \"$(echo ${item} | jq -c -r '.start')\",
-                    \"end\": \"$(echo ${item} | jq -c -r '.end')\",
+                    \"end\": \"$(echo ${item} | jq -c -r '.end')\"
                   }
                 ]
               }"
@@ -166,6 +166,16 @@ do
   transport_zone_id="/infra/sites/default/enforcement-points/default/transport-zones/$(jq -c -r .${json_key} ${file_json_output})"
   host_switch_spec=$(echo ${host_switch_spec} | jq -c -r '.host_switches[0].transport_zone_endpoints[0] += {"transport_zone_id": "'${transport_zone_id}'"}')
   host_switch_spec=$(echo ${host_switch_spec} | jq -c -r '. | del(.host_switches[0].transport_zone_endpoints[0].transport_zone_ref)')
+  file_json_output="/home/ubuntu/nsx/tz-nsx-id.json"
+  json_key="tz_id"
+  /bin/bash /home/ubuntu/nsx/retrieve_object_id.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/sites/default/enforcement-points/default/transport-zones" \
+              "$(echo ${host_switch_spec} | jq -c -r '.host_switches[0].transport_zone_endpoints[1].transport_zone_ref')" \
+              "${file_json_output}" \
+              "${json_key}"
+  transport_zone_id="/infra/sites/default/enforcement-points/default/transport-zones/$(jq -c -r .${json_key} ${file_json_output})"
+  host_switch_spec=$(echo ${host_switch_spec} | jq -c -r '.host_switches[0].transport_zone_endpoints[1] += {"transport_zone_id": "'${transport_zone_id}'"}')
+  host_switch_spec=$(echo ${host_switch_spec} | jq -c -r '. | del(.host_switches[0].transport_zone_endpoints[1].transport_zone_ref)')
   #
   # create transport node profiles
   #
@@ -607,7 +617,7 @@ do
     /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                 "api/v1/edge-clusters" \
                 "${file_json_output}"
-    edge_cluster_path="/infra/sites/default/enforcement-points/default/edge-clusters/$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .edge_cluster_name)" '.results[] | select(.display_name == $arg1).path' ${file_json_output})"
+    edge_cluster_path="/infra/sites/default/enforcement-points/default/edge-clusters/$(jq -c -r --arg arg1 "$(echo ${item} | jq -r -c .edge_cluster_name)" '.results[] | select(.display_name == $arg1).id' ${file_json_output})"
   else
     edge_cluster_path=""
   fi

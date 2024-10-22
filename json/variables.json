@@ -302,7 +302,7 @@
       ],
       "exclusion_list_groups": ["/infra/domains/default/groups/Avi-se"],
       "edge_node": {
-        "basename": "edge0",
+        "basename": "edge-0",
         "data_network": "segment2",
         "host_switch_spec": {
           "host_switches": [
@@ -445,18 +445,15 @@
           "display_name": "segment-server-1",
           "tier1": "tier1-01",
           "dhcp_ranges": ["50-99"],
-          "ips_app_first": ["11", "12"],
           "transport_zone": "tz_overlay",
-          "backend": true,
-          "ips_app_second": ["13", "14"]
+          "backend": true
         },
         {
           "display_name": "segment-server-2",
           "tier1": "tier1-02",
           "dhcp_ranges": ["50-99"],
           "transport_zone": "tz_overlay",
-          "backend": true,
-          "ips_app_first": ["11"]
+          "backend": true
         },
         {
           "display_name": "segment-vip-1",

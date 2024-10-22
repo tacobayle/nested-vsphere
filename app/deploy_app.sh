@@ -192,31 +192,28 @@ fi
 if [[ ${ips_app_second} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
   do
-    for net in $(seq 0 $(($(echo ${net_app_second_list} | jq -c -r '. | length')-1)))
-    do
-      ip_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
-      prefix_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].cidr' | cut -d"/" -f2)"
-      gw_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].gw')"
-      network_ref_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].display_name')"
-      sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
-          -e "s/\${hostname}/${network_ref_app}-${app_basename_second}${index}/" \
-          -e "s/\${ip_app}/${ip_app}/" \
-          -e "s/\${prefix}/${prefix_app}/" \
-          -e "s/\${packages}/${app_apt_packages}/" \
-          -e "s/\${default_gw}/${gw_app}/" \
-          -e "s/\${forwarders_netplan}/${gw_app}/" /home/ubuntu/templates/userdata_app_second.yaml.template | tee /home/ubuntu/app/userdata_app_second${index}.yaml
-      #
-      sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
-          -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app_second${index}.yaml -w 0)@" \
-          -e "s/\${password}/${GENERIC_PASSWORD}/" \
-          -e "s@\${network_ref}@${network_ref_app}@" \
-          -e "s/\${vm_name}/${network_ref_app}-${app_basename_second}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-second-${index}.json"
-      #
-  #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
-      govc library.deploy -options "/home/ubuntu/app/options-app-second-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
-      govc vm.change -vm "${folder_app}/${network_ref_app}-${app_basename_second}${index}" -c ${app_cpu} -m ${app_memory}
-      govc vm.power -on=true "${folder_app}/${network_ref_app}-${app_basename_second}${index}"
-    done
+    ip_app="$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+    prefix_app="$(echo ${net_app_second_list} | jq -r -c '.[0].cidr' | cut -d"/" -f2)"
+    gw_app="$(echo ${net_app_second_list} | jq -r -c '.[0].gw')"
+    network_ref_app="$(echo ${net_app_second_list} | jq -r -c '.[0].display_name')"
+    sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
+        -e "s/\${hostname}/${network_ref_app}-${app_basename_second}${index}/" \
+        -e "s/\${ip_app}/${ip_app}/" \
+        -e "s/\${prefix}/${prefix_app}/" \
+        -e "s/\${packages}/${app_apt_packages}/" \
+        -e "s/\${default_gw}/${gw_app}/" \
+        -e "s/\${forwarders_netplan}/${gw_app}/" /home/ubuntu/templates/userdata_app_second.yaml.template | tee /home/ubuntu/app/userdata_app_second${index}.yaml
+    #
+    sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
+        -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app_second${index}.yaml -w 0)@" \
+        -e "s/\${password}/${GENERIC_PASSWORD}/" \
+        -e "s@\${network_ref}@${network_ref_app}@" \
+        -e "s/\${vm_name}/${network_ref_app}-${app_basename_second}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-second-${index}.json"
+    #
+#    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
+    govc library.deploy -options "/home/ubuntu/app/options-app-second-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
+    govc vm.change -vm "${folder_app}/${network_ref_app}-${app_basename_second}${index}" -c ${app_cpu} -m ${app_memory}
+    govc vm.power -on=true "${folder_app}/${network_ref_app}-${app_basename_second}${index}"
   done
 fi
 #
@@ -346,30 +343,27 @@ fi
 if [[ ${ips_app_second} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
   do
-    for net in $(seq 0 $(($(echo ${net_app_second_list} | jq -c -r '. | length')-1)))
-    do
-      ip_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
-      # ssh check
-      retry=60 ; pause=10 ; attempt=1
-      while true ; do
-        echo "attempt $attempt to verify VM app ${ip_app} is ready"
-        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q "exit" >/dev/null 2>&1
-        if [[ $? -eq 0 ]]; then
-          echo "VM app ${ip_app} is reachable."
-          if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-          break
-        else
-          echo "VM app ${ip_app} is not reachable."
-        fi
-        ((attempt++))
-        if [ $attempt -eq $retry ]; then
-          echo "VM app ${ip_app} is not reachable after $attempt attempt"
-          break
-        fi
-        sleep $pause
-      done
-      echo "Ending timestamp: $(date)"
+    ip_app="$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+    # ssh check
+    retry=60 ; pause=10 ; attempt=1
+    while true ; do
+      echo "attempt $attempt to verify VM app ${ip_app} is ready"
+      ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q "exit" >/dev/null 2>&1
+      if [[ $? -eq 0 ]]; then
+        echo "VM app ${ip_app} is reachable."
+        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+        break
+      else
+        echo "VM app ${ip_app} is not reachable."
+      fi
+      ((attempt++))
+      if [ $attempt -eq $retry ]; then
+        echo "VM app ${ip_app} is not reachable after $attempt attempt"
+        break
+      fi
+      sleep $pause
     done
+    echo "Ending timestamp: $(date)"
   done
 fi
 #
