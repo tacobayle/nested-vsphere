@@ -55,6 +55,9 @@ if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl
 #
 echo ${host_switch_profiles} | jq -c -r .[] | while read item
 do
+  if [[ $(echo ${item} | jq .display_name) == $(basename $(echo ${transport_node_profiles} | jq -c -r '.[0].host_switch_spec.host_switches[0].host_switch_profile_ids[0].value')) ]]; then
+    item=$(echo ${item} | jq -c -r '. += {"transport_vlan": '${vlan_id_nsx_overlay}'}')
+  fi
   /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
               "policy/api/v1/infra/host-switch-profiles/$(echo ${item} | jq -c -r '.display_name')" \
               "PUT" \
@@ -77,31 +80,37 @@ done
             "${api_host}" \
             "${vsphere_nested_password}"
 #
-# create ip pools
+# create ip pools and subnets
 #
-echo ${ip_pools} | jq -c -r .[] | while read pool
+echo ${ip_pools} | jq -c -r .[] | while read item
 do
+  if [[ $(echo ${item} | jq .display_name) == $(basename $(echo ${transport_node_profiles} | jq -c -r '.[0].host_switch_spec.host_switches[0].ip_assignment_spec.ip_pool_id')) ]]; then
+    item=$(echo ${item} | jq -c -r '. += {"gateway": "'${gw_nsx_overlay}'"}')
+    item=$(echo ${item} | jq -c -r '. += {"start": "'${ip_start_nsx_overlay}'"}')
+    item=$(echo ${item} | jq -c -r '. += {"end": "'${ip_end_nsx_overlay}'"}')
+    item=$(echo ${item} | jq -c -r '. += {"cidr": "'${cidr_nsx_overlay}'"}')
+  fi
+  if [[ $(echo ${pool} | jq .display_name) == $(echo ${edge_node} | jq -c -r '.host_switch_spec.host_switches[0].ip_pool_name.') ]]; then
+    item=$(echo ${item} | jq -c -r '. += {"gateway": "'${gw_nsx_overlay_edge}'"}')
+    item=$(echo ${item} | jq -c -r '. += {"start": "'${ip_start_nsx_overlay_edge}'"}')
+    item=$(echo ${item} | jq -c -r '. += {"end": "'${ip_end_nsx_overlay_edge}'"}')
+    item=$(echo ${item} | jq -c -r '. += {"cidr": "'${cidr_nsx_overlay_edge}'"}')
+  fi
   /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
               "policy/api/v1/infra/ip-pools/$(echo ${pool} | jq -c -r '.display_name')" \
               "PATCH" \
-              "{\"display_name\": \"$(echo ${pool} | jq -c -r '.display_name')\"}"
-done
-#
-# create ip pool subnets
-#
-echo ${ip_pools} | jq -c -r .[] | while read pool
-do
+              "{\"display_name\": \"$(echo ${item} | jq -c -r '.display_name')\"}"
   /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-              "policy/api/v1/infra/ip-pools/$(echo ${pool} | jq -c -r '.display_name')/ip-subnets/$(echo ${pool} | jq -c -r '.display_name')-subnet" \
+              "policy/api/v1/infra/ip-pools/$(echo ${item} | jq -c -r '.display_name')/ip-subnets/$(echo ${item} | jq -c -r '.display_name')-subnet" \
               "PATCH" \
-              "{\"display_name\": \"$(echo ${pool} | jq -c -r '.display_name')-subnet\",
-                \"resource_type\": \"$(echo ${pool} | jq -c -r '.resource_type')\",
-                \"cidr\": \"$(echo ${pool} | jq -c -r '.cidr')\",
-                \"gateway_ip\": \"$(echo ${pool} | jq -c -r '.gateway')\",
+              "{\"display_name\": \"$(echo ${item} | jq -c -r '.display_name')-subnet\",
+                \"resource_type\": \"$(echo ${item} | jq -c -r '.resource_type')\",
+                \"cidr\": \"$(echo ${item} | jq -c -r '.cidr')\",
+                \"gateway_ip\": \"$(echo ${item} | jq -c -r '.gateway')\",
                 \"allocation_ranges\": [
                   {
-                    \"start\": \"$(echo ${pool} | jq -c -r '.start')\",
-                    \"end\": \"$(echo ${pool} | jq -c -r '.end')\",
+                    \"start\": \"$(echo ${item} | jq -c -r '.start')\",
+                    \"end\": \"$(echo ${item} | jq -c -r '.end')\",
                   }
                 ]
               }"

@@ -96,6 +96,7 @@ write_files:
           do
             echo "            - to: $(echo $segment | jq -c -r .cidr)" | tee -a /etc/netplan/50-cloud-init.yaml
             echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
+            sudo iptables -t nat -A POSTROUTING -s `echo $segment | jq -c -r .cidr` -o $ifaceFirstName -j MASQUERADE
           done
         fi
         sudo iptables -t nat -A POSTROUTING -s `echo $net | jq -c -r .cidr` -o $ifaceFirstName -j MASQUERADE

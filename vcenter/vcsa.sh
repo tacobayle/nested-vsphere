@@ -67,7 +67,7 @@ vcenter_api 6 10 "PUT" $token '{"max_days":0,"min_days":0,"warn_days":0}' "${api
 #
 # Add cluster(s) in dc
 #
-count_cluster=$(($(jq -r '.spec.esxi.ips | length' $jsonFile)/3))
+count_cluster=$(($(jq -r '.ips_esxi | length' $jsonFile)/3))
 for cluster in $(seq 1 ${count_cluster})
 do
   if [[ ${cluster} -ne 1 ]] ; then
@@ -79,7 +79,7 @@ done
 #
 # Add host in the cluster(s)
 #
-for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
+for esxi in $(seq 1 $(jq -r '.ips_esxi | length' $jsonFile))
 do
   if [[ ${esxi} != 1 ]] ; then
     load_govc_env_with_cluster "${cluster_basename}$((($esxi-1)/3+1))"
@@ -126,7 +126,7 @@ fi
 #
 # adding each ESXi hosts on vmnic1
 #
-for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
+for esxi in $(seq 1 $(jq -r '.ips_esxi | length' $jsonFile))
 do
   echo "Adding ESXi host ${esxi_basename}${esxi}.${domain} on $(jq -c -r .vds_switches[0].name ${jsonFile}) on pnic vmnic1"
   govc dvs.add -dvs $(jq -c -r .vds_switches[0].name ${jsonFile}) -pnic=vmnic1 "${esxi_basename}${esxi}.${domain}" > /dev/null
@@ -161,9 +161,9 @@ sleep 30
 # migrating from standard vswitch to VDS
 #
 echo "migrating vmk1 and vmk2 to vds1"
-for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
+for esxi in $(seq 1 $(jq -r '.ips_esxi | length' $jsonFile))
 do
-  ip_last_octet=$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
+  ip_last_octet=$(jq -r '.ips_esxi['$(expr ${esxi} - 1)']' $jsonFile)
   # migrating vmk0, vmk1 and vmk2 to vds1
   echo "+++ connecting to root@${cidr_mgmt_three_octets}.${ip_last_octet}"
   echo "  +++ running: esxcli network ip interface remove --interface-name $(jq -c -r .port_groups[3].old_vmk $jsonFile)"
@@ -191,9 +191,9 @@ sleep 30
 #
 load_govc_env_with_cluster "${cluster_basename}1"
 echo "cleaning standard Vswitch and adding vmnic0 in the vds"
-for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
+for esxi in $(seq 1 $(jq -r '.ips_esxi | length' $jsonFile))
 do
-  ip_last_octet=$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
+  ip_last_octet=$(jq -r '.ips_esxi['$(expr ${esxi} - 1)']' $jsonFile)
   echo "+++ connecting to root@${cidr_mgmt_three_octets}.${ip_last_octet}"
   echo "  +++ running: esxcli network vswitch standard uplink remove -u vmnic0 -v vSwitch0"
   sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no root@${cidr_mgmt_three_octets}.${ip_last_octet} "esxcli network vswitch standard uplink remove -u vmnic0 -v vSwitch0"
@@ -235,7 +235,7 @@ done
 #
 # VSAN Configuration
 #
-count_cluster=$(($(jq -r '.spec.esxi.ips | length' $jsonFile)/3))
+count_cluster=$(($(jq -r '.ips_esxi | length' $jsonFile)/3))
 for cluster in $(seq 1 ${count_cluster})
 do
   load_govc_env_with_cluster "${cluster_basename}${cluster}"
@@ -243,10 +243,10 @@ do
   govc cluster.change -drs-enabled -ha-enabled -vsan-enabled -vsan-autoclaim "${cluster_basename}${cluster}" > /dev/null
 done
 # Adding host in VSAN config.
-for esxi in $(seq 1 $(jq -r '.spec.esxi.ips | length' $jsonFile))
+for esxi in $(seq 1 $(jq -r '.ips_esxi | length' $jsonFile))
 do
   load_govc_esxi
-  ip_last_octet=$(jq -r '.spec.esxi.ips['$(expr ${esxi} - 1)']' $jsonFile)
+  ip_last_octet=$(jq -r '.ips_esxi['$(expr ${esxi} - 1)']' $jsonFile)
   if [[ $esxi -ne 1 ]] ; then
     export GOVC_URL=${cidr_mgmt_three_octets}.${ip_last_octet}
     echo "Adding host ${cidr_mgmt_three_octets}.${ip_last_octet} in VSAN configuration"

@@ -297,6 +297,15 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
+  if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+    echo '------------------------------------------------------------' >> ${log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Config. of NSX Manager - This should take about 60 minutes" >> ${log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+  fi
+  #
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1

@@ -30,6 +30,17 @@ if [[ ${k8s_clusters} != "null" ]]; then
       nsxtT1LR="''"
       avi_cloud_name="Default-Cloud"
     fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+      file_json_output="/home/ubuntu/nsx/tier-1s.json"
+      /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                  "policy/api/v1/infra/tier-1s" \
+                  "${file_json_output}"
+      connectivity_path=$(jq -c -r --arg arg1 "$(echo ${segments_overlay} | jq -r -c '.[] | select(.display_name == "segment-vip-1").tier1')" '.results[] | select(.display_name == $arg1).path' ${file_json_output})
+      nsxtT1LR="${connectivity_path}"
+      avi_cloud_name="${nsx_cloud_name}"
+      network_ref_vip=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).display_name')
+      cidr_vip_full=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).cidr')
+    fi
     sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
         -e "s/\${clusterName}/${k8s_basename}${index}/" \
         -e "s/\${cniPlugin}/${cni}/" \
@@ -104,30 +115,36 @@ if [[ ${k8s_clusters} != "null" ]]; then
   done
 fi
 #
-# Client VMs client creation // vsphere-avi use case)
+# Client VMs client creation
 #
 if [[ ${ips_clients} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
   do
-    ip_client="${cidr_vip_three_octets}.$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
-    sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
-        -e "s/\${hostname}/${client_basename}${index}/" \
-        -e "s/\${ip_app}/${ip_client}/" \
-        -e "s/\${prefix}/${prefix_client}/" \
-        -e "s/\${packages}/${app_apt_packages}/" \
-        -e "s/\${default_gw}/${gw_client}/" \
-        -e "s/\${forwarders_netplan}/${gw_client}/" /home/ubuntu/templates/userdata_client.yaml.template | tee /home/ubuntu/app/userdata_client${index}.yaml
-    #
-    sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
-        -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_client${index}.yaml -w 0)@" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" \
-        -e "s@\${network_ref}@${network_ref_vip}@" \
-        -e "s/\${vm_name}/${client_basename}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-client-${index}.json"
-    #
-#    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
-    govc library.deploy -options "/home/ubuntu/app/options-client-${index}.json" -folder "${folder_client}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
-    govc vm.change -vm "${folder_client}/${client_basename}${index}" -c ${client_cpu} -m ${client_memory}
-    govc vm.power -on=true "${folder_client}/${client_basename}${index}"
+    for net in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
+    do
+      ip_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
+      prefix_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr' | cut -d"/" -f2)"
+      gw_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].gw')"
+      network_ref_vip="$(echo ${net_client_list} | jq -r -c '.['${net}'].display_name')"
+      sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s/\${hostname}/${network_ref_vip}-${client_basename}${index}/" \
+          -e "s/\${ip_app}/${ip_client}/" \
+          -e "s/\${prefix}/${prefix_client}/" \
+          -e "s/\${packages}/${app_apt_packages}/" \
+          -e "s/\${default_gw}/${gw_client}/" \
+          -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/userdata_client.yaml.template | tee /home/ubuntu/app/userdata_client${index}.yaml
+      #
+      sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
+          -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_client${index}.yaml -w 0)@" \
+          -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s@\${network_ref}@${network_ref_vip}@" \
+          -e "s/\${vm_name}/${network_ref_vip}-${client_basename}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-client-${index}.json"
+      #
+  #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
+      govc library.deploy -options "/home/ubuntu/app/options-client-${index}.json" -folder "${folder_client}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
+      govc vm.change -vm "${folder_client}/${network_ref_vip}-${client_basename}${index}" -c ${client_cpu} -m ${client_memory}
+      govc vm.power -on=true "${folder_client}/${network_ref_vip}-${client_basename}${index}"
+    done
   done
 fi
 #
@@ -136,31 +153,37 @@ fi
 if [[ ${ips_app} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
   do
-    ip_app="${cidr_app_three_octets}.$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
-    sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
-        -e "s/\${hostname}/${app_basename}${index}/" \
-        -e "s/\${ip_app}/${ip_app}/" \
-        -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
-        -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
-        -e "s/\${app_tcp_default}/${app_tcp_default}/" \
-        -e "s/\${app_tcp_waf}/${app_tcp_waf}/" \
-        -e "s@\${docker_registry_repo_default_app}@${docker_registry_repo_default_app}@" \
-        -e "s@\${docker_registry_repo_waf}@${docker_registry_repo_waf}@" \
-        -e "s/\${prefix}/${prefix_app}/" \
-        -e "s/\${packages}/${app_apt_packages}/" \
-        -e "s/\${default_gw}/${gw_app}/" \
-        -e "s/\${forwarders_netplan}/${gw_app}/" /home/ubuntu/templates/userdata_app.yaml.template | tee /home/ubuntu/app/userdata_app${index}.yaml
-    #
-    sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
-        -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app${index}.yaml -w 0)@" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" \
-        -e "s@\${network_ref}@${network_ref_app}@" \
-        -e "s/\${vm_name}/${app_basename}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-${index}.json"
-    #
-#    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
-    govc library.deploy -options "/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
-    govc vm.change -vm "${folder_app}/${app_basename}${index}" -c ${app_cpu} -m ${app_memory}
-    govc vm.power -on=true "${folder_app}/${app_basename}${index}"
+    for net in $(seq 0 $(($(echo ${net_app_first_list} | jq -c -r '. | length')-1)))
+    do
+      ip_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+      prefix_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr' | cut -d"/" -f2)"
+      gw_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].gw')"
+      network_ref_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].display_name')"
+      sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s/\${hostname}/${network_ref_app}-${app_basename}${index}/" \
+          -e "s/\${ip_app}/${ip_app}/" \
+          -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
+          -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
+          -e "s/\${app_tcp_default}/${app_tcp_default}/" \
+          -e "s/\${app_tcp_waf}/${app_tcp_waf}/" \
+          -e "s@\${docker_registry_repo_default_app}@${docker_registry_repo_default_app}@" \
+          -e "s@\${docker_registry_repo_waf}@${docker_registry_repo_waf}@" \
+          -e "s/\${prefix}/${prefix_app}/" \
+          -e "s/\${packages}/${app_apt_packages}/" \
+          -e "s/\${default_gw}/${gw_app}/" \
+          -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/userdata_app.yaml.template | tee /home/ubuntu/app/userdata_app${index}.yaml
+      #
+      sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
+          -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app${index}.yaml -w 0)@" \
+          -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s@\${network_ref}@${network_ref_app}@" \
+          -e "s/\${vm_name}/${network_ref_app}-${app_basename}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-${index}.json"
+      #
+  #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
+      govc library.deploy -options "/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
+      govc vm.change -vm "${folder_app}/${network_ref_app}-${app_basename}${index}" -c ${app_cpu} -m ${app_memory}
+      govc vm.power -on=true "${folder_app}/${network_ref_app}-${app_basename}${index}"
+    done
   done
 fi
 #
@@ -169,25 +192,31 @@ fi
 if [[ ${ips_app_second} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
   do
-    ip_app="${cidr_app_three_octets}.$(echo ${ips_app_second} | jq -c -r .[$(expr ${index} - 1)])"
-    sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
-        -e "s/\${hostname}/${app_basename_second}${index}/" \
-        -e "s/\${ip_app}/${ip_app}/" \
-        -e "s/\${prefix}/${prefix_app}/" \
-        -e "s/\${packages}/${app_apt_packages}/" \
-        -e "s/\${default_gw}/${gw_app}/" \
-        -e "s/\${forwarders_netplan}/${gw_app}/" /home/ubuntu/templates/userdata_app_second.yaml.template | tee /home/ubuntu/app/userdata_app_second${index}.yaml
-    #
-    sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
-        -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app_second${index}.yaml -w 0)@" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" \
-        -e "s@\${network_ref}@${network_ref_app}@" \
-        -e "s/\${vm_name}/${app_basename_second}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-second-${index}.json"
-    #
-#    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
-    govc library.deploy -options "/home/ubuntu/app/options-app-second-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
-    govc vm.change -vm "${folder_app}/${app_basename_second}${index}" -c ${app_cpu} -m ${app_memory}
-    govc vm.power -on=true "${folder_app}/${app_basename_second}${index}"
+    for net in $(seq 0 $(($(echo ${net_app_second_list} | jq -c -r '. | length')-1)))
+    do
+      ip_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+      prefix_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].cidr' | cut -d"/" -f2)"
+      gw_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].gw')"
+      network_ref_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].display_name')"
+      sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s/\${hostname}/${network_ref_app}-${app_basename_second}${index}/" \
+          -e "s/\${ip_app}/${ip_app}/" \
+          -e "s/\${prefix}/${prefix_app}/" \
+          -e "s/\${packages}/${app_apt_packages}/" \
+          -e "s/\${default_gw}/${gw_app}/" \
+          -e "s/\${forwarders_netplan}/${gw_app}/" /home/ubuntu/templates/userdata_app_second.yaml.template | tee /home/ubuntu/app/userdata_app_second${index}.yaml
+      #
+      sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
+          -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app_second${index}.yaml -w 0)@" \
+          -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s@\${network_ref}@${network_ref_app}@" \
+          -e "s/\${vm_name}/${network_ref_app}-${app_basename_second}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-second-${index}.json"
+      #
+  #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
+      govc library.deploy -options "/home/ubuntu/app/options-app-second-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
+      govc vm.change -vm "${folder_app}/${network_ref_app}-${app_basename_second}${index}" -c ${app_cpu} -m ${app_memory}
+      govc vm.power -on=true "${folder_app}/${network_ref_app}-${app_basename_second}${index}"
+    done
   done
 fi
 #
@@ -199,9 +228,18 @@ if [[ ${k8s_clusters} != "null" ]]; then
     K8s_version="$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')"
     cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
     cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
-    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
+    for index_ip in $(seq 1 2)
     do
-      ip_k8s_node="${cidr_vip_three_octets}.$(echo ${k8s_clusters} | jq -c -r .[$(expr ${index} - 1)].ips[$(expr ${index_ip} - 1)])"
+      if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+        cidr=$(echo ${segments_overlay} | jq -r -c '.[] | select(.kube == "true").cidr')
+        if [[ ${cidr} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
+          cidr_vip_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+        fi
+        prefix_client=$(echo ${segments_overlay} | jq -r -c '.[] | select(.kube == "true").cidr' | cut -d"/" -f2)
+        gw_client=$(echo ${segments_overlay} | jq -r -c '.[] | select(.kube == "true").gateway_address' | cut -d"/" -f1)
+        network_ref_vip=$(echo ${segments_overlay} | jq -r -c '.[] | select(.kube == "true").display_name')
+      fi
+      ip_k8s_node="${cidr_vip_three_octets}.${kube_starting_ip}"
       if [[ ${index_ip} -eq 1 ]]; then
         node_type="master"
       else
@@ -213,7 +251,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
           -e "s/\${prefix}/${prefix_client}/" \
           -e "s/\${packages}/${k8s_apt_packages}/" \
           -e "s/\${default_gw}/${gw_client}/" \
-          -e "s/\${forwarders_netplan}/${gw_client}/" \
+          -e "s/\${forwarders_netplan}/${ip_gw}/" \
           -e "s/\${docker_version}/${docker_version}/" \
           -e "s/\${node_type}/${node_type}/" \
           -e "s@\${pod_cidr}@${pod_cidr}@" \
@@ -234,6 +272,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
       govc vm.change -vm "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}" -c ${k8s_node_cpu} -m ${k8s_node_memory}
       govc vm.disk.change -vm "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}" -size ${k8s_node_disk}
       govc vm.power -on=true "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}"
+      ((kube_starting_ip++))
     done
   done
 fi
@@ -243,27 +282,30 @@ fi
 if [[ ${ips_clients} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
   do
-    ip_client="${cidr_vip_three_octets}.$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
-    # ssh check
-    retry=60 ; pause=10 ; attempt=1
-    while true ; do
-      echo "attempt $attempt to verify VM app ${ip_client} is ready"
-      ssh -o StrictHostKeyChecking=no "ubuntu@${ip_client}" -q >/dev/null 2>&1
-      if [[ $? -eq 0 ]]; then
-        echo "VM client ${ip_client} is reachable."
-        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM client '${ip_client}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-        break
-      else
-        echo "VM client ${ip_client} is not reachable."
-      fi
-      ((attempt++))
-      if [ $attempt -eq $retry ]; then
-        echo "VM client ${ip_client} is not reachable after $attempt attempt"
-        break
-      fi
-      sleep $pause
+    for net in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
+    do
+      ip_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
+      # ssh check
+      retry=60 ; pause=10 ; attempt=1
+      while true ; do
+        echo "attempt $attempt to verify VM app ${ip_client} is ready"
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_client}" -q "exit" >/dev/null 2>&1
+        if [[ $? -eq 0 ]]; then
+          echo "VM client ${ip_client} is reachable."
+          if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM client '${ip_client}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+          break
+        else
+          echo "VM client ${ip_client} is not reachable."
+        fi
+        ((attempt++))
+        if [ $attempt -eq $retry ]; then
+          echo "VM client ${ip_client} is not reachable after $attempt attempt"
+          break
+        fi
+        sleep $pause
+      done
+      echo "Ending timestamp: $(date)"
     done
-    echo "Ending timestamp: $(date)"
   done
 fi
 #
@@ -272,27 +314,30 @@ fi
 if [[ ${ips_app} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
   do
-    ip_app="${cidr_app_three_octets}.$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
-    # ssh check
-    retry=60 ; pause=10 ; attempt=1
-    while true ; do
-      echo "attempt $attempt to verify VM app ${ip_app} is ready"
-      ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q >/dev/null 2>&1
-      if [[ $? -eq 0 ]]; then
-        echo "VM app ${ip_app} is reachable."
-        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-        break
-      else
-        echo "VM app ${ip_app} is not reachable."
-      fi
-      ((attempt++))
-      if [ $attempt -eq $retry ]; then
-        echo "VM app ${ip_app} is not reachable after $attempt attempt"
-        break
-      fi
-      sleep $pause
+    for net in $(seq 0 $(($(echo ${net_app_first_list} | jq -c -r '. | length')-1)))
+    do
+      ip_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+      # ssh check
+      retry=60 ; pause=10 ; attempt=1
+      while true ; do
+        echo "attempt $attempt to verify VM app ${ip_app} is ready"
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q "exit" >/dev/null 2>&1
+        if [[ $? -eq 0 ]]; then
+          echo "VM app ${ip_app} is reachable."
+          if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+          break
+        else
+          echo "VM app ${ip_app} is not reachable."
+        fi
+        ((attempt++))
+        if [ $attempt -eq $retry ]; then
+          echo "VM app ${ip_app} is not reachable after $attempt attempt"
+          break
+        fi
+        sleep $pause
+      done
+      echo "Ending timestamp: $(date)"
     done
-    echo "Ending timestamp: $(date)"
   done
 fi
 #
@@ -301,27 +346,30 @@ fi
 if [[ ${ips_app_second} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
   do
-    ip_app="${cidr_app_three_octets}.$(echo ${ips_app_second} | jq -c -r .[$(expr ${index} - 1)])"
-    # ssh check
-    retry=60 ; pause=10 ; attempt=1
-    while true ; do
-      echo "attempt $attempt to verify VM app ${ip_app} is ready"
-      ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q >/dev/null 2>&1
-      if [[ $? -eq 0 ]]; then
-        echo "VM app ${ip_app} is reachable."
-        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-        break
-      else
-        echo "VM app ${ip_app} is not reachable."
-      fi
-      ((attempt++))
-      if [ $attempt -eq $retry ]; then
-        echo "VM app ${ip_app} is not reachable after $attempt attempt"
-        break
-      fi
-      sleep $pause
+    for net in $(seq 0 $(($(echo ${net_app_second_list} | jq -c -r '. | length')-1)))
+    do
+      ip_app="$(echo ${net_app_second_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+      # ssh check
+      retry=60 ; pause=10 ; attempt=1
+      while true ; do
+        echo "attempt $attempt to verify VM app ${ip_app} is ready"
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q "exit" >/dev/null 2>&1
+        if [[ $? -eq 0 ]]; then
+          echo "VM app ${ip_app} is reachable."
+          if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+          break
+        else
+          echo "VM app ${ip_app} is not reachable."
+        fi
+        ((attempt++))
+        if [ $attempt -eq $retry ]; then
+          echo "VM app ${ip_app} is not reachable after $attempt attempt"
+          break
+        fi
+        sleep $pause
+      done
+      echo "Ending timestamp: $(date)"
     done
-    echo "Ending timestamp: $(date)"
   done
 fi
 #
@@ -338,9 +386,9 @@ if [[ ${k8s_clusters} != "null" ]]; then
         -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@g" \
         -e "s@\${deployment_name}@${deployment_name}@" \
         -e "s/\${clusterName}/${k8s_basename}${index}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh"
-    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
+    for index_ip in $(seq 1 2)
     do
-      ip_k8s_node="${cidr_vip_three_octets}.$(echo ${k8s_clusters} | jq -c -r .[$(expr ${index} - 1)].ips[$(expr ${index_ip} - 1)])"
+      ip_k8s_node="${cidr_vip_three_octets}.${kube_starting_ip}"
       retry=60 ; pause=10 ; attempt=1
       while true ; do
         echo "attempt $attempt to verify VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is ready"
@@ -373,6 +421,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
         fi
         sleep $pause
       done
+      ((kube_starting_ip++))
     done
   done
 fi
