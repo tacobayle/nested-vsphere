@@ -15,7 +15,7 @@
 #          type: 'dhcp'
 #        state: present
 #        enable_mgmt: True
-#      loop: "{{ spec.esxi.ips }}"
+#      loop: "{{ ips_esxi }}"
 #      loop_control:
 #        index_var: my_idx
 
@@ -33,7 +33,7 @@
           type: 'dhcp'
         state: present
         enable_mgmt: True
-      loop: "{{ spec.esxi.ips }}"
+      loop: "{{ ips_esxi }}"
       loop_control:
         index_var: my_idx
 
@@ -51,7 +51,7 @@
           type: 'dhcp'
         state: present
         enable_mgmt: False
-      loop: "{{ spec.esxi.ips }}"
+      loop: "{{ ips_esxi }}"
       loop_control:
         index_var: my_idx
 
@@ -70,6 +70,6 @@
           tcpip_stack: vmotion
         state: present
         enable_mgmt: False
-      loop: "{{ spec.esxi.ips }}"
+      loop: "{{ ips_esxi }}"
       loop_control:
         index_var: my_idx
