@@ -302,7 +302,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
     echo "Config. of NSX Manager - This should take about 60 minutes" >> ${log_file} 2>&1
     echo "running the following command from the gw: /home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+    #ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
