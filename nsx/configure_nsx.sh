@@ -249,6 +249,7 @@ new_members="{\"members\": ${exclusion_list_groups}}"
 #
 # waiting for host transport node to be ready
 #
+echo "pausing for 240 seconds"
 sleep 240
 file_json_output="/home/ubuntu/nsx/host-transport-nodes-status.json"
 /bin/bash /home/ubuntu/nsx/get_object.sh \
@@ -412,6 +413,8 @@ done
 #
 # Check the status of Nodes (including transport node and edge nodes but filtered with edge_ids
 #
+echo "pausing for 240 seconds"
+sleep 240
 retry=240 ; pause=20 ; attempt=0
 echo ${edge_ids} | jq -c -r .[] | while read item
 do
@@ -426,7 +429,7 @@ do
       if [[ $(echo ${edge} | jq -r .transport_node_id) == ${item} ]] && [[ $(echo ${edge} | jq -r .state) == "success" ]] ; then
         echo "new edge node id ${item} state is success after ${attempt} attempts of ${pause} seconds"
         if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': edge node '${item}' ready"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-        break
+        break 2
       fi
     done
     ((attempt++))
