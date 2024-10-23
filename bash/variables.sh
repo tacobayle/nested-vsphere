@@ -176,18 +176,23 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   tier0_vip_starting_ip=211
   tier1s=$(jq -c -r .nsx.config.tier1s $jsonFile)
   supernet_overlay=$(jq -c -r '.spec.nsx.supernet_overlay' $jsonFile)
+  supernet_vip=$(jq -c -r '.spec.avi.supernet_vip' $jsonFile)
   supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
   supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
+  supernet_vip_first_two_octets=$(echo "${supernet_vip}" | cut -d'.' -f1-2)
   segments_overlay="[]"
   segment_count=0
   amount_of_segment=$((${supernet_overlay_third_octet} + $(jq '.nsx.config.segments_overlay | length' $jsonFile) - 1))
   net_client_list=[]
   net_app_first_list=[]
   net_app_second_list=[]
+  vip_subnet_index=0
   for i in $(seq ${supernet_overlay_third_octet} ${amount_of_segment})
   do
     cidr="${supernet_first_two_octets}.$i.0/24"
     cidr_three_octets="${supernet_first_two_octets}.$i"
+    cidr_vip_subnet="${supernet_vip_first_two_octets}.$vip_subnet_index.0/24"
+    cidr_vip_three_octets="${supernet_vip_first_two_octets}.$vip_subnet_index"
     segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"cidr": "'${cidr}'",
                                                      "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
                                                      "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
@@ -222,6 +227,16 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
                                                                      }
                                                                    ]')
     fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.avi_mgmt' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"avi_mgmt": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_mgmt' $jsonFile)'"}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.avi_ipam_pool_se' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"avi_ipam_pool_se": "'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_se' $jsonFile | cut -d"-" -f1)'-'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_se' $jsonFile | cut -d"-" -f2)'"}')
+    fi
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.avi_ipam_pool_vip' > /dev/null) ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"avi_ipam_vip": {"cidr": "'${cidr_vip_subnet}'", "pool": "'${cidr_vip_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_vip' $jsonFile | cut -d"-" -f1)'-'${cidr_vip_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_vip' $jsonFile | cut -d"-" -f2)'"}}')
+      ((vip_subnet_index++))
+    fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.transport_zone' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"transport_zone": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].transport_zone' $jsonFile)'"}')
     fi
@@ -234,7 +249,12 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
                                                                "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
                                                                "cidr_three_octets": "'${cidr_three_octets}'",
                                                                "se_group_ref": "private",
-                                                               "gw": "'${cidr_three_octets}'.1"
+                                                               "gw": "'${cidr_three_octets}'.1",
+                                                               "avi_ipam_vip": {
+                                                                 "cidr": "'${cidr_vip_subnet}'",
+                                                                 "pool": "'${cidr_vip_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_vip' $jsonFile | cut -d"-" -f1)'-'${cidr_vip_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_vip' $jsonFile | cut -d"-" -f2)'"
+                                                               },
+                                                               "avi_ipam_pool_se": "'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_se' $jsonFile | cut -d"-" -f1)'-'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_se' $jsonFile | cut -d"-" -f2)'"
                                                              }
                                                            ]')
     fi
@@ -299,7 +319,7 @@ certificatemanagementprofile='[
                                       "is_dynamic": false,
                                       "is_sensitive": true,
                                       "name": "vault_token",
-                                      "value": "placeholder"
+                                      "value": "dummy_value"
                                     }
                                   ]
                                 }
@@ -351,30 +371,10 @@ sslkeyandcertificate='[
                           }
                          }
                       ]'
-if [[ $(jq -c -r '.spec.avi.applicationprofile' $jsonFile) == "null" ]]; then
-  applicationprofile=$(jq -c -r '.applicationprofile' $jsonFile)
-else
-  applicationprofile=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.applicationprofile $jsonFile)'')
-  applicationprofile=$(echo ${applicationprofile} | jq '. += '$(jq -c -r '.applicationprofile' $jsonFile)'')
-fi
-if [[ $(jq -c -r '.spec.avi.httppolicyset' $jsonFile) == "null" ]]; then
-  httppolicyset=$(jq -c -r '.httppolicyset' $jsonFile)
-else
-  httppolicyset=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.httppolicyset $jsonFile)'')
-  httppolicyset=$(echo ${httppolicyset} | jq '. += '$(jq -c -r '.httppolicyset' $jsonFile)'')
-fi
-if [[ $(jq -c -r '.spec.avi.roles' $jsonFile) == "null" ]]; then
-  roles=$(jq -c -r '.roles' $jsonFile)
-else
-  roles=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.roles $jsonFile)'')
-  roles=$(echo ${roles} | jq '. += '$(jq -c -r '.roles' $jsonFile)'')
-fi
-if [[ $(jq -c -r '.spec.avi.tenants' $jsonFile) == "null" ]]; then
-  tenants=$(jq -c -r '.tenants' $jsonFile)
-else
-  tenants=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.tenants $jsonFile)'')
-  tenants=$(echo ${tenants} | jq '. += '$(jq -c -r '.tenants' $jsonFile)'')
-fi
+applicationprofile=$(jq -c -r '.applicationprofile' $jsonFile)
+httppolicyset=$(jq -c -r '.httppolicyset' $jsonFile)
+roles=$(jq -c -r '.roles' $jsonFile)
+tenants=$(jq -c -r '.tenants' $jsonFile)
 for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
 do
   tenants=$(echo $tenants | jq -c -r '. += [{"name": "'${k8s_basename}${index}'",
@@ -385,16 +385,13 @@ do
                                                  "tenant_access_to_provider_se": true
                                                }}]')
 done
-if [[ $(jq -c -r '.spec.avi.users' $jsonFile) == "null" ]]; then
-  users=$(jq -c -r '.users' $jsonFile)
-else
-  users=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.users $jsonFile)'')
-  users=$(echo ${users} | jq '. += '$(jq -c -r '.users' $jsonFile)'')
-fi
+users=$(jq -c -r '.users' $jsonFile)
 avi_subdomain=$(jq -c -r '.avi.subdomain' $jsonFile)
+avi_config_repo=$(jq -c -r '.avi.config_repo' $jsonFile)
 avi_content_library_name=$(jq -c -r '.avi_content_library_name' $jsonFile)
 avi_ipam_first=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
+service_engine_groups=$(jq -c -r '.service_engine_groups' $jsonFile)
 if [[ ${kind} == "vsphere-avi" ]]; then
   avi_lsc_se_folder=$(jq -c -r '.avi_lsc_se_folder' $jsonFile)
   avi_lsc_kernel_version=$(jq -c -r '.avi_lsc_kernel_version' $jsonFile)
@@ -501,10 +498,8 @@ if [[ ${kind} == "vsphere-avi" ]]; then
             ]'
   contexts='[]'
   additional_subnets='[]'
-  service_engine_groups=$(jq -c -r '.service_engine_groups' $jsonFile)
   ips_app_full=$(echo ${ips_app} | jq '. | map("'${cidr_app_three_octets}'." + (. | tostring))')
   ips_app_second_full=$(echo ${ips_app_second} | jq '. | map("'${cidr_app_three_octets}'." + (. | tostring))')
-  avi_config_repo=$(jq -c -r '.avi_config_repo' $jsonFile)
   playbook=$(jq -c -r '.playbook_vcenter' $jsonFile)
   tag=$(jq -c -r '.tag_vcenter' $jsonFile)
   supernet_overlay_third_octet=0
@@ -513,7 +508,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
 fi
 if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   nsx_cloud_name=$(jq -c -r '.avi.nsx.cloud.name' $jsonFile)
-  avi_config_repo=$(jq -c -r '.avi_config_repo' $jsonFile)
+  cloud_obj_name_prefix=$(jq -c -r '.avi.nsx.cloud.cloud_obj_name_prefix' $jsonFile)
   playbook=$(jq -c -r '.playbook_nsx' $jsonFile)
   tag=$(jq -c -r '.tag_nsx' $jsonFile)
 fi

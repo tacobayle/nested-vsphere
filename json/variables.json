@@ -431,7 +431,9 @@
           "display_name": "segment-mgmt-avi",
           "tier1": "tier1-01",
           "transport_zone": "tz_overlay",
-          "dhcp_ranges": ["50-99"]
+          "dhcp_ranges": ["50-99"],
+          "avi_ipam_pool_se": "210-230",
+          "avi_mgmt": true
         },
         {
           "display_name": "segment-mgmt-tanzu-supervisor",
@@ -439,12 +441,14 @@
           "tanzu_supervisor_starting_ip": "130",
           "tanzu_supervisor_count": 5,
           "transport_zone": "tz_overlay",
-          "dhcp_ranges": ["50-99"]
+          "dhcp_ranges": ["50-99"],
+          "avi_ipam_pool_se": "210-230"
         },
         {
           "display_name": "segment-server-1",
           "tier1": "tier1-01",
           "dhcp_ranges": ["50-99"],
+          "avi_ipam_pool_se": "210-230",
           "transport_zone": "tz_overlay",
           "backend": true
         },
@@ -452,6 +456,7 @@
           "display_name": "segment-server-2",
           "tier1": "tier1-02",
           "dhcp_ranges": ["50-99"],
+          "avi_ipam_pool_se": "210-230",
           "transport_zone": "tz_overlay",
           "backend": true
         },
@@ -459,6 +464,8 @@
           "display_name": "segment-vip-1",
           "tier1": "tier1-01",
           "dhcp_ranges": ["50-99"],
+          "avi_ipam_pool_se": "210-230",
+          "avi_ipam_pool_vip": "231-254",
           "transport_zone": "tz_overlay",
           "kube": true,
           "lbaas_private": true
@@ -467,6 +474,8 @@
           "display_name": "segment-vip-2",
           "tier1": "tier1-02",
           "dhcp_ranges": ["50-99"],
+          "avi_ipam_pool_se": "210-230",
+          "avi_ipam_pool_vip": "231-254",
           "transport_zone": "tz_overlay",
           "lbaas_public": true
         }
@@ -482,6 +491,7 @@
     "lbaas_username": "automation",
     "ipam_pool": "100-149",
     "ips_se_lsc": [151, 152],
+    "config_repo": "https://github.com/tacobayle/ansibleAviConfig",
     "ipam_pool_lsc": "160-179",
     "client": {
       "ips": [11, 12]
@@ -498,7 +508,8 @@
     "kube_starting_ip": 21,
     "nsx": {
       "cloud": {
-        "name":  "dc1_nsx"
+        "name":  "dc1_nsx",
+        "cloud_obj_name_prefix": "avi-auto-cfg"
       }
     }
   },
@@ -773,7 +784,6 @@
     }
   ],
   "avi_content_library_name": "content_library_avi_se",
-  "avi_config_repo": "https://github.com/tacobayle/ansibleAviConfig",
   "playbook_vcenter": "vcenter.yml",
   "tag_vcenter": "v2.27",
   "playbook_nsx": "nsx.yml",

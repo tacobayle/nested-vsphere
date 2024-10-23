@@ -36,6 +36,10 @@ roles: |
   ${roles}
 users: |
   ${users}
+applicationprofile: |
+  ${applicationprofile}
+httppolicyset: |
+  ${httppolicyset}
 vcenter:
   domains: |
     [{"name": "${domain}"}]
@@ -58,10 +62,6 @@ vcenter:
       ${additional_subnets}
     service_engine_groups: |
       ${service_engine_groups}
-    applicationprofile: |
-      ${applicationprofile}
-    httppolicyset: |
-      ${httppolicyset}
     pools: |
       ${pools}
     pool_groups: |

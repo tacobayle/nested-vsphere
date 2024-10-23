@@ -36,45 +36,94 @@ if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl
 # templating python control script
 #
 sed -e "s@\${webhook_url}@${SLACK_WEBHOOK_URL_AVI}@" /home/ubuntu/templates/avi_slack_cs.py.template | tee $(jq -c -r .avi_slack.path $jsonFile)
-#
-# templating yaml file
-#
-sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
-    -e "s/\${ntp}/${ip_gw_mgmt}/" \
-    -e "s/\${dns}/${ip_gw_mgmt}/" \
-    -e "s/\${avi_username}/${avi_username}/" \
-    -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
-    -e "s/\${avi_old_password}/${AVI_OLD_PASSWORD}/" \
-    -e "s/\${avi_version}/${avi_version}/" \
-    -e "s/\${vsphere_username}/${vsphere_nested_username}@${ssoDomain}/" \
-    -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
-    -e "s/\${vsphere_server}/${api_host}/" \
-    -e "s/\${external_gw_ip}/${ip_gw_mgmt}/" \
-    -e "s@\${static_routes}@$(echo ${avi_static_routes} | jq -c -r .)@" \
-    -e "s@\${import_sslkeyandcertificate_ca}@$(echo ${import_sslkeyandcertificate_ca} | jq -c -r '.')@" \
-    -e "s@\${certificatemanagementprofile}@$(echo ${certificatemanagementprofile} | jq -c -r '.')@" \
-    -e "s@\${alertscriptconfig}@$(echo ${alertscriptconfig} | jq -c -r '.')@" \
-    -e "s@\${actiongroupconfig}@$(echo ${actiongroupconfig} | jq -c -r '.')@" \
-    -e "s@\${alertconfig}@$(echo ${alertconfig} | jq -c -r '.')@" \
-    -e "s@\${sslkeyandcertificate}@$(echo ${sslkeyandcertificate} | jq -c -r '.')@" \
-    -e "s@\${sslkeyandcertificate_ref}@${tanzu_cert_name}@" \
-    -e "s@\${applicationprofile}@$(echo ${applicationprofile} | jq -c -r '.')@" \
-    -e "s@\${httppolicyset}@$(echo ${httppolicyset} | jq -c -r '.')@" \
-    -e "s@\${roles}@$(echo ${roles} | jq -c -r '.')@" \
-    -e "s@\${tenants}@$(echo ${tenants} | jq -c -r '.')@" \
-    -e "s@\${users}@$(echo ${users} | jq -c -r '.')@" \
-    -e "s@\${domain}@${avi_subdomain}.${domain}@" \
-    -e "s@\${ipam}@$(echo ${ipam} | jq -c -r '.')@" \
-    -e "s@\${dc}@${dc}@" \
-    -e "s@\${content_library_id}@${content_library_id}@" \
-    -e "s@\${content_library_name}@${avi_content_library_name}@" \
-    -e "s@\${networks}@$(echo ${networks_avi} | jq -c -r '.')@" \
-    -e "s@\${contexts}@$(echo ${contexts} | jq -c -r '.')@" \
-    -e "s@\${additional_subnets}@$(echo ${additional_subnets} | jq -c -r '.')@" \
-    -e "s@\${service_engine_groups}@$(echo ${service_engine_groups} | jq -c -r '.')@" \
-    -e "s@\${pools}@$(echo ${pools} | jq -c -r '.')@" \
-    -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
-    -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_vcenter.yml.template | tee /home/ubuntu/avi/values_vcenter.yml
+if [[ $${kind} == "vsphere-avi" ]]; then
+  #
+  # templating yaml file
+  #
+  sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
+      -e "s/\${ntp}/${ip_gw_mgmt}/" \
+      -e "s/\${dns}/${ip_gw_mgmt}/" \
+      -e "s/\${avi_username}/${avi_username}/" \
+      -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
+      -e "s/\${avi_old_password}/${AVI_OLD_PASSWORD}/" \
+      -e "s/\${avi_version}/${avi_version}/" \
+      -e "s/\${vsphere_username}/${vsphere_nested_username}@${ssoDomain}/" \
+      -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
+      -e "s/\${vsphere_server}/${api_host}/" \
+      -e "s/\${external_gw_ip}/${ip_gw_mgmt}/" \
+      -e "s@\${static_routes}@$(echo ${avi_static_routes} | jq -c -r .)@" \
+      -e "s@\${import_sslkeyandcertificate_ca}@$(echo ${import_sslkeyandcertificate_ca} | jq -c -r '.')@" \
+      -e "s@\${certificatemanagementprofile}@$(echo ${certificatemanagementprofile} | jq -c -r '.')@" \
+      -e "s@\${alertscriptconfig}@$(echo ${alertscriptconfig} | jq -c -r '.')@" \
+      -e "s@\${actiongroupconfig}@$(echo ${actiongroupconfig} | jq -c -r '.')@" \
+      -e "s@\${alertconfig}@$(echo ${alertconfig} | jq -c -r '.')@" \
+      -e "s@\${sslkeyandcertificate}@$(echo ${sslkeyandcertificate} | jq -c -r '.')@" \
+      -e "s@\${sslkeyandcertificate_ref}@${tanzu_cert_name}@" \
+      -e "s@\${applicationprofile}@$(echo ${applicationprofile} | jq -c -r '.')@" \
+      -e "s@\${httppolicyset}@$(echo ${httppolicyset} | jq -c -r '.')@" \
+      -e "s@\${roles}@$(echo ${roles} | jq -c -r '.')@" \
+      -e "s@\${tenants}@$(echo ${tenants} | jq -c -r '.')@" \
+      -e "s@\${users}@$(echo ${users} | jq -c -r '.')@" \
+      -e "s@\${domain}@${avi_subdomain}.${domain}@" \
+      -e "s@\${ipam}@$(echo ${ipam} | jq -c -r '.')@" \
+      -e "s@\${dc}@${dc}@" \
+      -e "s@\${content_library_id}@${content_library_id}@" \
+      -e "s@\${content_library_name}@${avi_content_library_name}@" \
+      -e "s@\${networks}@$(echo ${networks_avi} | jq -c -r '.')@" \
+      -e "s@\${contexts}@$(echo ${contexts} | jq -c -r '.')@" \
+      -e "s@\${additional_subnets}@$(echo ${additional_subnets} | jq -c -r '.')@" \
+      -e "s@\${service_engine_groups}@$(echo ${service_engine_groups} | jq -c -r '.')@" \
+      -e "s@\${pools}@$(echo ${pools} | jq -c -r '.')@" \
+      -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
+      -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_vcenter.yml.template | tee /home/ubuntu/avi/avi_values.yml
+fi
+if [[ $${kind} == "vsphere-nsx-avi" ]]; then
+  #
+  # patching certificatemanagementprofile with vault token
+  #
+  certificatemanagementprofile=$(echo ${certificatemanagementprofile} | jq '.[0].script_params[2] += {"value": "'$(jq -c -r '.root_token' ${vault_secret_file_path})'"}')
+  #
+  # Network mgmt
+  #
+  network_management=$(echo ${segments_overlay} | jq -c -r '.[] | select( .avi_mgmt == true)')
+  #
+  # templating yaml file
+  #
+  sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
+      -e "s/\${ntp}/${ip_gw_mgmt}/" \
+      -e "s/\${dns}/${ip_gw_mgmt}/" \
+      -e "s/\${avi_username}/${avi_username}/" \
+      -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
+      -e "s/\${avi_old_password}/${AVI_OLD_PASSWORD}/" \
+      -e "s/\${avi_version}/${avi_version}/" \
+      -e "s/\${vsphere_username}/${vsphere_nested_username}@${ssoDomain}/" \
+      -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
+      -e "s/\${vsphere_server}/${api_host}/" \
+      -e "s/\${external_gw_ip}/${ip_gw_mgmt}/" \
+      -e "s@\${import_sslkeyandcertificate_ca}@$(echo ${import_sslkeyandcertificate_ca} | jq -c -r '.')@" \
+      -e "s@\${certificatemanagementprofile}@$(echo ${certificatemanagementprofile} | jq -c -r '.')@" \
+      -e "s@\${alertscriptconfig}@$(echo ${alertscriptconfig} | jq -c -r '.')@" \
+      -e "s@\${actiongroupconfig}@$(echo ${actiongroupconfig} | jq -c -r '.')@" \
+      -e "s@\${alertconfig}@$(echo ${alertconfig} | jq -c -r '.')@" \
+      -e "s@\${sslkeyandcertificate}@$(echo ${sslkeyandcertificate} | jq -c -r '.')@" \
+      -e "s@\${sslkeyandcertificate_ref}@${tanzu_cert_name}@" \
+      -e "s@\${applicationprofile}@$(echo ${applicationprofile} | jq -c -r '.')@" \
+      -e "s@\${httppolicyset}@$(echo ${httppolicyset} | jq -c -r '.')@" \
+      -e "s@\${roles}@$(echo ${roles} | jq -c -r '.')@" \
+      -e "s@\${tenants}@$(echo ${tenants} | jq -c -r '.')@" \
+      -e "s@\${users}@$(echo ${users} | jq -c -r '.')@" \
+      -e "s@\${cloud_name}@${nsx_cloud_name}@" \
+      -e "s@\${cloud_obj_name_prefix}@${cloud_obj_name_prefix}@" \
+      -e "s@\${domain}@${avi_subdomain}.${domain}@" \
+      -e "s@\${transport_zone_name}@$(echo ${transport_zones} | jq -c -r '.[] | select(.transport_type == "OVERLAY").display_name')@" \
+      -e "s@\${network_management}@${network_management}@" \
+      -e "s@\${networks_data}@${net_client_list}@" \
+      -e "s@\${content_library_name}@${avi_content_library_name}@" \
+      -e "s@\${service_engine_groups}@$(echo ${service_engine_groups} | jq -c -r '.')@" \
+      -e "s@\${pools}@$(echo ${pools} | jq -c -r '.')@" \
+      -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
+      -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_nsx.yml.template | tee /home/ubuntu/avi/avi_values.yml
+fi
 #
 # starting ansible configuration
 #
@@ -87,7 +136,7 @@ echo '  children:' | tee -a hosts_avi
 echo '    controller:' | tee -a hosts_avi
 echo '      hosts:' | tee -a hosts_avi
 echo '        '${ip_avi}':' | tee -a hosts_avi
-/home/ubuntu/.local/bin/ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/values_vcenter.yml
+/home/ubuntu/.local/bin/ansible-playbook -i hosts_avi ${playbook} --extra-vars @/home/ubuntu/avi/avi_values.yml
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl '${ip_app}' has been configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #
 # traffic gen from gw
