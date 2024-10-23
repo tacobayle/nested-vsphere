@@ -156,11 +156,14 @@ chmod u+x /home/ubuntu/avi/traffic_gen_client.sh
 if [[ ${ips_clients} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
   do
-    ip_client="${cidr_vip_three_octets}.$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
-    scp -o StrictHostKeyChecking=no /home/ubuntu/json/loopback_ips.json ubuntu@${ip_client}:/home/ubuntu/loopback_ips.json
-    scp -o StrictHostKeyChecking=no /home/ubuntu/json/user_agents.json ubuntu@${ip_client}:/home/ubuntu/user_agents.json
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_client} "jq -c -r '.[]' /home/ubuntu/loopback_ips.json | while read ip ; do sudo ip a add \$ip dev lo: ; done"
-    scp -o StrictHostKeyChecking=no /home/ubuntu/avi/traffic_gen_client.sh ubuntu@${ip_client}:/home/ubuntu/traffic_gen_client.sh
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_client} 'crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/traffic_gen_client.sh" | crontab -'
+    for net in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
+    do
+      ip_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
+      scp -o StrictHostKeyChecking=no /home/ubuntu/json/loopback_ips.json ubuntu@${ip_client}:/home/ubuntu/loopback_ips.json
+      scp -o StrictHostKeyChecking=no /home/ubuntu/json/user_agents.json ubuntu@${ip_client}:/home/ubuntu/user_agents.json
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_client} "jq -c -r '.[]' /home/ubuntu/loopback_ips.json | while read ip ; do sudo ip a add \$ip dev lo: ; done"
+      scp -o StrictHostKeyChecking=no /home/ubuntu/avi/traffic_gen_client.sh ubuntu@${ip_client}:/home/ubuntu/traffic_gen_client.sh
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_client} 'crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/traffic_gen_client.sh" | crontab -'
+    done
   done
 fi

@@ -447,6 +447,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   prefix_client=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
   gw_client=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   network_ref_vip="avi-vip"
+  net_client_list='[{"display_name": "avi-vip", "cidr": "'${cidr_vip_prefix}'","cidr_three_octets": "'${cidr_vip_three_octets}'"}]'
   network_ref_app="avi-app-backend"
   net_client_list='[{"cidr_three_octets": "'${cidr_vip_three_octets}'", "cidr": "'${cidr_vip_full}'", "tier1": "", "gw": "'${gw_client}'", "display_name": "'${network_ref_vip}'"}]'
   net_app_first_list='[{"cidr_three_octets": "'${cidr_app_three_octets}'", "cidr": "'${cidr_app}'", "tier1": "", "gw": "'${gw_app}'", "display_name": "'${network_ref_app}'"}]'
