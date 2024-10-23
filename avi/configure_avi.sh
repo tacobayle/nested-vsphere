@@ -36,7 +36,7 @@ if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl
 # templating python control script
 #
 sed -e "s@\${webhook_url}@${SLACK_WEBHOOK_URL_AVI}@" /home/ubuntu/templates/avi_slack_cs.py.template | tee $(jq -c -r .avi_slack.path $jsonFile)
-if [[ $${kind} == "vsphere-avi" ]]; then
+if [[ ${kind} == "vsphere-avi" ]]; then
   #
   # templating yaml file
   #
@@ -77,7 +77,7 @@ if [[ $${kind} == "vsphere-avi" ]]; then
       -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
       -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_vcenter.yml.template | tee /home/ubuntu/avi/avi_values.yml
 fi
-if [[ $${kind} == "vsphere-nsx-avi" ]]; then
+if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   #
   # patching certificatemanagementprofile with vault token
   #
