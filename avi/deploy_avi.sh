@@ -30,7 +30,7 @@ else
   echo "Ending timestamp: $(date)"
 fi
 #
-#
+# avi ctrl creation
 #
 list_vm=$(govc find -json vm -name "${avi_ctrl_name}")
 if [[ ${list_vm} != "null" ]] ; then
