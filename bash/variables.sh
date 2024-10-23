@@ -180,6 +180,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
   supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
   supernet_vip_first_two_octets=$(echo "${supernet_vip}" | cut -d'.' -f1-2)
+  supernet_vip_third_octet=$(echo "${supernet_vip}" | cut -d'.' -f3)
   segments_overlay="[]"
   segment_count=0
   amount_of_segment=$((${supernet_overlay_third_octet} + $(jq '.nsx.config.segments_overlay | length' $jsonFile) - 1))
@@ -191,8 +192,8 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   do
     cidr="${supernet_first_two_octets}.$i.0/24"
     cidr_three_octets="${supernet_first_two_octets}.$i"
-    cidr_vip_subnet="${supernet_vip_first_two_octets}.$vip_subnet_index.0/24"
-    cidr_vip_three_octets="${supernet_vip_first_two_octets}.$vip_subnet_index"
+    cidr_vip_subnet="${supernet_vip_first_two_octets}.$(($supernet_vip_third_octet+$vip_subnet_index)).0/24"
+    cidr_vip_three_octets="${supernet_vip_first_two_octets}.$(($supernet_vip_third_octet+$vip_subnet_index))"
     segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"cidr": "'${cidr}'",
                                                      "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
                                                      "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
