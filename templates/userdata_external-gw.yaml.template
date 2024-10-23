@@ -268,103 +268,105 @@ write_files:
       #
       # vault config
       #
-      mv /etc/vault.d/vault.hcl /etc/vault.d/vault.hcl.ori
-      export VAULT_ADDR="https://127.0.0.1:8200"
-      vault_config='
-      storage "file" {
-        path    = "/opt/vault/data"
-      }
-        listener "tcp" {
-          address     = "0.0.0.0:8200"
-          tls_disable = "false"
-          tls_cert_file = "/opt/vault/tls/tls.crt"
-          tls_key_file = "/opt/vault/tls/tls.key"
-        }
-        ui = true
-        api_addr = "https://${ip_gw}:8200"'
-      echo "${vault_config}" | tee /etc/vault.d/vault.hcl
-      systemctl start vault
-      systemctl enable vault
-      vault operator init -key-shares=1 -key-threshold=1 -tls-skip-verify -format json | tee ${vault_secret_file_path}
-      vault operator unseal -tls-skip-verify $(jq -c -r .unseal_keys_hex[0] ${vault_secret_file_path})
-      vault login -tls-skip-verify $(jq -c -r .root_token ${vault_secret_file_path})
-      # root ca
-      vault secrets enable -tls-skip-verify ${vault_pki_name}
-      vault secrets tune -tls-skip-verify -max-lease-ttl=${vault_pki_max_lease_ttl} "${vault_pki_name}"
-      vault write -tls-skip-verify -field=certificate ${vault_pki_name}/root/generate/internal common_name="${vault_pki_cert_common_name}" issuer_name="${vault_pki_cert_issuer_name}" ttl=${vault_pki_cert_ttl} > ${vault_pki_cert_path}
-      vault write -tls-skip-verify ${vault_pki_name}/roles/${vault_pki_role_name} allow_any_name=true
-      vault write -tls-skip-verify ${vault_pki_name}/config/urls issuing_certificates="https://${ip_gw}:8200/v1/${vault_pki_role_name}/ca" crl_distribution_points="https://${ip_gw}:8200/v1/${vault_pki_role_name}/crl"
-      # intermediate ca
-      vault secrets enable -tls-skip-verify -path=${vault_pki_intermediate_name} ${vault_pki_name}
-      vault secrets tune -tls-skip-verify -max-lease-ttl=${vault_pki_intermediate_max_lease_ttl} ${vault_pki_intermediate_name}
-      vault write -tls-skip-verify -format=json ${vault_pki_intermediate_name}/intermediate/generate/internal common_name="${vault_pki_intermediate_cert_common_name}" issuer_name="${vault_pki_intermediate_cert_issuer_name}" | jq -r '.data.csr' | tee ${vault_pki_intermediate_cert_path}
-      vault write -tls-skip-verify -format=json ${vault_pki_name}/root/sign-intermediate issuer_ref="${vault_pki_cert_issuer_name}" csr=@${vault_pki_intermediate_cert_path} format=pem_bundle ttl="${vault_pki_intermediate_max_lease_ttl}" | jq -r '.data.certificate' | tee ${vault_pki_intermediate_cert_path_signed}
-      vault write -tls-skip-verify ${vault_pki_intermediate_name}/intermediate/set-signed certificate=@${vault_pki_intermediate_cert_path_signed}
-      vault write -tls-skip-verify ${vault_pki_intermediate_name}/roles/${vault_pki_intermediate_role_name} issuer_ref="$(vault read -tls-skip-verify -field=default ${vault_pki_intermediate_role_name}/config/issuers)" allowed_domains="${domain}" allow_subdomains=${vault_pki_intermediate_role_allow_subdomains} max_ttl="${vault_pki_intermediate_role_max_ttl}"
-      #
-      # lbaas config
-      #
-      echo "{\"jsonFile\": \"/home/ubuntu/json/${jsonFile}\"}" | tee /home/ubuntu/lbaas/lbaas.json
-      mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service
-      chown root /etc/systemd/system/avi-lbaas.service
-      chgrp root /etc/systemd/system/avi-lbaas.service
-      chmod 644 /etc/systemd/system/avi-lbaas.service
-      systemctl start avi-lbaas
-      systemctl enable avi-lbaas
-      mv /home/ubuntu/lbaas/html/* /var/www/html/
-      chown root /var/www/html/*
-      chgrp root /var/www/html/*
-      #
-      # nginx config
-      #
-      # nginx auth
-      echo -n 'admin:' | tee /etc/nginx/.htpasswd
-      openssl passwd -apr1 ${password} | tee -a /etc/nginx/.htpasswd
-      #
-      # nginx ssl
-      openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj '/CN=demo/C=nl/ST=Amsterdam/L=Amsterdam/O=VMware/OU=Avi' -addext "subjectAltName = DNS:demo.${domain},IP:${ip_gw}"
-      openssl dhparam -out /etc/ssl/certs/dhparam.pem 1024
-      #
-      echo "ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;"  | tee /etc/nginx/snippets/self-signed.conf
-      echo "ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;"  | tee -a /etc/nginx/snippets/self-signed.conf
-      #
-      echo "ssl_protocols TLSv1 TLSv1.1 TLSv1.2;" | tee /etc/nginx/snippets/ssl-params.conf
-      echo "ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "ssl_ecdh_curve secp384r1;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "ssl_session_cache shared:SSL:10m;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "ssl_session_tickets off;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "ssl_stapling on;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "ssl_stapling_verify on;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "resolver 8.8.8.8 8.8.4.4 valid=300s;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "resolver_timeout 5s;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "add_header Strict-Transport-Security "max-age=63072000; includeSubdomains";" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "add_header X-Frame-Options DENY;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "add_header X-Content-Type-Options nosniff;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      echo "ssl_dhparam /etc/ssl/certs/dhparam.pem;" | tee -a /etc/nginx/snippets/ssl-params.conf
-      #
-      # nginx config file
-      mv /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.old
-      echo "server {" | tee /etc/nginx/sites-enabled/default
-      echo "	listen 443 ssl default_server;" | tee -a /etc/nginx/sites-enabled/default
-      echo "	listen [::]:443 ssl default_server;" | tee -a /etc/nginx/sites-enabled/default
-      echo "	server_name ${ip_gw};" | tee -a /etc/nginx/sites-enabled/default
-      echo "	include snippets/self-signed.conf;" | tee -a /etc/nginx/sites-enabled/default
-      echo "	include snippets/ssl-params.conf;" | tee -a /etc/nginx/sites-enabled/default
-      echo "	root /var/www/html;" | tee -a /etc/nginx/sites-enabled/default
-      echo "	index index.html index.htm index.nginx-debian.html;" | tee -a /etc/nginx/sites-enabled/default
-      echo "	server_name _;" | tee -a /etc/nginx/sites-enabled/default
-      echo "	location / {" | tee -a /etc/nginx/sites-enabled/default
-      echo '		try_files $uri $uri/ =404;' | tee -a /etc/nginx/sites-enabled/default
-      echo "		auth_basic \"Restricted Content\";" | tee -a /etc/nginx/sites-enabled/default
-      echo "		auth_basic_user_file /etc/nginx/.htpasswd;" | tee -a /etc/nginx/sites-enabled/default
-      echo "	}" | tee -a /etc/nginx/sites-enabled/default
-      echo "	location /api/ {" | tee -a /etc/nginx/sites-enabled/default
-      echo '		include proxy_params;' | tee -a /etc/nginx/sites-enabled/default
-      echo '		proxy_pass http://127.0.0.1:5000/api/;' | tee -a /etc/nginx/sites-enabled/default
-      echo "	}" | tee -a /etc/nginx/sites-enabled/default
-      echo "}" | tee -a /etc/nginx/sites-enabled/default
-      #
-      service nginx restart
+      if [[ "${kind}" == "vsphere-nsx-avi" ]] ; then
+          mv /etc/vault.d/vault.hcl /etc/vault.d/vault.hcl.ori
+          export VAULT_ADDR="https://127.0.0.1:8200"
+          vault_config='
+          storage "file" {
+            path    = "/opt/vault/data"
+          }
+            listener "tcp" {
+              address     = "0.0.0.0:8200"
+              tls_disable = "false"
+              tls_cert_file = "/opt/vault/tls/tls.crt"
+              tls_key_file = "/opt/vault/tls/tls.key"
+            }
+            ui = true
+            api_addr = "https://${ip_gw}:8200"'
+          echo "${vault_config}" | tee /etc/vault.d/vault.hcl
+          systemctl start vault
+          systemctl enable vault
+          vault operator init -key-shares=1 -key-threshold=1 -tls-skip-verify -format json | tee ${vault_secret_file_path}
+          vault operator unseal -tls-skip-verify $(jq -c -r .unseal_keys_hex[0] ${vault_secret_file_path})
+          vault login -tls-skip-verify $(jq -c -r .root_token ${vault_secret_file_path})
+          # root ca
+          vault secrets enable -tls-skip-verify ${vault_pki_name}
+          vault secrets tune -tls-skip-verify -max-lease-ttl=${vault_pki_max_lease_ttl} "${vault_pki_name}"
+          vault write -tls-skip-verify -field=certificate ${vault_pki_name}/root/generate/internal common_name="${vault_pki_cert_common_name}" issuer_name="${vault_pki_cert_issuer_name}" ttl=${vault_pki_cert_ttl} > ${vault_pki_cert_path}
+          vault write -tls-skip-verify ${vault_pki_name}/roles/${vault_pki_role_name} allow_any_name=true
+          vault write -tls-skip-verify ${vault_pki_name}/config/urls issuing_certificates="https://${ip_gw}:8200/v1/${vault_pki_role_name}/ca" crl_distribution_points="https://${ip_gw}:8200/v1/${vault_pki_role_name}/crl"
+          # intermediate ca
+          vault secrets enable -tls-skip-verify -path=${vault_pki_intermediate_name} ${vault_pki_name}
+          vault secrets tune -tls-skip-verify -max-lease-ttl=${vault_pki_intermediate_max_lease_ttl} ${vault_pki_intermediate_name}
+          vault write -tls-skip-verify -format=json ${vault_pki_intermediate_name}/intermediate/generate/internal common_name="${vault_pki_intermediate_cert_common_name}" issuer_name="${vault_pki_intermediate_cert_issuer_name}" | jq -r '.data.csr' | tee ${vault_pki_intermediate_cert_path}
+          vault write -tls-skip-verify -format=json ${vault_pki_name}/root/sign-intermediate issuer_ref="${vault_pki_cert_issuer_name}" csr=@${vault_pki_intermediate_cert_path} format=pem_bundle ttl="${vault_pki_intermediate_max_lease_ttl}" | jq -r '.data.certificate' | tee ${vault_pki_intermediate_cert_path_signed}
+          vault write -tls-skip-verify ${vault_pki_intermediate_name}/intermediate/set-signed certificate=@${vault_pki_intermediate_cert_path_signed}
+          vault write -tls-skip-verify ${vault_pki_intermediate_name}/roles/${vault_pki_intermediate_role_name} issuer_ref="$(vault read -tls-skip-verify -field=default ${vault_pki_intermediate_role_name}/config/issuers)" allowed_domains="${domain}" allow_subdomains=${vault_pki_intermediate_role_allow_subdomains} max_ttl="${vault_pki_intermediate_role_max_ttl}"
+          #
+          # lbaas config
+          #
+          echo "{\"jsonFile\": \"/home/ubuntu/json/${jsonFile}\"}" | tee /home/ubuntu/lbaas/lbaas.json
+          mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service
+          chown root /etc/systemd/system/avi-lbaas.service
+          chgrp root /etc/systemd/system/avi-lbaas.service
+          chmod 644 /etc/systemd/system/avi-lbaas.service
+          systemctl start avi-lbaas
+          systemctl enable avi-lbaas
+          mv /home/ubuntu/lbaas/html/* /var/www/html/
+          chown root /var/www/html/*
+          chgrp root /var/www/html/*
+          #
+          # nginx config
+          #
+          # nginx auth
+          echo -n 'admin:' | tee /etc/nginx/.htpasswd
+          openssl passwd -apr1 ${password} | tee -a /etc/nginx/.htpasswd
+          #
+          # nginx ssl
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj '/CN=demo/C=nl/ST=Amsterdam/L=Amsterdam/O=VMware/OU=Avi' -addext "subjectAltName = DNS:demo.${domain},IP:${ip_gw}"
+          openssl dhparam -out /etc/ssl/certs/dhparam.pem 1024
+          #
+          echo "ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;"  | tee /etc/nginx/snippets/self-signed.conf
+          echo "ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;"  | tee -a /etc/nginx/snippets/self-signed.conf
+          #
+          echo "ssl_protocols TLSv1 TLSv1.1 TLSv1.2;" | tee /etc/nginx/snippets/ssl-params.conf
+          echo "ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "ssl_ecdh_curve secp384r1;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "ssl_session_cache shared:SSL:10m;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "ssl_session_tickets off;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "ssl_stapling on;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "ssl_stapling_verify on;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "resolver 8.8.8.8 8.8.4.4 valid=300s;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "resolver_timeout 5s;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "add_header Strict-Transport-Security "max-age=63072000; includeSubdomains";" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "add_header X-Frame-Options DENY;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "add_header X-Content-Type-Options nosniff;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          echo "ssl_dhparam /etc/ssl/certs/dhparam.pem;" | tee -a /etc/nginx/snippets/ssl-params.conf
+          #
+          # nginx config file
+          mv /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.old
+          echo "server {" | tee /etc/nginx/sites-enabled/default
+          echo "	listen 443 ssl default_server;" | tee -a /etc/nginx/sites-enabled/default
+          echo "	listen [::]:443 ssl default_server;" | tee -a /etc/nginx/sites-enabled/default
+          echo "	server_name ${ip_gw};" | tee -a /etc/nginx/sites-enabled/default
+          echo "	include snippets/self-signed.conf;" | tee -a /etc/nginx/sites-enabled/default
+          echo "	include snippets/ssl-params.conf;" | tee -a /etc/nginx/sites-enabled/default
+          echo "	root /var/www/html;" | tee -a /etc/nginx/sites-enabled/default
+          echo "	index index.html index.htm index.nginx-debian.html;" | tee -a /etc/nginx/sites-enabled/default
+          echo "	server_name _;" | tee -a /etc/nginx/sites-enabled/default
+          echo "	location / {" | tee -a /etc/nginx/sites-enabled/default
+          echo '		try_files $uri $uri/ =404;' | tee -a /etc/nginx/sites-enabled/default
+          echo "		auth_basic \"Restricted Content\";" | tee -a /etc/nginx/sites-enabled/default
+          echo "		auth_basic_user_file /etc/nginx/.htpasswd;" | tee -a /etc/nginx/sites-enabled/default
+          echo "	}" | tee -a /etc/nginx/sites-enabled/default
+          echo "	location /api/ {" | tee -a /etc/nginx/sites-enabled/default
+          echo '		include proxy_params;' | tee -a /etc/nginx/sites-enabled/default
+          echo '		proxy_pass http://127.0.0.1:5000/api/;' | tee -a /etc/nginx/sites-enabled/default
+          echo "	}" | tee -a /etc/nginx/sites-enabled/default
+          echo "}" | tee -a /etc/nginx/sites-enabled/default
+          #
+          service nginx restart
+      fi
       #
       # End of cloud init
       #
