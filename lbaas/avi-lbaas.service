@@ -1,0 +1,10 @@
+[Unit]
+Description=avi-lbaas
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/bin/bash /home/ubuntu/lbaas/lbaas_service.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,145 @@
+
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    fetchInitialList();
+
+
+    function fetchInitialList() {
+
+        const apiUrl = 'https://demo.${domain}/api/getapp';
+
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ payload: 'example' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const list = data.results;
+            list.forEach(item => {
+                addColumn(item);
+            });
+        })
+        .catch(error => console.error('Error fetching initial list:', error));
+    }
+
+
+    function addColumn(item) {
+        const table = document.querySelector('table');
+        const headerRow = table.querySelector('thead tr');
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+
+
+        const headerCell = document.createElement('th');
+        headerCell.textContent = item;
+        headerRow.appendChild(headerCell);
+
+
+        rows.forEach((row, rowIndex) => {
+            const cell = row.insertCell(-1);
+            cell.innerHTML = '<div class="loader"></div>';
+            fetchDetails(item, cell, rowIndex);
+        });
+    }
+
+
+    function fetchDetails(item, cell, rowIndex) {
+        let apiUrl;
+        let payload;
+
+        if (rowIndex === 0) {
+            apiUrl = 'https://demo.${domain}/api/getvip';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                cell.innerHTML = `<span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.vsvip}</span>`;
+            });
+        } else if (rowIndex === 1) {
+            apiUrl = 'https://demo.${domain}/api/getfqdn';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+	        console.log(data.fqdn);
+                cell.innerHTML = `<a href=${data.fqdn} target="_blank">${data.fqdn}</a>`;
+	    console.log(data.fqdn);
+            });
+        } else if (rowIndex === 2) {
+            apiUrl = 'https://demo.${domain}/api/getnsxgroup';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                cell.innerHTML = `Number of Pool Member: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.vm_count}</span> <br> Pool Member IP(s): <br> <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">-${data.vm_ips.join('<br>-')}</span>`;
+            });
+        } else if (rowIndex === 3) {
+            apiUrl = 'https://demo.${domain}/api/getcert';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                cell.innerHTML = `Certificate Name: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.cert_name}</span> <br> Certificate Type: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.cert_type} </span><br> Issuer Name: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.issuer_name}</span>`;
+            });
+        } else if (rowIndex === 4) {
+            apiUrl = 'https://demo.${domain}/api/getwaf';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                cell.innerHTML = `<span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.waf}</span>`;
+            });
+        } else if (rowIndex === 5) {
+            apiUrl = 'https://demo.${domain}/api/getsesizing';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                cell.innerHTML = `vCPU per SE: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.vcpu_per_se}</span> <br> Memory per SE: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.memory_per_se} </span> <br> Disk per SE: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.disk_per_se}</span>`;
+            });
+        } else if (rowIndex === 6) {
+            apiUrl = 'https://demo.${domain}/api/getsehost';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                const seList = data.se_list.map(se => `SE: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${se.name} </span><br> deployed on ESXi host: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${se.esxi_host}</span>`).join('<br><br>');
+                cell.innerHTML = seList;
+            });
+        } else if (rowIndex === 7) {
+            apiUrl = 'https://demo.${domain}/api/getvipsegment';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                cell.innerHTML = `SE(s) deployed on: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.segment_name}</span>`;
+            });
+        } else if (rowIndex === 8) {
+            apiUrl = 'https://demo.${domain}/api/getseip';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                const seList = data.se_list.map(se => `SE: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${se.name} </span><br> IP: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${se.ip}</span>`).join('<br><br>');
+                cell.innerHTML = seList;
+            });
+        } else if (rowIndex === 9) {
+            apiUrl = 'https://demo.${domain}/api/getnsxroute';
+            payload = { vs_name: item };
+            fetchData(apiUrl, payload)
+            .then(data => {
+                cell.innerHTML = `prefix: <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${data.vsvip} </span><br> next_hops: <br>  <span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">-${data.next_hops.join('<br>-')}</span>`;
+            });
+        } else if (rowIndex === 10) {
+	    cell.innerHTML = `<span style="font-style: italic; background: -webkit-linear-gradient(#23800a, #007da3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Enabled</span>`;
+        }
+    }
+
+
+    function fetchData(url, payload) {
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .catch(error => console.error('Error fetching data:', error));
+    }
+});

@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avi Application Self-Service Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Avi Application Self-Service Demo</h1>
+    <form id="avi-load-balancer-form">
+        <fieldset>
+            <legend>Application Details</legend>
+            <div>
+                <label for="app-name">App Name:</label>
+                <input type="text" id="app-name" name="app-name" required>
+                <span class="tooltip-icon" data-tooltip="Enter the name of the application">?</span>
+            </div>
+            <div>
+                <label for="app-profile">App Profile:</label>
+                <select id="app-profile" name="app-profile">
+                    <option value="private">Private</option>
+                    <option value="public" selected>Public</option>
+                </select>
+                <span class="tooltip-icon" data-tooltip="Select the application profile">?</span>
+            </div>
+            <div>
+                <label for="app-certificate">App Certificate:</label>
+                <select id="app-certificate" name="app-certificate">
+                    <option value="self-signed">Self-signed</option>
+                    <option value="signed" selected>Signed</option>
+                </select>
+                <span class="tooltip-icon" data-tooltip="Choose the application certificate">?</span>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Virtual Machine Details</legend>
+            <div>
+                <label for="vm-flavor">VM Flavor:</label>
+                <select id="vm-flavor" name="vm-flavor">
+                    <option value="ubuntu">Ubuntu</option>
+                    <option value="windows">Windows</option>
+                    <option value="red-hat">Red Hat</option>
+                    <option value="suse-linux">SUSE Linux</option>
+                    <option value="debian">Debian</option>
+                </select>
+                <span class="tooltip-icon" data-tooltip="Select the virtual machine flavor">?</span>
+            </div>
+            <div>
+                <label for="vm-size">VM Size:</label>
+                <select id="vm-size" name="vm-size">
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                </select>
+                <span class="tooltip-icon" data-tooltip="Select the virtual machine size">?</span>
+            </div>
+            <div>
+                <label for="vm-count">VM Count:</label>
+                <select id="vm-count" name="vm-count">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+                <span class="tooltip-icon" data-tooltip="Select the number of virtual machine">?</span>
+            </div>
+        </fieldset>
+    <div id="button-box">
+        <button type="submit">Submit</button>
+        <button type="button">Delete</button>
+        <button type="button" onclick="window.open('api.html','_blank')">View App Dashboard</button>
+        <button type="button" onclick="window.open('vs.html','_blank')">View VS API call</button>
+    </div>
+    <!-- <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Success!</h2>
+            <p id="errorMessage"></p>
+        </div>
+    </div> -->
+    </form>
+    <script src="script.js"></script>
+</body>
+</html>
+

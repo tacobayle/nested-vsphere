@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avi Load Balancer API Calls</title>
+    <link rel="stylesheet" href="vs.css">
+</head>
+<body>
+<table>
+    <thead>
+    <tr>
+        <th>App Profile</th>
+        <th>App Certificate</th>
+        <th>API Endpoint</th>
+        <th>Variables</th>
+        <th>API JSON</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><font size="-1">Public</font></td>
+        <td><font size="-1">Signed</font></td>
+        <td><font size="-1">api/macro</font></td>
+        <td>
+            <span style="color:blue;"><font size="-1"><i>${vs_name}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${cloud_name}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${se_group_name}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${waf_policy_name}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${cert_name}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${vsvip_name}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${tier1_id}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${mask}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${cidr}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${fqdn}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${pool_name}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${group_id}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${cert_common_name}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${certificatemanagementprofile_name}</i></font></span>
+        </td>
+        <td><i><code><pre>
+{
+  "model_name": "VirtualService",
+  "data": {
+    "name": <span style="color:blue;">${vs_name}</span>,
+    "enabled": true,
+    "cloud_ref": "/api/cloud/?name=<span style="color:blue;">${cloud_name}"</span>,
+    "se_group_ref": "/api/serviceenginegroup/?name=<span style="color:blue;">${se_group_name}"</span>,
+    "waf_policy_ref": "/api/wafpolicy/?name=<span style="color:blue;">${waf_policy_name}"</span>,
+    "ssl_key_and_certificate_refs": ["/api/sslkeyandcertificate/?name=$<span style="color:blue;">{cert_name}</span>]",
+    "services": [
+      {
+        "enable_ssl": false,
+        "port": 80
+      },
+      {
+        "port": 443,
+        "enable_ssl": true
+      }
+    ],
+    "vsvip_ref_data": {
+      "name": <span style="color:blue;">${vsvip_name}</span>,
+      "cloud_ref": "/api/cloud/?name=<span style="color:blue;">${cloud_name}"</span>,
+      "tier1_lr": <span style="color:blue;">${tier1_id}</span>,
+      "vip":
+        [
+          {
+            "auto_allocate_ip": true
+            "vip_id": "1",
+            "ipam_network_subnet":
+            {
+              "subnet":
+              {
+                "mask": <span style="color:blue;">${mask}</span>,
+                "ip_addr":
+                {
+                  "type": "V4",
+                  "addr": <span style="color:blue;">${cidr}</span>
+                }
+              }
+            }
+          }
+        ],
+      "dns_info": [
+        {
+          "fqdn": <span style="color:blue;">${fqdn}</span>
+        }
+      ]
+    },
+    "pool_ref_data": {
+      "name": <span style="color:blue;">${pool_name}</span>,
+      "enabled": true,
+      "tier1_lr": <span style="color:blue;">${tier1_id}</span>,
+      "cloud_ref": "/api/cloud/?name=<span style="color:blue;">${cloud_name}"</span>,
+      "lb_algorithm": "LB_ALGORITHM_LEAST_CONNECTIONS",
+      "nsx_securitygroup": [<span style="color:blue;">${group_id}</span>],
+      "default_server_port": 80
+    },
+    "ssl_key_and_certificate_refs_data":
+    [
+      {
+        "certificate":
+          {
+            "expiry_status": "SSL_CERTIFICATE_GOOD",
+            "self_signed":false,
+            "issuer":{},
+            "subject":
+              {
+                "common_name":<span style="color:blue;">${cert_common_name}</span>
+              }
+          },
+        "key_params":
+          {
+            "algorithm":"SSL_KEY_ALGORITHM_RSA",
+            "rsa_params":
+              {
+                "key_size":"SSL_KEY_2048_BITS",
+                "exponent":65537
+              }
+          },
+        "status":"SSL_CERTIFICATE_FINISHED",
+        "format":"SSL_PEM",
+        "certificate_base64":true,
+        "key_base64":true,
+        "enable_ocsp_stapling":false,
+        "ocsp_config":
+          {
+            "ocsp_req_interval":86400,
+            "url_action":"OCSP_RESPONDER_URL_FAILOVER",
+            "failed_ocsp_jobs_retry_interval":3600,
+            "max_tries":10
+          },
+        "import_key_to_hsm":false,
+        "is_federated":false,
+        "type":"SSL_CERTIFICATE_TYPE_VIRTUALSERVICE",
+        "ocsp_response_info":{},
+        "name":"${cert_name}",
+        "certificate_management_profile_ref":"/api/certificatemanagementprofile/?name=<span style="color:blue;">${certificatemanagementprofile_name}"</span>
+      }
+    ]
+  }
+}
+        </pre></code></i></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

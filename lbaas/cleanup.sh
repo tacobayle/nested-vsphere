@@ -3,7 +3,7 @@
 source /home/ubuntu/bash/functions.sh
 jsonFile=$(jq -c -r '.jsonFile' /home/ubuntu/lbaas/lbaas.json)
 source /home/ubuntu/bash/variables.sh
-source /home/ubuntu/avi/alb_api.sh.sh
+source /home/ubuntu/avi/alb_api.sh
 #
 # GOVC check
 #
@@ -56,57 +56,24 @@ do
       fi
     done
     list=$(govc find -json vm -name "unassigned*")
-    if [[ ${list} != "null" && $(echo ${list} | jq -c -r '. | length') -eq 4 ]] ; then
+    if [[ ${list} != "null" && $(echo ${list} | jq -c -r '. | length') -eq 5 ]] ; then
       echo "clean-up done"
       break
     else
-      if [[ ${list} != "null" ]] ; then
-        echo $list | jq -c -r .[] | while read item
-        do
-           echo "delete vSphere VM name ${item}"
-          govc vm.destroy ${item}
-        done
-      fi
-      for index in $(seq 0 1) ;
-      do
-        #
-        # public VMs
-        #
-        backend=$(uuidgen)
-        tier1=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == "true").tier1')
-        lbaas_segment=$(echo ${segments_overlay} | jq -r -c --arg arg1 "${tier1}" '.[] | select(.backend == "true" and .tier1 == $arg1).display_name')
-        sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
-            -e "s/\${hostname}/unassigned-public-${backend}/" \
-            -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
-            -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/userdata_lbaas_backend.yaml.template | tee /tmp/userdata_${backend}.yaml > /dev/null
-        #
-        sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
-            -e "s@\${base64_userdata}@$(base64 /tmp/userdata_${backend}.yaml -w 0)@" \
-            -e "s/\${password}/${GENERIC_PASSWORD}/" \
-            -e "s@\${network_ref}@${lbaas_segment}@" \
-            -e "s/\${vm_name}/unassigned-public-${backend}/" /home/ubuntu/templates/options-ubuntu.json.template | tee /tmp/${backend}.json
-        govc library.deploy -options /tmp/${backend}.json /${content_library_name}/$(basename ${ubuntu_ova_url} .ova)
-      done
-      for index in $(seq 0 1) ;
-      do
-        #
-        # private VMs
-        #
-        backend=$(uuidgen)
-        tier1=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == "true").tier1')
-        lbaas_segment=$(echo ${segments_overlay} | jq -r -c --arg arg1 "${tier1}" '.[] | select(.backend == "true" and .tier1 == $arg1).display_name')
-        sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
-            -e "s/\${hostname}/unassigned-private-${backend}/" \
-            -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
-            -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/userdata_lbaas_backend.yaml.template | tee /tmp/userdata_${backend}.yaml > /dev/null
-        #
-        sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
-            -e "s@\${base64_userdata}@$(base64 /tmp/userdata_${backend}.yaml -w 0)@" \
-            -e "s/\${password}/${GENERIC_PASSWORD}/" \
-            -e "s@\${network_ref}@${lbaas_segment}@" \
-            -e "s/\${vm_name}/unassigned-private-${backend}/" /home/ubuntu/templates/options-ubuntu.json.template | tee /tmp/${backend}.json
-        govc library.deploy -options /tmp/${backend}.json /${content_library_name}/$(basename ${ubuntu_ova_url} .ova)
-      done
+      backend=$(uuidgen)
+      tier1=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == "true").tier1')
+      lbaas_segment=$(echo ${segments_overlay} | jq -r -c --arg arg1 "${tier1}" '.[] | select(.backend == "true" and .tier1 == $arg1).display_name')
+      sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s/\${hostname}/unassigned-${backend}/" \
+          -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
+          -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/userdata_lbaas_backend.yaml.template | tee /tmp/userdata_${backend}.yaml > /dev/null
+      #
+      sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
+          -e "s@\${base64_userdata}@$(base64 /tmp/userdata_${backend}.yaml -w 0)@" \
+          -e "s/\${password}/${GENERIC_PASSWORD}/" \
+          -e "s@\${network_ref}@${lbaas_segment}@" \
+          -e "s/\${vm_name}/unassigned-${backend}/" /home/ubuntu/templates/options-ubuntu.json.template | tee /tmp/${backend}.json
+      govc library.deploy -options /tmp/${backend}.json /${content_library_name}/$(basename ${ubuntu_ova_url} .ova)
     fi
   else
     echo "waiting for on-going stuff"

@@ -478,6 +478,7 @@
     "username": "admin",
     "ip_controller": 18,
     "lbaas_tenant": "automation",
+    "subdomain" : "app",
     "lbaas_username": "automation",
     "ipam_pool": "100-149",
     "ips_se_lsc": [151, 152],
@@ -494,7 +495,12 @@
       },
       "content_library_name": "ubuntu"
     },
-    "kube_starting_ip": 21
+    "kube_starting_ip": 21,
+    "nsx": {
+      "cloud": {
+        "name":  "dc1_nsx"
+      }
+    }
   },
   "avi_folder": "avi-ctrl",
   "avi_ctrl_name": "avi-ctrl-01",
@@ -767,11 +773,9 @@
     }
   ],
   "avi_content_library_name": "content_library_avi_se",
-  "avi_subdomain" : "app",
   "avi_config_repo": "https://github.com/tacobayle/ansibleAviConfig",
   "playbook_vcenter": "vcenter.yml",
   "tag_vcenter": "v2.27",
-  "nsx_cloud_name": "dc1_nsx",
   "playbook_nsx": "nsx.yml",
   "tag_nsx": "v2.24",
   "service_engine_groups": [

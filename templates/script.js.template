@@ -1,0 +1,110 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('avi-load-balancer-form');
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const vsName = document.getElementById('app-name').value;
+        const appProfile = document.getElementById('app-profile').value;
+        const cert = document.getElementById('app-certificate').value;
+        const vmCount = document.getElementById('vm-count').value;
+
+        //if (!validateAppName(vsName)) {
+        //    alert('Please provide a valid FQDN');
+        //    return;
+        //}
+
+        const requestBody = {
+            vs_name: vsName,
+            app_profile: appProfile,
+            cert: cert,
+            count: vmCount
+        };
+
+        console.log(requestBody);
+
+        fetch('https://demo.${domain}/api/createlbaas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // return response.json();
+        })
+        .then(data => {
+            console.log('Success:', data);
+            alert('Load Balancer Created Successfully!');
+        })
+        .catch((error) => {
+            console.log('Error:', error);
+            alert('Load Balancer Creation Failed');
+        });
+    });
+
+
+
+    const deleteButton = document.querySelector('#button-box button[type="button"]');
+    deleteButton.addEventListener('click', () => {
+        const vsName = document.getElementById('app-name').value;
+
+        const requestBody = {
+            vs_name: vsName
+        };
+
+        fetch('https://demo.${domain}/api/deletelbaas', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // return response.json();
+        })
+        .then(data => {
+            console.log('Success:', data);
+            alert('Load Balancer Deleted Successfully!');
+        })
+        .catch((error) => {
+            console.log('Error:', error);
+            alert('Load Balancer Deletion Failed.');
+        });
+    });
+
+    //function validateAppName(name) {
+    //    const regex = new RegExp("(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)");
+    //    return regex.test(name);
+    //}
+
+
+    // function showModal(errorMessage) {
+    //     const modal = document.getElementById('errorModal');
+    //     const span = document.getElementsByClassName('close')[0];
+    //     const errorMessageElement = document.getElementById('errorMessage');
+
+    //     errorMessageElement.textContent = errorMessage;
+    //     modal.style.display = 'block';
+
+
+    //     span.onclick = function() {
+    //         modal.style.display = 'none';
+    //     };
+
+
+    //     window.onclick = function(event) {
+    //         if (event.target == modal) {
+    //             modal.style.display = 'none';
+    //         }
+    //     };
+    // }
+
+
+});

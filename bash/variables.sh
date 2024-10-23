@@ -391,7 +391,7 @@ else
   users=$(echo "[]" | jq '. += '$(jq -c -r .spec.avi.users $jsonFile)'')
   users=$(echo ${users} | jq '. += '$(jq -c -r '.users' $jsonFile)'')
 fi
-avi_subdomain=$(jq -c -r '.avi_subdomain' $jsonFile)
+avi_subdomain=$(jq -c -r '.avi.subdomain' $jsonFile)
 avi_content_library_name=$(jq -c -r '.avi_content_library_name' $jsonFile)
 avi_ipam_first=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
@@ -512,7 +512,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   se_group_ref="private"
 fi
 if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-  nsx_cloud_name=$(jq -c -r '.nsx_cloud_name' $jsonFile)
+  nsx_cloud_name=$(jq -c -r '.avi.nsx.cloud.name' $jsonFile)
   avi_config_repo=$(jq -c -r '.avi_config_repo' $jsonFile)
   playbook=$(jq -c -r '.playbook_nsx' $jsonFile)
   tag=$(jq -c -r '.tag_nsx' $jsonFile)
