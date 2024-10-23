@@ -5,8 +5,8 @@
     "disk": "40G"
   },
   "K8s_version_short": "v1.28",
-  "directories": ["esxi","yaml-files", ".kube", "openssl", "routes", "vault", "traffic_gen", "lbaas", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "unmanaged_k8s_clusters", "templates", "bin", "k8s", "python", ".ssh"],
-  "folders_to_copy": ["vcenter", "nsx", "avi", "app", "tanzu", "templates", "bash", "json"],
+  "directories": ["esxi","yaml-files", ".kube", "openssl", "routes", "vault", "traffic_gen", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "unmanaged_k8s_clusters", "templates", "bin", "k8s", "python", ".ssh"],
+  "folders_to_copy": ["vcenter", "nsx", "avi", "app", "tanzu", "templates", "bash", "json", "lbaas"],
   "apt_packages": ["vault", "python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso", "expect", "iptables-persistent"],
   "pip3_packages": ["ansible-core==2.12.5", "ansible==5.7.1", "avisdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors", "pyvmomi"],
   "yaml_folder": "yaml-files",
@@ -475,7 +475,10 @@
     }
   },
   "avi": {
+    "username": "admin",
     "ip_controller": 18,
+    "lbaas_tenant": "automation",
+    "lbaas_username": "automation",
     "ipam_pool": "100-149",
     "ips_se_lsc": [151, 152],
     "ipam_pool_lsc": "160-179",
@@ -488,7 +491,8 @@
       },
       "second": {
         "ips": [13, 14]
-      }
+      },
+      "content_library_name": "ubuntu"
     },
     "kube_starting_ip": 21
   },

@@ -261,9 +261,13 @@ fi
 # Avi variables
 #
 folder_avi=$(jq -c -r '.avi_folder' $jsonFile)
-  ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .avi.ip_controller $jsonFile)"
-  ip_avi_last_octet=$(jq -c -r .avi.ip_controller $jsonFile)
+ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .avi.ip_controller $jsonFile)"
+avi_username=$(jq -c -r '.avi.avi_username' $jsonFile)
+lbaas_username=$(jq -c -r '.avi.lbaas_username' $jsonFile)
+lbaas_tenant=$(jq -c -r '.avi.lbaas_tenant' $jsonFile)
+ip_avi_last_octet=$(jq -c -r .avi.ip_controller $jsonFile)
 kube_starting_ip=$(jq -c -r '.avi.kube_starting_ip' $jsonFile)
+content_library_name=$(jq -c -r '.avi.app.content_library_name' $jsonFile)
 avi_ctrl_name=$(jq -c -r '.avi_ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)

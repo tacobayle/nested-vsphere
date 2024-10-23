@@ -1,0 +1,35 @@
+#cloud-config
+users:
+  - default
+
+ssh_pwauth: True
+
+chpasswd:
+  list: |
+    ubuntu:${password}
+  expire: False
+
+hostname: ${hostname}
+
+write_files:
+  - content: |
+      #!/bin/bash
+      # retrieve the network interface names
+      ip=`ip a | grep -v inet6 | grep inet | tail -1 | awk -F' ' '{print $2}' | cut -d"/" -f1`
+      hostname=${hostname}
+      echo "${ip} $hostname" | sudo tee -a /etc/hosts
+      apt update
+      apt install -y docker.io
+      sudo usermod -a -G docker ubuntu
+      docker login --username ${docker_registry_username} --password ${docker_registry_password}
+      docker run -d -p 80:80 tacobayle/avi_app
+      echo "cloud init done" | tee /tmp/cloudInitDone.log
+    path: /opt/bootstrap.sh
+    permissions: 0755
+
+  - content: |
+      ubuntu ALL=(ALL) NOPASSWD:ALL
+    path: /etc/sudoers.d/ubuntu
+
+runcmd:
+  - /opt/bootstrap.sh

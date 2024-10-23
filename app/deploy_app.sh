@@ -74,8 +74,8 @@ fi
 #
 # content library creation
 #
-govc library.create ubuntu
-govc library.import ubuntu "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
+govc library.create ${content_library_name}
+govc library.import ${content_library_name} "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
 #
 # folder creation for app
 #

@@ -301,6 +301,10 @@ write_files:
       vault write -tls-skip-verify ${vault_pki_intermediate_name}/intermediate/set-signed certificate=@${vault_pki_intermediate_cert_path_signed}
       vault write -tls-skip-verify ${vault_pki_intermediate_name}/roles/${vault_pki_intermediate_role_name} issuer_ref="$(vault read -tls-skip-verify -field=default ${vault_pki_intermediate_role_name}/config/issuers)" allowed_domains="${domain}" allow_subdomains=${vault_pki_intermediate_role_allow_subdomains} max_ttl="${vault_pki_intermediate_role_max_ttl}"
       #
+      # pointer to jsonFile
+      #
+      echo "{\"jsonFile\": \"/home/ubuntu/json/${jsonFile}\"}" | tee /home/ubuntu/lbaas/lbaas.json
+      #
       # End of cloud init
       #
       echo "cloud init done" | tee /tmp/cloudInitDone.log

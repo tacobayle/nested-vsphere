@@ -42,6 +42,7 @@ sed -e "s@\${webhook_url}@${SLACK_WEBHOOK_URL_AVI}@" /home/ubuntu/templates/avi_
 sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s/\${ntp}/${ip_gw_mgmt}/" \
     -e "s/\${dns}/${ip_gw_mgmt}/" \
+    -e "s/\${avi_username}/${avi_username}/" \
     -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
     -e "s/\${avi_old_password}/${AVI_OLD_PASSWORD}/" \
     -e "s/\${avi_version}/${avi_version}/" \

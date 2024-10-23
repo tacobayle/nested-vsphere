@@ -87,6 +87,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${tier0_vip_starting_ip}@${tier0_vip_starting_ip}@" \
         -e "s/\${forwarders_bind}/${forwarders_bind}/" \
         -e "s/\${domain}/${domain}/g" \
+        -e "s@\${jsonFile}@$(basename ${jsonFile})@g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
         -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
         -e "s/\${ip_avi_dns}/${ip_avi_dns}/" \
