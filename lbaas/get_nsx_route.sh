@@ -16,7 +16,7 @@ else
   exit 255
 fi
 #
-jsonFile2=$(jq -c -r '.jsonFile' /home/ubuntu/lbaas/lbaas.json)
+jsonFile2=$(jq -c -r '.jsonFile' /home/ubuntu/lbaas.json)
 if [ -s "${jsonFile2}" ]; then
   jq . $jsonFile2 > /dev/null
 else

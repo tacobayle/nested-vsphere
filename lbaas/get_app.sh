@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-jsonFile=$(jq -c -r '.jsonFile' /home/ubuntu/lbaas/lbaas.json)
+jsonFile=$(jq -c -r '.jsonFile' /home/ubuntu/lbaas.json)
 source /home/ubuntu/bash/variables.sh
 source /home/ubuntu/avi/alb_api.sh
 output_json_file="${1}"
