@@ -230,7 +230,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
                                                                    ]')
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.avi_mgmt' > /dev/null) ; then
-      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"avi_mgmt": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_mgmt' $jsonFile)'"}')
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"avi_mgmt": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_mgmt' $jsonFile)'}')
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.avi_ipam_pool_se' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"avi_ipam_pool_se": "'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_se' $jsonFile | cut -d"-" -f1)'-'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_se' $jsonFile | cut -d"-" -f2)'"}')
