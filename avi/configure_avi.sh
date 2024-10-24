@@ -96,6 +96,9 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
       -e "s/\${avi_old_password}/${AVI_OLD_PASSWORD}/" \
       -e "s/\${avi_version}/${avi_version}/" \
+      -e "s/\${nsx_username}/${nsx_username}/" \
+      -e "s/\${nsx_password}/${GENERIC_PASSWORD}/" \
+      -e "s/\${nsx_server}/${ip_nsx}/" \
       -e "s/\${vsphere_username}/${vsphere_nested_username}@${ssoDomain}/" \
       -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
       -e "s/\${vsphere_server}/${api_host}/" \
@@ -109,17 +112,17 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       -e "s@\${sslkeyandcertificate_ref}@${tanzu_cert_name}@" \
       -e "s@\${applicationprofile}@$(echo ${applicationprofile} | jq -c -r '.')@" \
       -e "s@\${httppolicyset}@$(echo ${httppolicyset} | jq -c -r '.')@" \
-      -e "s@\${roles}@$(echo ${roles} | jq -c -r '.')@" \
-      -e "s@\${tenants}@$(echo ${tenants} | jq -c -r '.')@" \
-      -e "s@\${users}@$(echo ${users} | jq -c -r '.')@" \
+      -e "s@\${roles}@$(echo "${roles}" | jq -c -r '.')@" \
+      -e "s@\${tenants}@$(echo "${tenants}" | jq -c -r '.')@" \
+      -e "s@\${users}@$(echo "${users}" | jq -c -r '.')@" \
       -e "s@\${cloud_name}@${nsx_cloud_name}@" \
       -e "s@\${cloud_obj_name_prefix}@${cloud_obj_name_prefix}@" \
       -e "s@\${domain}@${avi_subdomain}.${domain}@" \
       -e "s@\${transport_zone_name}@$(echo ${transport_zones} | jq -c -r '.[] | select(.transport_type == "OVERLAY").display_name')@" \
       -e "s@\${network_management}@${network_management}@" \
-      -e "s@\${networks_data}@${net_client_list}@" \
+      -e "s@\${networks_data}@$(echo ${net_client_list} | jq -c -r '.')@" \
       -e "s@\${content_library_name}@${avi_content_library_name}@" \
-      -e "s@\${service_engine_groups}@$(echo ${service_engine_groups} | jq -c -r '.')@" \
+      -e "s@\${service_engine_groups}@$(echo "${service_engine_groups}" | jq -c -r '.')@" \
       -e "s@\${pools}@$(echo ${pools} | jq -c -r '.')@" \
       -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
       -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_nsx.yml.template | tee /home/ubuntu/avi/avi_values.yml

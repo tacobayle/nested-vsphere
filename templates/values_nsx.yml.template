@@ -2,7 +2,7 @@
 external_gw_ip: ${external_gw_ip}
 avi_version: ${avi_version}
 controllerPrivateIps: |
-  [${controllerPrivateIp}]
+  ["${controllerPrivateIp}"]
 avi_old_password: ${avi_old_password}
 avi_password: ${avi_password}
 avi_username: ${avi_username}
@@ -11,10 +11,10 @@ controller:
   environment: vCenter
   cluster: false
   ntp: |
-    [${ntp}]
+    ["${ntp}"]
   dns: |
-    [${dns}]
-nsx_username: admin
+    ["${dns"}]
+nsx_username: ${nsx_username}
 nsx_password: ${nsx_password}
 nsx_server: ${nsx_server}
 import_sslkeyandcertificate_ca: |

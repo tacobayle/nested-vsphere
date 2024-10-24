@@ -122,6 +122,7 @@ pod_cidr=$(jq -c -r '.pod_cidr' $jsonFile)
 #
 if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   nsx_avi_basename="-"
+  nsx_username=$(jq -c -r '.nsx.username' $jsonFile)
   folder_nsx=$(jq -c -r '.nsx.folder' $jsonFile)
   ip_nsx="${cidr_mgmt_three_octets}.$(jq -c -r .nsx.ip_manager $jsonFile)"
   ip_nsx_last_octet=$(jq -c -r .nsx.ip_manager $jsonFile)
@@ -268,7 +269,12 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
                                                                "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
                                                                "cidr_three_octets": "'${cidr_three_octets}'",
                                                                "se_group_ref": "public",
-                                                               "gw": "'${cidr_three_octets}'.1"
+                                                               "gw": "'${cidr_three_octets}'.1",
+                                                               "avi_ipam_vip": {
+                                                                 "cidr": "'${cidr_vip_subnet}'",
+                                                                 "pool": "'${cidr_vip_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_vip' $jsonFile | cut -d"-" -f1)'-'${cidr_vip_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_vip' $jsonFile | cut -d"-" -f2)'"
+                                                               },
+                                                               "avi_ipam_pool_se": "'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_se' $jsonFile | cut -d"-" -f1)'-'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_ipam_pool_se' $jsonFile | cut -d"-" -f2)'"
                                                              }
                                                            ]')
     fi
@@ -283,7 +289,7 @@ fi
 #
 folder_avi=$(jq -c -r '.avi_folder' $jsonFile)
 ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .avi.ip_controller $jsonFile)"
-avi_username=$(jq -c -r '.avi.avi_username' $jsonFile)
+avi_username=$(jq -c -r '.avi.username' $jsonFile)
 lbaas_username=$(jq -c -r '.avi.lbaas_username' $jsonFile)
 lbaas_tenant=$(jq -c -r '.avi.lbaas_tenant' $jsonFile)
 ip_avi_last_octet=$(jq -c -r .avi.ip_controller $jsonFile)
@@ -522,7 +528,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
   if [[ ${ips_app} != "null" ]]; then
     for net in $(seq 0 $(($(echo ${net_app_first_list} | jq -c -r '. | length')-1)))
     do
-      ips_app_full=$(echo $(jq -c -r '.avi.app.first.ips' $jsonFile) | jq '. | map("'$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets')'." + (. | tostring))')
+      ips_app_full=$(echo "$(jq -c -r '.avi.app.first.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets')'." + (. | tostring))')
       tier1_name="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].tier1')"
       if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
       if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
@@ -708,7 +714,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
     done
   fi
   if [[ ${ips_app_second} != "null" ]]; then
-    ips_app_second=$(echo $(jq -c -r '.avi.app.second.ips' $jsonFile) | jq '. | map("'$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets')'." + (. | tostring))')
+    ips_app_second=$(echo "$(jq -c -r '.avi.app.second.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets')'." + (. | tostring))')
     tier1_name="$(echo ${net_app_first_list} | jq -r -c '.[0].tier1')"
     #
     if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
@@ -722,6 +728,8 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
     pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
   fi
+  echo "${pools}" | jq -c -r . | tee /tmp/tmp.json >/dev/null 2>&1
+  pools=$(jq -c -r '.' /tmp/tmp.json)
   virtual_services_http="[]"
   virtual_services_dns="[]"
   for net in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
@@ -1185,6 +1193,8 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
     fi
   done
   virtual_services='{"http": '${virtual_services_http}', "dns": '${virtual_services_dns}'}'
+  echo "${virtual_services}" | jq -c -r . | tee /tmp/tmp.json >/dev/null 2>&1
+  virtual_services=$(jq -c -r '.' /tmp/tmp.json)
 fi
 #
 # Tanzu variables
@@ -1213,7 +1223,7 @@ tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)
 tkc_clusters=$(jq -c -r '.tanzu.tkc_clusters' $jsonFile)
 for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
 do
-  tenants=$(echo $tenants | jq -c -r '. += [{"name": "'$(echo ${cluster} | jq -c -r .avi_tenant_name)'",
+  tenants=$(echo "$tenants" | jq -c -r '. += [{"name": "'$(echo ${cluster} | jq -c -r .avi_tenant_name)'",
                                                "local": true,
                                                "config_settings" : {
                                                  "tenant_vrf": false,

@@ -161,6 +161,7 @@
   },
   "nsx": {
     "folder": "nsx-manager",
+    "username": "admin",
     "manager_name": "nsx-manager-01",
     "ip_manager": 14,
     "ips_edge": [15, 16],
@@ -785,9 +786,9 @@
   ],
   "avi_content_library_name": "content_library_avi_se",
   "playbook_vcenter": "vcenter.yml",
-  "tag_vcenter": "v2.27",
+  "tag_vcenter": "v2.28",
   "playbook_nsx": "nsx.yml",
-  "tag_nsx": "v2.24",
+  "tag_nsx": "v2.28",
   "service_engine_groups": [
     {
       "name": "Default-Group",
