@@ -36,6 +36,9 @@ if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl
 # templating python control script
 #
 sed -e "s@\${webhook_url}@${SLACK_WEBHOOK_URL_AVI}@" /home/ubuntu/templates/avi_slack_cs.py.template | tee $(jq -c -r .avi_slack.path $jsonFile)
+#
+#
+#
 if [[ ${kind} == "vsphere-avi" ]]; then
   #
   # templating yaml file
