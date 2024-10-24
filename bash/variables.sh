@@ -1214,10 +1214,10 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   ip_gw_backend=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
 fi
 if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-  management_tanzu_segment=$(jq '.nsx.config.segments_overlay[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).display_name' ${segment_overlay_file})
-  management_tanzu_cidr=$(jq '.nsx.config.segments_overlay[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).cidr' ${segment_overlay_file})
-  management_tanzu_supervisor_starting_ip=$(jq '.nsx.config.segments_overlay[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_starting_ip' ${segment_overlay_file})
-  management_tanzu_supervisor_count=$(jq '.nsx.config.segments_overlay[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_count' ${segment_overlay_file})
+  management_tanzu_segment=$(jq '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).display_name' ${segment_overlay_file})
+  management_tanzu_cidr=$(jq '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).cidr' ${segment_overlay_file})
+  management_tanzu_supervisor_starting_ip=$(jq '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_starting_ip' ${segment_overlay_file})
+  management_tanzu_supervisor_count=$(jq '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_count' ${segment_overlay_file})
 fi
 tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)
 tkc_clusters=$(jq -c -r '.tanzu.tkc_clusters' $jsonFile)
