@@ -416,7 +416,7 @@ done
 echo "pausing for 240 seconds"
 sleep 240
 retry=240 ; pause=20 ; attempt=0
-echo ${edge_ids} | jq -c -r .[] | while read item
+for item in $(echo ${edge_ids} | jq -c -r '.[]')
 do
   while true ; do
     echo "attempt ${attempt} to get node id ${item} ready"
@@ -424,9 +424,9 @@ do
     /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                 "policy/api/v1/transport-nodes/state" \
                 "${file_json_output}"
-    jq -c -r .results[] ${file_json_output} | while read edge
+    for edge in $(seq 0 $(($(jq -c -r '.results | length' ${file_json_output})-1)))
     do
-      if [[ $(echo ${edge} | jq -r .transport_node_id) == ${item} ]] && [[ $(echo ${edge} | jq -r .state) == "success" ]] ; then
+      if [[ $(jq -c -r '.results['$edge'].transport_node_id' ${file_json_output}) == ${item} ]] && [[ $(jq -c -r '.results['$edge'].state' ${file_json_output}) == "success" ]] ; then
         echo "new edge node id ${item} state is success after ${attempt} attempts of ${pause} seconds"
         if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': edge node '${item}' ready"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
         break 2

@@ -485,6 +485,8 @@
     }
   },
   "avi": {
+    "ctrl_name": "avi-ctrl-01",
+    "ctrl_folder": "avi-ctrl",
     "username": "admin",
     "ip_controller": 18,
     "lbaas_tenant": "automation",
@@ -514,8 +516,6 @@
       }
     }
   },
-  "avi_folder": "avi-ctrl",
-  "avi_ctrl_name": "avi-ctrl-01",
   "avi_lsc_se_folder": "lsc-se",
   "avi_lsc_kernel_version": "4.4.0-21-generic",
   "avi_lsc_se_basename": "lsc-se0",
@@ -786,9 +786,9 @@
   ],
   "avi_content_library_name": "content_library_avi_se",
   "playbook_vcenter": "vcenter.yml",
-  "tag_vcenter": "v2.29",
+  "tag_vcenter": "v2.39",
   "playbook_nsx": "nsx.yml",
-  "tag_nsx": "v2.29",
+  "tag_nsx": "v2.39",
   "service_engine_groups": [
     {
       "name": "Default-Group",
