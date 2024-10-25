@@ -193,6 +193,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   vip_subnet_index=0
   for i in $(seq ${supernet_overlay_third_octet} ${amount_of_segment})
   do
+    net_app_first_list_flag=0
     cidr="${supernet_first_two_octets}.$i.0/24"
     cidr_three_octets="${supernet_first_two_octets}.$i"
     cidr_vip_subnet="${supernet_vip_first_two_octets}.$(($supernet_vip_third_octet+$vip_subnet_index)).0/24"
@@ -212,24 +213,29 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"tanzu_supervisor_count": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_count' $jsonFile)'"}')
     fi
     if [[ $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq '.backend') == "true" ]] ; then
-      net_app_first_list=$(echo ${net_app_first_list} | jq '. += [
-                                                                    {
-                                                                      "cidr": "'${cidr}'",
-                                                                      "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
-                                                                      "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
-                                                                      "cidr_three_octets": "'${cidr_three_octets}'",
-                                                                      "gw": "'${cidr_three_octets}'.1"
-                                                                    }
-                                                                  ]')
-      net_app_second_list=$(echo ${net_app_second_list} | jq '. += [
-                                                                     {
-                                                                       "cidr": "'${cidr}'",
-                                                                       "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
-                                                                       "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
-                                                                       "cidr_three_octets": "'${cidr_three_octets}'",
-                                                                       "gw": "'${cidr_three_octets}'.1"
-                                                                     }
-                                                                   ]')
+      if [[ $(echo ${net_app_first_list} | jq '. | length') -eq 0 ]]; then
+        net_app_first_list_flag=1
+        net_app_first_list=$(echo ${net_app_first_list} | jq '. += [
+                                                                      {
+                                                                        "cidr": "'${cidr}'",
+                                                                        "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
+                                                                        "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
+                                                                        "cidr_three_octets": "'${cidr_three_octets}'",
+                                                                        "gw": "'${cidr_three_octets}'.1"
+                                                                      }
+                                                                    ]')
+      fi
+      if [[ $(echo ${net_app_second_list} | jq '. | length') -eq 0 && ${net_app_first_list_flag} -eq 0 ]]; then
+        net_app_second_list=$(echo ${net_app_second_list} | jq '. += [
+                                                                       {
+                                                                         "cidr": "'${cidr}'",
+                                                                         "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
+                                                                         "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
+                                                                         "cidr_three_octets": "'${cidr_three_octets}'",
+                                                                         "gw": "'${cidr_three_octets}'.1"
+                                                                       }
+                                                                     ]')
+      fi
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.avi_mgmt' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"avi_mgmt": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_mgmt' $jsonFile)'}')
