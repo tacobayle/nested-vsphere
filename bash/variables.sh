@@ -128,6 +128,8 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   ip_nsx_last_octet=$(jq -c -r .nsx.ip_manager $jsonFile)
   cidr_nsx_external=$(jq -c -r --arg arg "nsx-external" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f1)
   gw_nsx_external=$(jq -c -r --arg arg "nsx-external" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  nsx_group_app_name=$(jq -c -r '.nsx.nsx_group_app_name' $jsonFile)
+  nsx_group_app_tag=$(jq -c -r '.nsx.nsx_group_app_tag' $jsonFile)
   cidr_nsx_external_prefix_length=$(jq -c -r --arg arg "nsx-external" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2)
   if [[ ${cidr_nsx_external} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
     cidr_nsx_external_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
@@ -523,6 +525,7 @@ fi
 #
 # pools and vs definitions
 #
+nsx_group_app="true"
 if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
   pools="[]"
   if [[ ${ips_app} != "null" ]]; then
@@ -530,33 +533,45 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
     do
       ips_app_full=$(echo "$(jq -c -r '.avi.app.first.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets')'." + (. | tostring))')
       tier1_name="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].tier1')"
-      if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      if [[ ${nsx_group_app} == "true" && ${kind} == "vsphere-nsx-avi" ]]; then
+        pool="{}"
+        pool=$(echo ${pool} | jq '. += {
+                    "name": "'${nsx_group_app_name}'",
+                    "default_server_port": 80,
+                    "tier1": "'${tier1_name}'",
+                    "type": "nsx-group-based"
+                  }')
+        pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+      fi
+      nsx_group_app="false"
+      if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
+      pool="{}"
       pool=$(echo ${pool} | jq '. += {
                   "name": "'${tier1_name}''${nsx_avi_basename}'pool1",
                   "default_server_port": 80,
+                  "tier1": "'${tier1_name}'",
+                  "type": "ip-based",
                   "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-                  "type": "V4",
                   "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                 }')
       pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      pool="{}"
       pool=$(echo ${pool} | jq '. += {
                   "name": "'${tier1_name}''${nsx_avi_basename}'pool2",
                   "default_server_port": '${app_tcp_default}',
-                  "type": "V4",
+                  "tier1": "'${tier1_name}'",
+                  "type": "ip-based",
                   "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                 }')
       pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      pool="{}"
       pool=$(echo ${pool} | jq '. += {
                   "name": "'${tier1_name}''${nsx_avi_basename}'pool3",
                   "default_server_port": '${app_tcp_waf}',
-                  "type": "V4",
+                  "tier1": "'${tier1_name}'",
+                  "type": "ip-based",
                   "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                 }')
       pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
@@ -583,130 +598,130 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
             ]
           }
         ]'
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool1-app-v1",
                     "default_server_port": 80,
+                    "tier1": "'${tier1_name}'",
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'blue-dev-Pool",
                     "tenant_ref": "dev",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["blue"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'blue-preprod-Pool",
                     "tenant_ref": "preprod",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["blue"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'blue-prod-Pool",
                     "tenant_ref": "prod",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["blue"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'orange-dev-Pool",
                     "tenant_ref": "dev",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["orange"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'orange-preprod-Pool",
                     "tenant_ref": "preprod",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["orange"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'orange-prod-Pool",
                     "tenant_ref": "prod",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["orange"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'green-dev-Pool",
                     "tenant_ref": "dev",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["green"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'green-preprod-Pool",
                     "tenant_ref": "preprod",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["green"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
         #
-        if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-        if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+        pool="{}"
         pool=$(echo ${pool} | jq '. += {
                     "name": "'${tier1_name}''${nsx_avi_basename}'green-prod-Pool",
                     "tenant_ref": "prod",
+                    "tier1": "'${tier1_name}'",
                     "markers": [{"key": "app", "values": ["green"]}],
                     "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                     "default_server_port": 80,
-                    "type": "V4",
+                    "type": "ip-based",
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
@@ -717,13 +732,14 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
     ips_app_second=$(echo "$(jq -c -r '.avi.app.second.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets')'." + (. | tostring))')
     tier1_name="$(echo ${net_app_first_list} | jq -r -c '.[0].tier1')"
     #
-    if [[ ${kind} == "vsphere-avi" ]] ; then pool="{}" ; tier1_name="" ; fi
-    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then pool='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
+    pool="{}"
     pool=$(echo ${pool} | jq '. += {
-                "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool1-app-v2",
+                "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool2-app-v2",
                 "default_server_port": 80,
+                "tier1": "'${tier1_name}'",
                 "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-                "type": "V4",
+                "type": "ip-based",
                 "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
               }')
     pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
@@ -732,17 +748,43 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
   pools=$(jq -c -r '.' /tmp/tmp.json)
   virtual_services_http="[]"
   virtual_services_dns="[]"
+  nsx_group_app="true"
   for net in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
   do
     cidr_vip_prefix="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr')"
     network_ref_vip="$(echo ${net_client_list} | jq -r -c '.['${net}'].display_name')"
     tier1_name="$(echo ${net_client_list} | jq -r -c '.['${net}'].tier1')"
     se_group_ref="$(echo ${net_client_list} | jq -r -c '.['${net}'].se_group_ref')"
-    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    if [[ ${nsx_group_app} == "true" && ${kind} == "vsphere-nsx-avi" ]]; then
+      virtual_service_http="{}"
+      virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                       "name": "'${tier1_name}''${nsx_avi_basename}'app-nsx-group",
+                       "type": "V4",
+                       "tier1": "'${tier1_name}'",
+                       "cidr": "'${cidr_vip_prefix}'",
+                       "network_ref": "'${network_ref_vip}'",
+                       "pool_ref": "'${nsx_group_app_name}'",
+                       "se_group_ref": "'${se_group_ref}'",
+                       "services": [
+                                     {
+                                       "port": 80,
+                                       "enable_ssl": false
+                                      },
+                                      {
+                                        "port": 443,
+                                        "enable_ssl": true
+                                      }
+                       ]
+              }')
+      virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+    fi
+    nsx_group_app="false"
+    if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
+    virtual_service_http="{}"
     virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                      "name": "'${tier1_name}''${nsx_avi_basename}'app-hello-world",
                      "type": "V4",
+                     "tier1": "'${tier1_name}'",
                      "cidr": "'${cidr_vip_prefix}'",
                      "network_ref": "'${network_ref_vip}'",
                      "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool1",
@@ -760,11 +802,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
             }')
     virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
     #
-    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http="{}"
     virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                        "name": "'${tier1_name}''${nsx_avi_basename}'app-avi",
                        "type": "V4",
+                       "tier1": "'${tier1_name}'",
                        "cidr": "'${cidr_vip_prefix}'",
                        "network_ref": "'${network_ref_vip}'",
                        "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool2",
@@ -782,11 +824,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
             }')
     virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
     #
-    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http="{}"
     virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                        "name": "'${tier1_name}''${nsx_avi_basename}'app-waf",
                        "type": "V4",
+                       "tier1": "'${tier1_name}'",
                        "cidr": "'${cidr_vip_prefix}'",
                        "network_ref": "'${network_ref_vip}'",
                        "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool3",
@@ -804,11 +846,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
             }')
     virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
     #
-    if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-    if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+    virtual_service_http="{}"
     virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                        "name": "'${tier1_name}''${nsx_avi_basename}'app-security",
                        "type": "V4",
+                       "tier1": "'${tier1_name}'",
                        "cidr": "'${cidr_vip_prefix}'",
                        "network_ref": "'${network_ref_vip}'",
                        "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool1",
@@ -911,11 +953,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
       #
       #
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'app-migration",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_group_ref": "pg1",
@@ -933,11 +975,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                           "name": "'${tier1_name}''${nsx_avi_basename}'app-content-switching",
                           "type": "V4",
+                          "tier1": "'${tier1_name}'",
                           "cidr": "'${cidr_vip_prefix}'",
                           "network_ref": "'${network_ref_vip}'",
                           "pool_ref": "'${tier1_name}''${nsx_avi_basename}'pool2",
@@ -961,11 +1003,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'blue-dev",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-dev-Pool",
@@ -985,11 +1027,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'blue-preprod",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-preprod-Pool",
@@ -1009,11 +1051,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'blue-prod",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-prod-Pool",
@@ -1033,11 +1075,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'green-dev",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-dev-Pool",
@@ -1057,11 +1099,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'green-preprod",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-preprod-Pool",
@@ -1081,11 +1123,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'green-prod",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-prod-Pool",
@@ -1105,11 +1147,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'orange-dev",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-dev-Pool",
@@ -1129,11 +1171,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'orange-preprod",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-preprod-Pool",
@@ -1153,11 +1195,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
               }')
       virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_http="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_http='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
                          "name": "'${tier1_name}''${nsx_avi_basename}'orange-prod",
                          "type": "V4",
+                         "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
                          "network_ref": "'${network_ref_vip}'",
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-prod-Pool",
@@ -1179,11 +1221,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
       #
       # dns vs
       #
-      if [[ ${kind} == "vsphere-avi" ]] ; then virtual_service_dns="{}" ; tier1_name="" ; fi
-      if [[ ${kind} == "vsphere-nsx-avi" ]] ; then virtual_service_dns='{"vrf_ref": "'${tier1_name}'"}' ; fi
+      virtual_service_dns="{}"
       virtual_service_dns=$(echo ${virtual_service_dns} | jq '. += {
                              "name": "'${tier1_name}''${nsx_avi_basename}'app-dns",
                              "type": "V4",
+                             "tier1": "'${tier1_name}'",
                              "cidr": "'${cidr_vip_prefix}'",
                              "network_ref": "'${network_ref_vip}'",
                              "se_group_ref": "Default-Group",

@@ -166,6 +166,8 @@
     "ip_manager": 14,
     "ips_edge": [15, 16],
     "pool_start": 32,
+    "nsx_group_app_name": "avi_app",
+    "nsx_group_app_tag": "avi_app",
     "pool_end": 64,
     "config" : {
       "uplink_profiles":
@@ -786,9 +788,9 @@
   ],
   "avi_content_library_name": "content_library_avi_se",
   "playbook_vcenter": "vcenter.yml",
-  "tag_vcenter": "v2.39",
+  "tag_vcenter": "v2.44",
   "playbook_nsx": "nsx.yml",
-  "tag_nsx": "v2.39",
+  "tag_nsx": "v2.44",
   "service_engine_groups": [
     {
       "name": "Default-Group",

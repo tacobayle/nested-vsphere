@@ -105,7 +105,6 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       -e "s/\${vsphere_username}/${vsphere_nested_username}@${ssoDomain}/" \
       -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
       -e "s/\${vsphere_server}/${api_host}/" \
-      -e "s/\${external_gw_ip}/${ip_gw_mgmt}/" \
       -e "s@\${import_sslkeyandcertificate_ca}@$(echo ${import_sslkeyandcertificate_ca} | jq -c -r '.')@" \
       -e "s@\${certificatemanagementprofile}@$(echo ${certificatemanagementprofile} | jq -c -r '.')@" \
       -e "s@\${alertscriptconfig}@$(echo ${alertscriptconfig} | jq -c -r '.')@" \
