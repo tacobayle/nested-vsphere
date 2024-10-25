@@ -249,6 +249,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
       net_client_list=$(echo ${net_client_list} | jq '. += [
                                                              {
                                                                "cidr": "'${cidr}'",
+                                                               "cidr_vip": "'${cidr_vip_subnet}'",
                                                                "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
                                                                "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
                                                                "cidr_three_octets": "'${cidr_three_octets}'",
@@ -267,6 +268,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
       net_client_list=$(echo ${net_client_list} | jq '. += [
                                                              {
                                                                "cidr": "'${cidr}'",
+                                                               "cidr_vip": "'${cidr_vip_subnet}'",
                                                                "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
                                                                "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
                                                                "cidr_three_octets": "'${cidr_three_octets}'",
@@ -751,14 +753,14 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
   nsx_group_app="true"
   for net in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
   do
-    cidr_vip_prefix="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr')"
+    cidr_vip_prefix="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr_vip')"
     network_ref_vip="$(echo ${net_client_list} | jq -r -c '.['${net}'].display_name')"
     tier1_name="$(echo ${net_client_list} | jq -r -c '.['${net}'].tier1')"
     se_group_ref="$(echo ${net_client_list} | jq -r -c '.['${net}'].se_group_ref')"
     if [[ ${nsx_group_app} == "true" && ${kind} == "vsphere-nsx-avi" ]]; then
       virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
-                       "name": "'${tier1_name}''${nsx_avi_basename}'app-nsx-group",
+                       "name": "'${tier1_name}''${nsx_avi_basename}'nsx-group",
                        "type": "V4",
                        "tier1": "'${tier1_name}'",
                        "cidr": "'${cidr_vip_prefix}'",
@@ -782,7 +784,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
     if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
     virtual_service_http="{}"
     virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
-                     "name": "'${tier1_name}''${nsx_avi_basename}'app-hello-world",
+                     "name": "'${tier1_name}''${nsx_avi_basename}'hello-world",
                      "type": "V4",
                      "tier1": "'${tier1_name}'",
                      "cidr": "'${cidr_vip_prefix}'",
@@ -804,7 +806,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
     #
     virtual_service_http="{}"
     virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
-                       "name": "'${tier1_name}''${nsx_avi_basename}'app-avi",
+                       "name": "'${tier1_name}''${nsx_avi_basename}'avi",
                        "type": "V4",
                        "tier1": "'${tier1_name}'",
                        "cidr": "'${cidr_vip_prefix}'",
@@ -826,7 +828,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
     #
     virtual_service_http="{}"
     virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
-                       "name": "'${tier1_name}''${nsx_avi_basename}'app-waf",
+                       "name": "'${tier1_name}''${nsx_avi_basename}'waf",
                        "type": "V4",
                        "tier1": "'${tier1_name}'",
                        "cidr": "'${cidr_vip_prefix}'",
@@ -848,7 +850,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
     #
     virtual_service_http="{}"
     virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
-                       "name": "'${tier1_name}''${nsx_avi_basename}'app-security",
+                       "name": "'${tier1_name}''${nsx_avi_basename}'security",
                        "type": "V4",
                        "tier1": "'${tier1_name}'",
                        "cidr": "'${cidr_vip_prefix}'",
@@ -955,7 +957,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
       #
       virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
-                         "name": "'${tier1_name}''${nsx_avi_basename}'app-migration",
+                         "name": "'${tier1_name}''${nsx_avi_basename}'migration",
                          "type": "V4",
                          "tier1": "'${tier1_name}'",
                          "cidr": "'${cidr_vip_prefix}'",
@@ -977,7 +979,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
       #
       virtual_service_http="{}"
       virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
-                          "name": "'${tier1_name}''${nsx_avi_basename}'app-content-switching",
+                          "name": "'${tier1_name}''${nsx_avi_basename}'content-switching",
                           "type": "V4",
                           "tier1": "'${tier1_name}'",
                           "cidr": "'${cidr_vip_prefix}'",
@@ -1223,7 +1225,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
       #
       virtual_service_dns="{}"
       virtual_service_dns=$(echo ${virtual_service_dns} | jq '. += {
-                             "name": "'${tier1_name}''${nsx_avi_basename}'app-dns",
+                             "name": "'${tier1_name}''${nsx_avi_basename}'dns",
                              "type": "V4",
                              "tier1": "'${tier1_name}'",
                              "cidr": "'${cidr_vip_prefix}'",

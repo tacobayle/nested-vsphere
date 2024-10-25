@@ -33,24 +33,37 @@ else
   exit 255
 fi
 #
-avi_cookie_file="/tmp/avi_$(basename $0 | cut -d"." -f1)_${date_index}_cookie.txt"
-curl_login=$(curl -s -k -X POST -H "Content-Type: application/json" \
-                                -d "{\"username\": \"${lbaas_username}\", \"password\": \"${GENERIC_PASSWORD}\"}" \
-                                -c ${avi_cookie_file} https://${ip_avi}/login)
-csrftoken=$(cat ${avi_cookie_file} | grep csrftoken | awk '{print $7}')
-#
+json_api_output="/home/ubuntu/avi/response_body.json"#
 while true
 do
-  alb_api 2 2 "GET" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "" "${ip_avi}" "api/virtualservice?page_size=-1"
-  if [[ $(echo ${response_body} | jq -c -r '.results | length') -gt 0 && $(echo ${response_body} | jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length') -eq 1 ]]; then
-    vsvip_ref=$(echo $response_body | jq -c -r --arg arg "${vs_name}" '.results[] | select(.name == $arg).vsvip_ref')
-    alb_api 2 2 "GET" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "" "${ip_avi}" "api/vsvip/$(basename ${vsvip_ref})"
-    network_ref=$(echo ${response_body} | jq -c -r .vip[0].ipam_network_subnet.network_ref)
+  /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                       "api/virtualservice?page_size=-1" \
+                                       "GET" \
+                                       "${avi_version}" \
+                                       "${lbaas_tenant}" \
+                                       "" \
+                                       "${json_api_output}"
+  if [[ $(jq -c -r '.results | length' ${json_api_output}) -gt 0 && $(jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length' ${json_api_output}) -eq 1 ]]; then
+    vsvip_ref=$(jq -c -r --arg arg "${vs_name}" '.results[] | select(.name == $arg).vsvip_ref' ${json_api_output})
+    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                         "api/vsvip/$(basename ${vsvip_ref})" \
+                                         "GET" \
+                                         "${avi_version}" \
+                                         "${lbaas_tenant}" \
+                                         "" \
+                                         "${json_api_output}"
+    network_ref=$(jq -c -r .vip[0].ipam_network_subnet.network_ref ${json_api_output})
     if [ -z "${network_ref}" ]; then
       echo "retrying..."
     else
-      alb_api 2 2 "GET" "${avi_cookie_file}" "${csrftoken}" "admin" "${avi_version}" "" "${ip_avi}" "api/network/$(basename ${network_ref})"
-      segment_name=$(echo ${response_body} | jq -c -r .name)
+      /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                           "api/network/$(basename ${network_ref})" \
+                                           "GET" \
+                                           "${avi_version}" \
+                                           "admin" \
+                                           "" \
+                                           "${json_api_output}"
+      segment_name=$(jq -c -r .name ${json_api_output})
       results_json=$(echo $results_json | jq '. += {"date": "'$(date)'", "vs_name": "'${vs_name}'", "segment_name": "'${segment_name}'"}')
       break
     fi
@@ -63,4 +76,3 @@ echo $results_json | tee ${output_json_file} | jq .
 #
 rm -f ${jsonFile}
 rm -f ${jsonFile1}
-rm -f ${avi_cookie_file}

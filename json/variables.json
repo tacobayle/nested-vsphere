@@ -788,9 +788,9 @@
   ],
   "avi_content_library_name": "content_library_avi_se",
   "playbook_vcenter": "vcenter.yml",
-  "tag_vcenter": "v2.44",
+  "tag_vcenter": "v2.51",
   "playbook_nsx": "nsx.yml",
-  "tag_nsx": "v2.44",
+  "tag_nsx": "v2.51",
   "service_engine_groups": [
     {
       "name": "Default-Group",

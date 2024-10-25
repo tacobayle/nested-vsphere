@@ -10,25 +10,39 @@ operation=$(jq -c -r .operation $jsonFile)
 vs_name=$(jq -c -r .vs_name $jsonFile)
 date_index=$(date '+%Y%m%d%H%M%S')
 #
-avi_cookie_file="/tmp/avi_$(basename $0 | cut -d"." -f1)_${date_index}_cookie.txt"
-curl_login=$(curl -s -k -X POST -H "Content-Type: application/json" \
-                                -d "{\"username\": \"${lbaas_username}\", \"password\": \"${GENERIC_PASSWORD}\"}" \
-                                -c ${avi_cookie_file} https://${ip_avi}/login)
-csrftoken=$(cat ${avi_cookie_file} | grep csrftoken | awk '{print $7}')
+json_api_output="/home/ubuntu/avi/response_body.json"
 if [[ ${operation} == "apply" ]] ; then
-  alb_api 2 2 "GET" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "" "${ip_avi}" "api/virtualservice?page_size=-1"
-  if [[ $(echo $response_body | jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length') -eq 1 ]]; then
+  /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                       "api/virtualservice?page_size=-1" \
+                                       "GET" \
+                                       "${avi_version}" \
+                                       "${lbaas_tenant}" \
+                                       "" \
+                                       "${json_api_output}"
+  if [[ $(jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length' ${json_api_output}) -eq 1 ]]; then
     json_data='
     {
       "model_name": "VirtualService",
       "data": {
-        "uuid": "'$(echo $response_body | jq -c -r --arg arg "${vs_name}" '.results[] | select(.name == $arg).uuid')'"
+        "uuid": "'$(jq -c -r --arg arg "${vs_name}" '.results[] | select(.name == $arg).uuid' ${json_api_output})'"
       }
     }'
-    alb_api 2 2 "DELETE" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "" "${ip_avi}" "${json_data}" "${ip_avi}" "api/macro"
+    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                         "api/macro" \
+                                         "DELETE" \
+                                         "${avi_version}" \
+                                         "${lbaas_tenant}" \
+                                         "" \
+                                         "${json_api_output}"
   fi
-  alb_api 2 2 "GET" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "" "${ip_avi}" "api/virtualservice?page_size=-1"
-  if [[ $(echo $response_body | jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length') -eq 0 ]]; then
+  /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                       "api/virtualservice?page_size=-1" \
+                                       "GET" \
+                                       "${avi_version}" \
+                                       "${lbaas_tenant}" \
+                                       "" \
+                                       "${json_api_output}"
+  if [[ $(jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length' ${json_api_output}) -eq 0 ]]; then
     app_profile=$(jq -c -r .app_profile $jsonFile)
     if [[ ${app_profile} != "public" && ${app_profile} != "private" ]] ; then echo "ERROR: Unsupported app_profile" ; exit 255 ; fi
     if [[ ${app_profile} == "public" ]] ; then
@@ -45,9 +59,21 @@ if [[ ${operation} == "apply" ]] ; then
       "username": "admin",
       "password": "'${GENERIC_PASSWORD}'"
     }'
-    alb_api 2 2 "POST" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "${json_data}" "${ip_avi}" "api/nsxt/tier1s?page_size=-1"
+    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                         "api/nsxt/tier1s?page_size=-1" \
+                                         "POST" \
+                                         "${avi_version}" \
+                                         "${lbaas_tenant}" \
+                                         "" \
+                                         "${json_api_output}"
     tier1_id=$(echo $response_body | jq -c -r --arg arg ${tier1_name} '.resource.nsxt_tier1routers[] | select(.name == $arg).id' )
-    alb_api 2 2 "POST" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "${json_data}" "${ip_avi}" "api/nsxt/groups?page_size=-1"
+    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                         "api/nsxt/groups?page_size=-1" \
+                                         "POST" \
+                                         "${avi_version}" \
+                                         "${lbaas_tenant}" \
+                                         "" \
+                                         "${json_api_output}"
     group_id=$(echo $response_body | jq -c -r --arg arg ${vs_name} '.resource.nsxt_groups[] | select(.name == $arg).id' )
     json_data='
     {
@@ -140,12 +166,24 @@ if [[ ${operation} == "apply" ]] ; then
     if [[ ${app_profile} == "private" ]] ; then
       json_data=$(echo ${json_data} | jq -c -r '.data += {"se_group_ref": "/api/serviceenginegroup/?name=private"}')
     fi
-    alb_api 2 2 "POST" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "${json_data}" "${ip_avi}" "api/macro"
+    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                         "api/macro" \
+                                         "POST" \
+                                         "${avi_version}" \
+                                         "${lbaas_tenant}" \
+                                         "${json_data}" \
+                                         "${json_api_output}"
   fi
 fi
 #
 if [[ ${operation} == "destroy" ]] ; then
-  alb_api 2 2 "GET" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "" "${ip_avi}" "api/virtualservice?page_size=-1"
+  /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                       "api/virtualservice?page_size=-1" \
+                                       "GET" \
+                                       "${avi_version}" \
+                                       "${lbaas_tenant}" \
+                                       "" \
+                                       "${json_api_output}"
   if [[ $(echo $response_body | jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length') -eq 1 ]]; then
     json_data='
     {
@@ -154,7 +192,13 @@ if [[ ${operation} == "destroy" ]] ; then
         "uuid": "'$(echo $response_body | jq -c -r --arg arg "${vs_name}" '.results[] | select(.name == $arg).uuid')'"
       }
     }'
-    alb_api 2 2 "DELETE" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "${json_data}" "${ip_avi}" "api/macro"
+    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                         "api/macro" \
+                                         "DELETE" \
+                                         "${avi_version}" \
+                                         "${lbaas_tenant}" \
+                                         "${json_data}" \
+                                         "${json_api_output}"
   else
     echo "no VS ${vs_name}* to be deleted"
   fi

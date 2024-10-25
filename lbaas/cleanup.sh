@@ -3,7 +3,6 @@
 source /home/ubuntu/bash/functions.sh
 jsonFile=$(jq -c -r '.jsonFile' /home/ubuntu/lbaas.json)
 source /home/ubuntu/bash/variables.sh
-source /home/ubuntu/avi/alb_api.sh
 #
 # GOVC check
 #
@@ -15,19 +14,20 @@ if [ $? -ne 0 ] ; then
 fi
 #
 IFS=$'\n'
-date_index=$(date '+%Y%m%d%H%M%S')
+json_api_output="/home/ubuntu/avi/response_body.json"
 #
 while true
 do
   if [[ -z "$(ps -ef | grep backend.sh | grep -v grep)" && -z "$(ps -ef | grep vs.sh | grep -v grep)" && -z "$(ps -ef | grep nsx_group.sh | grep -v grep)" ]]; then
     echo "VM is not creating"
-    avi_cookie_file="/tmp/avi_$(basename $0 | cut -d"." -f1)_${date_index}_cookie.txt"
-    curl_login=$(curl -s -k -X POST -H "Content-Type: application/json" \
-                                    -d "{\"username\": \"${lbaas_username}\", \"password\": \"${GENERIC_PASSWORD}\"}" \
-                                    -c ${avi_cookie_file} https://${ip_avi}/login)
-    csrftoken=$(cat ${avi_cookie_file} | grep csrftoken | awk '{print $7}')
-    alb_api 3 5 "GET" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "" "${ip_avi}" "api/virtualservice?page_size=-1"
-    for vs in $(echo ${response_body} | jq -c -r '.results[]')
+    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                   "api/virtualservice?page_size=-1" \
+                                   "GET" \
+                                   "${avi_version}" \
+                                   "${lbaas_tenant}" \
+                                   "" \
+                                   "${json_api_output}"
+    for vs in $(jq -c -r '.results[]' ${json_api_output})
     do
       # Avi
       vs_name=$(echo ${vs} | jq -c -r '.name')
@@ -39,7 +39,13 @@ do
         }
       }'
       echo "delete Avi vs name ${vs_name}"
-      alb_api 3 5 "DELETE" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "${json_data}" "${ip_avi}" "api/macro"
+      /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                     "api/virtualservice?page_size=-1" \
+                                     "DELETE" \
+                                     "${avi_version}" \
+                                     "${lbaas_tenant}" \
+                                     "${json_data}" \
+                                     "${json_api_output}"
       # NSX
       /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                   "policy/api/v1/infra/domains/default/groups/${vs_name}" \

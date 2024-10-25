@@ -2,25 +2,25 @@
 #
 jsonFile=$(jq -c -r '.jsonFile' /home/ubuntu/lbaas.json)
 source /home/ubuntu/bash/variables.sh
-source /home/ubuntu/avi/alb_api.sh
 output_json_file="${1}"
 #
 IFS=$'\n'
-date_index=$(date '+%Y%m%d%H%M%S')
+json_api_output="/home/ubuntu/avi/response_body.json"
 #
 while true
 do
   if [[ -z "$(ps -ef | grep vs.sh | grep -v grep)" ]]; then
     echo "VS is not creating"
-    avi_cookie_file="/tmp/avi_$(basename $0 | cut -d"." -f1)_${date_index}_cookie.txt"
-    curl_login=$(curl -s -k -X POST -H "Content-Type: application/json" \
-                                    -d "{\"username\": \"${lbaas_username}\", \"password\": \"${GENERIC_PASSWORD}\"}" \
-                                    -c ${avi_cookie_file} https://${ip_avi}/login)
-    csrftoken=$(cat ${avi_cookie_file} | grep csrftoken | awk '{print $7}')
-    alb_api 2 2 "GET" "${avi_cookie_file}" "${csrftoken}" "${lbaas_tenant}" "${avi_version}" "" "${ip_avi}" "api/virtualservice?page_size=-1"
-    vs_count=$(echo ${response_body} | jq -c -r '.count')
+    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+                                       "api/virtualservice?page_size=-1" \
+                                       "GET" \
+                                       "${avi_version}" \
+                                       "${lbaas_tenant}" \
+                                       "" \
+                                       "${json_api_output}"
+    vs_count=$(jq -c -r '.count' ${json_api_output})
     results_json='{"count": "'${vs_count}'", "results": []}'
-    for vs in $(echo ${response_body} | jq -c -r '.results[]')
+    for vs in $(jq -c -r '.results[]' ${json_api_output})
     do
       results_json=$(echo ${results_json} | jq -c -r '.results += ["'$(echo ${vs} | jq -c -r '.name')'"]')
     done

@@ -14,3 +14,7 @@ rm -f ${cookies_file} ${headers_file}
 /bin/bash /home/ubuntu/nsx/create_nsx_api_session.sh admin ${nsx_password} ${nsx_nested_ip} ${cookies_file} ${headers_file}
 nsx_api 2 2 "${http_method}" ${cookies_file} ${headers_file} "${json_data}" ${nsx_nested_ip} "${api_endpoint}"
 echo ${response_body} | jq . | tee /home/ubuntu/nsx/response_body.json
+
+
+
+
