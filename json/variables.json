@@ -499,7 +499,7 @@
     "config_repo": "https://github.com/tacobayle/ansibleAviConfig",
     "ipam_pool_lsc": "160-179",
     "client": {
-      "ips": [11, 12]
+      "ips": [11]
     },
     "app": {
       "first": {
