@@ -12,7 +12,7 @@ controller:
   ntp: |
     ["${ntp}"]
   dns: |
-    ["${dns"}]
+    ["${dns}"]
 nsx_username: ${nsx_username}
 nsx_password: ${nsx_password}
 nsx_server: ${nsx_server}
