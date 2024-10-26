@@ -200,8 +200,8 @@ if [[ ${ips_app} != "null" ]]; then
                         }
                       ]
                     }"
-        echo "waiting for 30 seconds"
-        sleep 30
+        echo "waiting for 60 seconds"
+        sleep 60
         # retrieve the external_id of the first VM
         file_json_output="/home/ubuntu/nsx/vms.json"
         /bin/bash /home/ubuntu/nsx/get_object.sh \ "${ip_nsx}" "${GENERIC_PASSWORD}" \
