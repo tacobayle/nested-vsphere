@@ -123,7 +123,7 @@ def on_create(body, **kwargs):
     except requests.RequestException as e:
         raise kopf.PermanentError(f'Failed to create external resource: {e}')
 
-@kopf.on.delete('vsphere-nsx-vi')
+@kopf.on.delete('vsphere-nsx-avi')
 def on_delete(body, **kwargs):
     metadata = body['metadata']
     spec = body['spec']
