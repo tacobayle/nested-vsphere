@@ -329,7 +329,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
-  if [[ ${kind} == "vsphere-avi" ]]; then
+  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
     echo "Configuration of Avi - This should take about 45 minutes" >> ${log_file} 2>&1

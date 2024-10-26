@@ -293,6 +293,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   segment_overlay_file=$(jq -c -r '.nsx.config.segment_overlay_file' $jsonFile)
   echo ${segments_overlay} | tee ${segment_overlay_file}
   segments_overlay=$(jq -c -r . ${segment_overlay_file})
+  ip_avi_dns=$(echo ${net_client_list} | jq -c -r .[0].avi_ipam_vip.pool | cut -d"-" -f1)
 fi
 #
 # Avi variables
@@ -738,7 +739,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
   fi
   if [[ ${ips_app_second} != "null" ]]; then
     ips_app_second=$(echo "$(jq -c -r '.avi.app.second.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets')'." + (. | tostring))')
-    tier1_name="$(echo ${net_app_first_list} | jq -r -c '.[0].tier1')"
+    tier1_name="$(echo ${net_app_second_list} | jq -r -c '.[0].tier1')"
     #
     if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
     pool="{}"
@@ -748,7 +749,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                 "tier1": "'${tier1_name}'",
                 "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                 "type": "ip-based",
-                "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+                "avi_app_server_ips": '$(echo ${ips_app_second} | jq -c -r .)'
               }')
     pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
   fi
