@@ -468,7 +468,7 @@
           "tier1": "tier1-01",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
-          "avi_ipam_pool_vip": "231-254",
+          "avi_ipam_pool_vip": "11-99",
           "transport_zone": "tz_overlay",
           "kube": true,
           "lbaas_private": true
@@ -478,7 +478,7 @@
           "tier1": "tier1-02",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
-          "avi_ipam_pool_vip": "231-254",
+          "avi_ipam_pool_vip": "11-99",
           "transport_zone": "tz_overlay",
           "lbaas_public": true
         }

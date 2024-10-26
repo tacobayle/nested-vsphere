@@ -314,9 +314,6 @@ write_files:
           chmod 644 /etc/systemd/system/avi-lbaas.service
           systemctl start avi-lbaas
           systemctl enable avi-lbaas
-          mv /home/ubuntu/html/* /var/www/html/
-          chown root /var/www/html/*
-          chgrp root /var/www/html/*
           #
           # nginx config
           #
