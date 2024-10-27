@@ -213,29 +213,15 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"tanzu_supervisor_count": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_count' $jsonFile)'"}')
     fi
     if [[ $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq '.backend') == "true" ]] ; then
-      if [[ $(echo ${net_app_first_list} | jq '. | length') -eq 0 ]]; then
-        net_app_first_list_flag=1
-        net_app_first_list=$(echo ${net_app_first_list} | jq '. += [
-                                                                      {
-                                                                        "cidr": "'${cidr}'",
-                                                                        "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
-                                                                        "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
-                                                                        "cidr_three_octets": "'${cidr_three_octets}'",
-                                                                        "gw": "'${cidr_three_octets}'.1"
-                                                                      }
-                                                                    ]')
-      fi
-      if [[ $(echo ${net_app_second_list} | jq '. | length') -eq 0 && ${net_app_first_list_flag} -eq 0 ]]; then
-        net_app_second_list=$(echo ${net_app_second_list} | jq '. += [
-                                                                       {
-                                                                         "cidr": "'${cidr}'",
-                                                                         "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
-                                                                         "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
-                                                                         "cidr_three_octets": "'${cidr_three_octets}'",
-                                                                         "gw": "'${cidr_three_octets}'.1"
-                                                                       }
-                                                                     ]')
-      fi
+      net_app_first_list=$(echo ${net_app_first_list} | jq '. += [
+                                                                    {
+                                                                      "cidr": "'${cidr}'",
+                                                                      "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
+                                                                      "tier1": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tier1' $jsonFile)'",
+                                                                      "cidr_three_octets": "'${cidr_three_octets}'",
+                                                                      "gw": "'${cidr_three_octets}'.1"
+                                                                    }
+                                                                  ]')
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.avi_mgmt' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"avi_mgmt": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].avi_mgmt' $jsonFile)'}')
@@ -585,7 +571,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                 }')
       pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
       #
-      # pools that are created only on the first app segments
+      # pools and pool groups that are created only on the first app segments
       #
       if [[ ${net} -eq 0 ]]; then
         #
@@ -734,24 +720,25 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                     "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                   }')
         pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+        #
+        ips_app_second_full=$(echo "$(jq -c -r '.avi.app.second.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_first_list} | jq -r -c '.[0].cidr_three_octets')'." + (. | tostring))')
+        tier1_name="$(echo ${net_app_first_list} | jq -r -c '.[0].tier1')"
+        #
+        if [[ ${ips_app_second} != "null" ]]; then
+          if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
+          pool="{}"
+          pool=$(echo ${pool} | jq '. += {
+                      "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool2-app-v2",
+                      "default_server_port": 80,
+                      "tier1": "'${tier1_name}'",
+                      "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                      "type": "ip-based",
+                      "avi_app_server_ips": '$(echo ${ips_app_second_full} | jq -c -r .)'
+                    }')
+          pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+        fi
       fi
     done
-  fi
-  if [[ ${ips_app_second} != "null" ]]; then
-    ips_app_second=$(echo "$(jq -c -r '.avi.app.second.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets')'." + (. | tostring))')
-    tier1_name="$(echo ${net_app_second_list} | jq -r -c '.[0].tier1')"
-    #
-    if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
-    pool="{}"
-    pool=$(echo ${pool} | jq '. += {
-                "name": "'${tier1_name}''${nsx_avi_basename}'pg1-pool2-app-v2",
-                "default_server_port": 80,
-                "tier1": "'${tier1_name}'",
-                "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
-                "type": "ip-based",
-                "avi_app_server_ips": '$(echo ${ips_app_second} | jq -c -r .)'
-              }')
-    pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
   fi
   echo "${pools}" | jq -c -r . | tee /tmp/tmp.json >/dev/null 2>&1
   pools=$(jq -c -r '.' /tmp/tmp.json)
@@ -1022,7 +1009,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-dev-Pool",
                          "tenant_ref": "dev",
                          "markers": [{"key": "app", "values": ["blue"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,
@@ -1046,7 +1033,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-preprod-Pool",
                          "tenant_ref": "preprod",
                          "markers": [{"key": "app", "values": ["blue"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,
@@ -1070,7 +1057,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-prod-Pool",
                          "tenant_ref": "prod",
                          "markers": [{"key": "app", "values": ["blue"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,
@@ -1094,7 +1081,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-dev-Pool",
                          "tenant_ref": "dev",
                          "markers": [{"key": "app", "values": ["green"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,
@@ -1118,7 +1105,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-preprod-Pool",
                          "tenant_ref": "preprod",
                          "markers": [{"key": "app", "values": ["green"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,
@@ -1142,7 +1129,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-prod-Pool",
                          "tenant_ref": "prod",
                          "markers": [{"key": "app", "values": ["green"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,
@@ -1166,7 +1153,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-dev-Pool",
                          "tenant_ref": "dev",
                          "markers": [{"key": "app", "values": ["orange"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,
@@ -1190,7 +1177,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-preprod-Pool",
                          "tenant_ref": "preprod",
                          "markers": [{"key": "app", "values": ["orange"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,
@@ -1214,7 +1201,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-prod-Pool",
                          "tenant_ref": "prod",
                          "markers": [{"key": "app", "values": ["orange"]}],
-                         "se_group_ref": "Default-Group",
+                         "se_group_ref": "'${se_group_ref}'",
                          "services": [
                                        {
                                          "port": 80,

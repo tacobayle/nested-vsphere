@@ -233,10 +233,10 @@ fi
 if [[ ${ips_app_second} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
   do
-    ip_app="$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app_second} | jq -c -r .[$(expr ${index} - 1)])"
-    prefix_app="$(echo ${net_app_second_list} | jq -r -c '.[0].cidr' | cut -d"/" -f2)"
-    gw_app="$(echo ${net_app_second_list} | jq -r -c '.[0].gw')"
-    network_ref_app="$(echo ${net_app_second_list} | jq -r -c '.[0].display_name')"
+    ip_app="$(echo ${net_app_first_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app_second} | jq -c -r .[$(expr ${index} - 1)])"
+    prefix_app="$(echo ${net_app_first_list} | jq -r -c '.[0].cidr' | cut -d"/" -f2)"
+    gw_app="$(echo ${net_app_first_list} | jq -r -c '.[0].gw')"
+    network_ref_app="$(echo ${net_app_first_list} | jq -r -c '.[0].display_name')"
     sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s/\${hostname}/${network_ref_app}-${app_basename_second}${index}/" \
         -e "s/\${ip_app}/${ip_app}/" \
@@ -382,9 +382,9 @@ fi
 # VM app connectivity second group
 #
 if [[ ${ips_app_second} != "null" ]]; then
-  for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
+  for index in $(seq 1 $(echo ${net_app_first_list} | jq -c -r '. | length'))
   do
-    ip_app="$(echo ${net_app_second_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+    ip_app="$(echo ${net_app_first_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
     # ssh check
     retry=60 ; pause=10 ; attempt=1
     while true ; do
