@@ -84,14 +84,14 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${default_gw}/${default_gw}/" \
         -e "s/\${ntp_masters}/${ntp_masters}/" \
         -e "s/\${forwarders_netplan}/${forwarders_netplan}/" \
-        -e "s@\${networks}@${networks}@" \
+        -e "s@\${networks}@$(echo ${networks} | jq -c -r '.')@" \
         -e "s@\${segments_overlay}@${segments_overlay}@" \
         -e "s@\${cidr_nsx_external_three_octets}@${cidr_nsx_external_three_octets}@" \
         -e "s@\${tier0_vip_starting_ip}@${tier0_vip_starting_ip}@" \
         -e "s/\${forwarders_bind}/${forwarders_bind}/" \
         -e "s/\${domain}/${domain}/g" \
         -e "s/\${kind}/${kind}/g" \
-        -e "s@\${net_client_list}@$(echo ${net_client_list} | jq -c -r .)@g" \
+        -e "s@\${net_client_list}@$(echo ${net_client_list} | jq -c -r '.')@g" \
         -e "s@\${jsonFile}@$(basename ${jsonFile})@g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
         -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
