@@ -101,9 +101,9 @@ write_files:
         fi
         if [[ "${kind}" == "vsphere-nsx-avi" ]] ; then
           net_client_list='${net_client_list}'
-          echo $segments_overlay | jq -c -r .[] | while read segment
+          echo $net_client_list | jq -c -r .[] | while read cidr_vip
           do
-            echo "            - to: $(echo $segment | jq -c -r .cidr_vip)" | tee -a /etc/netplan/50-cloud-init.yaml
+            echo "            - to: $(echo $cidr_vip | jq -c -r .cidr_vip)" | tee -a /etc/netplan/50-cloud-init.yaml
             echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
           done
         fi
