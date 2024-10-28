@@ -67,8 +67,8 @@ do
       break
     else
       backend=$(uuidgen)
-      tier1=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == "true").tier1')
-      lbaas_segment=$(echo ${segments_overlay} | jq -r -c --arg arg1 "${tier1}" '.[] | select(.backend == "true" and .tier1 == $arg1).display_name')
+      tier1=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == true).tier1')
+      lbaas_segment=$(echo ${segments_overlay} | jq -r -c --arg arg1 "${tier1}" '.[] | select(.backend == true and .tier1 == $arg1).display_name')
       sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
           -e "s/\${hostname}/unassigned-${backend}/" \
           -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \

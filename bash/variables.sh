@@ -213,6 +213,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"tanzu_supervisor_count": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_count' $jsonFile)'"}')
     fi
     if [[ $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq '.backend') == "true" ]] ; then
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"backend": true}')
       net_app_first_list=$(echo ${net_app_first_list} | jq '. += [
                                                                     {
                                                                       "cidr": "'${cidr}'",
