@@ -33,7 +33,8 @@ else
   exit 255
 fi
 #
-json_api_output="/home/ubuntu/avi/response_body.json"#
+json_api_output="/home/ubuntu/avi/response_body.json"
+#
 while true
 do
   /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
@@ -55,7 +56,7 @@ do
     vcpus_per_se=$(jq -c -r '.vcpus_per_se' ${json_api_output})
     memory_per_se=$(jq -c -r '.memory_per_se' ${json_api_output})
     disk_per_se=$(jq -c -r '.disk_per_se' ${json_api_output})
-    results_json=$(jq '. += {"date": "'$(date)'", "vs_name": "'${vs_name}'", "vcpu_per_se": "'${vcpus_per_se}'", "memory_per_se": "'${memory_per_se}'MB", "disk_per_se": "'${disk_per_se}'G"}')
+    results_json=$(echo ${results_json} | jq '. += {"date": "'$(date)'", "vs_name": "'${vs_name}'", "vcpu_per_se": "'${vcpus_per_se}'", "memory_per_se": "'${memory_per_se}'MB", "disk_per_se": "'${disk_per_se}'G"}')
     break
   fi
 done
