@@ -44,7 +44,7 @@ do
                                        "" \
                                        "${json_api_output}"
   if [[ $(jq -c -r '.results | length' ${json_api_output}) -gt 0 && $(jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length' ${json_api_output}) -eq 1 ]]; then
-    if $(jq -c -r --arg arg "${vs_name}" '.results[] | select(.name == $arg)' | jq -e 'has("waf_policy_ref")' ${json_api_output}) ; then
+    if $(jq -c -r --arg arg "${vs_name}" '.results[] | select(.name == $arg)' ${json_api_output} | jq -e 'has("waf_policy_ref")') ; then
       echo "waf is enabled"
       results_json=$(echo ${results_json} | jq '. += {"date": "'$(date)'", "vs_name": "'${vs_name}'", "waf": "Enabled"}')
     else
