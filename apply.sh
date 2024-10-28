@@ -183,6 +183,12 @@ if [[ ${operation} == "apply" ]] ; then
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/html/* /var/www/html/" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chmod 644 /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl start avi-lbaas" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
           echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break

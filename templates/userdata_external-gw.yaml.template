@@ -316,12 +316,6 @@ write_files:
           echo "{\"jsonFile\": \"/home/ubuntu/json/${jsonFile}\"}" | tee /home/ubuntu/lbaas.json
           chown ubuntu /home/ubuntu/lbaas.json
           chgrp ubuntu /home/ubuntu/lbaas.json
-          mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service
-          chown root /etc/systemd/system/avi-lbaas.service
-          chgrp root /etc/systemd/system/avi-lbaas.service
-          chmod 644 /etc/systemd/system/avi-lbaas.service
-          systemctl start avi-lbaas
-          systemctl enable avi-lbaas
           #
           # nginx config
           #
