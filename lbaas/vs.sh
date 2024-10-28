@@ -46,12 +46,12 @@ if [[ ${operation} == "apply" ]] ; then
     app_profile=$(jq -c -r .app_profile $jsonFile)
     if [[ ${app_profile} != "public" && ${app_profile} != "private" ]] ; then echo "ERROR: Unsupported app_profile" ; exit 255 ; fi
     if [[ ${app_profile} == "public" ]] ; then
-      avi_vip_cidr=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == "true").cidr')
-      tier1_name=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == "true").tier1')
+      avi_vip_cidr=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == true).cidr_vip')
+      tier1_name=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == true).tier1')
     fi
     if [[ ${app_profile} == "private" ]] ; then
-      avi_vip_cidr=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == "true").cidr')
-      tier1_name=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == "true").tier1')
+      avi_vip_cidr=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).cidr_vip')
+      tier1_name=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).tier1')
     fi
     json_data='
     {
@@ -64,17 +64,17 @@ if [[ ${operation} == "apply" ]] ; then
                                          "POST" \
                                          "${avi_version}" \
                                          "${lbaas_tenant}" \
-                                         "" \
+                                         "${json_data}" \
                                          "${json_api_output}"
-    tier1_id=$(echo $response_body | jq -c -r --arg arg ${tier1_name} '.resource.nsxt_tier1routers[] | select(.name == $arg).id' )
+    tier1_id=$(jq -c -r --arg arg ${tier1_name} '.resource.nsxt_tier1routers[] | select(.name == $arg).id' ${json_api_output})
     /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
                                          "api/nsxt/groups?page_size=-1" \
                                          "POST" \
                                          "${avi_version}" \
                                          "${lbaas_tenant}" \
-                                         "" \
+                                         "${json_data}" \
                                          "${json_api_output}"
-    group_id=$(echo $response_body | jq -c -r --arg arg ${vs_name} '.resource.nsxt_groups[] | select(.name == $arg).id' )
+    group_id=$(jq -c -r --arg arg ${vs_name} '.resource.nsxt_groups[] | select(.name == $arg).id' ${json_api_output})
     json_data='
     {
       "model_name": "VirtualService",
@@ -184,7 +184,7 @@ if [[ ${operation} == "destroy" ]] ; then
                                        "${lbaas_tenant}" \
                                        "" \
                                        "${json_api_output}"
-  if [[ $(echo $response_body | jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length') -eq 1 ]]; then
+  if [[ $(jq -c -r --arg arg "${vs_name}" '[.results[] | select(.name == $arg).name] | length' ${json_api_output}) -eq 1 ]]; then
     json_data='
     {
       "model_name": "VirtualService",

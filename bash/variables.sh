@@ -239,6 +239,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_private' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"lbaas_private": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_private' $jsonFile)'}')
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"cidr_vip": "'${cidr_vip_subnet}'"}')
       net_client_list=$(echo ${net_client_list} | jq '. += [
                                                              {
                                                                "cidr": "'${cidr}'",
@@ -258,6 +259,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lbaas_public' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"lbaas_public": '$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].lbaas_public' $jsonFile)'}')
+      segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"cidr_vip": "'${cidr_vip_subnet}'"}')
       net_client_list=$(echo ${net_client_list} | jq '. += [
                                                              {
                                                                "cidr": "'${cidr}'",
