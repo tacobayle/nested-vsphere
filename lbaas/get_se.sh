@@ -33,7 +33,8 @@ else
   exit 255
 fi
 #
-json_api_output="/home/ubuntu/avi/response_body.json"#
+json_api_output="/home/ubuntu/avi/response_body.json"
+#
 while true
 do
   /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
@@ -52,10 +53,10 @@ do
                                              "api/serviceengine/$(basename ${se_ref})" \
                                              "GET" \
                                              "${avi_version}" \
-                                             "${lbaas_tenant}" \
+                                             "admin" \
                                              "" \
                                              "${json_api_output}"
-	      results_json=$(jq '.se_list += [{"se_name": "'$(echo $response_body | jq -c -r '.name')'"}]' ${json_api_output})
+	      results_json=$(echo ${results_json} | jq '.se_list += [{"se_name": "'$(jq -c -r '.name' ${json_api_output})'"}]')
 	      echo $results_json | jq -c -r '.' > ${output_json_file}
       done
       break
