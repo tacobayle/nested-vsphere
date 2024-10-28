@@ -31,6 +31,6 @@ fi
 #
 if [[ ${operation} != "apply" && ${operation} != "destroy" ]] ; then echo "ERROR: Unsupported operation" ; exit 255 ; fi
 #
-/bin/bash /home/ubuntu/lbaas/backend.sh ${jsonFile} &
-/bin/bash /home/ubuntu/lbaas/nsx_group.sh ${jsonFile}
-/bin/bash /home/ubuntu/lbaas/vs.sh ${jsonFile}
+/bin/bash /home/ubuntu/lbaas/backend.sh ${jsonFile} > /home/ubuntu/lbaas/backend.log &
+/bin/bash /home/ubuntu/lbaas/nsx_group.sh ${jsonFile} > /home/ubuntu/lbaas/nsx_group.log
+/bin/bash /home/ubuntu/lbaas/vs.sh ${jsonFile} > /home/ubuntu/lbaas/vs.log
