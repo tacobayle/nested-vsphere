@@ -70,7 +70,7 @@ do
                                              "${json_api_output}"
         se_host=$(jq -c -r '.host' ${json_api_output})
         results_json=$(echo $results_json | jq '.se_list += [{"name": "'${se_name}'", "esxi_host": "'${se_host}'"}]')
-        echo $results_json | tee ${output_json_file} | jq .
+        echo $results_json | jq -c -r '.' > ${output_json_file}
       done
     fi
     break

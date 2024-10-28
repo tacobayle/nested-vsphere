@@ -80,7 +80,7 @@ do
       se_ip=$(jq -c -r --arg arg "${segment_name}" '.data_vnics[] | select(.network_name == $arg).vnic_networks[1].ip.ip_addr.addr' ${json_api_output})
       se_name=$(jq -c -r '.name' ${json_api_output})
       results_json=$(jq '.se_list += [{"name": "'${se_name}'", "ip": "'${se_ip}'"}]' ${json_api_output})
-      echo $results_json | tee ${output_json_file} | jq .
+      echo $results_json | jq -c -r '.' > ${output_json_file}
     done
     break
   else

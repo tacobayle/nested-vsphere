@@ -76,7 +76,7 @@ do
     echo "retrying..."
   else
     results_json=$(echo $results_json | jq '. += {"date": "'$(date)'", "vs_name": "'${vs_name}'", "vsvip": "'${ip_vip}'/32", "next_hops": '${next_hops}'}')
-    echo $results_json | tee ${output_json_file} | jq .
+    echo $results_json | jq -c -r '.' > ${output_json_file}
     break
   fi
   sleep 10

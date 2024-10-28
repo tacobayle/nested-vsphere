@@ -56,7 +56,7 @@ do
                                              "" \
                                              "${json_api_output}"
 	      results_json=$(jq '.se_list += [{"se_name": "'$(echo $response_body | jq -c -r '.name')'"}]' ${json_api_output})
-	      echo $results_json | tee ${output_json_file} | jq .
+	      echo $results_json | jq -c -r '.' > ${output_json_file}
       done
       break
     else

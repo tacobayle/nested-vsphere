@@ -56,7 +56,7 @@ do
 done
 
 #
-echo $results_json | tee ${output_json_file} | jq .
+echo $results_json | jq -c -r '.' > ${output_json_file}
 #
 rm -f ${jsonFile}
 rm -f ${jsonFile1}
