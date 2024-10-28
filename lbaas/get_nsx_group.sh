@@ -51,15 +51,16 @@ do
                    "policy/api/v1/infra/domains/default/groups/${vs_name}/members/virtual-machines" \
                    "${file_json_output}"
         vm_count=$(jq -c -r '.results | length' ${file_json_output})
+        file_json_output="/home/ubuntu/nsx/ip-addresses.json"
         /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                    "policy/api/v1/infra/domains/default/groups/${vs_name}/members/ip-addresses" \
                    "${file_json_output}"
         ip_count=$(jq -c -r '.results | length' ${file_json_output})
         vm_ips=$(jq -c -r '.results' ${file_json_output})
-        sleep 10
+        sleep 2
       done
       results_json=$(echo ${results_json} | jq '. += {"date": "'$(date)'", "vs_name": "'${vs_name}'", "vm_count": "'${vm_count}'", "vm_ips": '${vm_ips}'}')
-      echo $results_json | tee ${output_json_file} | jq .
+      echo ${results_json} | jq -c -r '.' > ${output_json_file}
       break
     else
       echo "NSX group ${vs_name} does not exist"
