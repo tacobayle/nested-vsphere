@@ -1057,7 +1057,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'blue-prod-Pool",
                          "tenant_ref": "prod",
                          "markers": [{"key": "app", "values": ["blue"]}],
-                         "se_group_ref": "'${se_group_ref}'",
+                         "se_group_ref": "Default-Group",
                          "services": [
                                        {
                                          "port": 80,
@@ -1129,7 +1129,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'green-prod-Pool",
                          "tenant_ref": "prod",
                          "markers": [{"key": "app", "values": ["green"]}],
-                         "se_group_ref": "'${se_group_ref}'",
+                         "se_group_ref": "Default-Group",
                          "services": [
                                        {
                                          "port": 80,
@@ -1201,7 +1201,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                          "pool_ref": "'${tier1_name}''${nsx_avi_basename}'orange-prod-Pool",
                          "tenant_ref": "prod",
                          "markers": [{"key": "app", "values": ["orange"]}],
-                         "se_group_ref": "'${se_group_ref}'",
+                         "se_group_ref": "Default-Group",
                          "services": [
                                        {
                                          "port": 80,
