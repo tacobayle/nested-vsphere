@@ -34,7 +34,8 @@ else
   exit 255
 fi
 #
-json_api_output="/home/ubuntu/avi/response_body.json"#
+json_api_output="/home/ubuntu/avi/response_body.json"
+#
 while true
 do
   /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
@@ -69,7 +70,7 @@ while true
 do
   file_json_output="/home/ubuntu/nsx/static-routes.json"
   /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-             "olicy/api/v1/infra/tier-1s/$(basename ${tier1_name})/static-routes" \
+             "policy/api/v1/infra/tier-1s/$(basename ${tier1_name})/static-routes" \
              "${file_json_output}"
   next_hops=$(jq -c -r --arg arg1 "${ip_vip}/32" '[.results[] | select(.network == $arg1) | .next_hops[].ip_address]' ${file_json_output})
   if [ -z "${next_hops}" ]; then
