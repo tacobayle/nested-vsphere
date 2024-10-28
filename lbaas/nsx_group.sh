@@ -33,7 +33,7 @@ if [[ ${operation} == "apply" ]] ; then
     /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                 "policy/api/v1/infra/domains/default/groups/${vs_name}" \
                 "PUT" \
-                "${json_data}"
+                "$(echo ${json_data} | jq -c -r .)"
   fi
 fi
 #

@@ -320,7 +320,7 @@ certificatemanagementprofile='[
                                       "is_dynamic": false,
                                       "is_sensitive": false,
                                       "name": "vault_path",
-                                      "value": "/v1/'${ip_gw}'/sign/'${vault_pki_intermediate_role_name}'"
+                                      "value": "/v1/'${vault_pki_intermediate_name}'/sign/'${vault_pki_intermediate_role_name}'"
                                     },
                                     {
                                       "is_dynamic": false,

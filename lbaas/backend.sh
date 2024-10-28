@@ -21,7 +21,7 @@ if [[ ${operation} == "apply" ]] ; then
   if [[ ${list} != "null" ]] ; then
     echo $list | jq -c -r .[] | while read item
     do
-      govc vm.destroy $item
+      govc vm.destroy $item > /dev/null 2>&1
     done
   fi
   list=$(govc find -json vm -name "${vs_name}*")
@@ -41,11 +41,11 @@ if [[ ${operation} == "apply" ]] ; then
     do
       list=$(govc find -json vm -name "unassigned*")
       if [[ ${list} != "null" && $(echo ${list} | jq -c -r '. | length') -gt 0 ]] ; then
-        govc vm.change -vm $(echo ${list} | jq -c -r .[0]) -c 2 -m 2048 -e="disk.enableUUID=1"
-        govc vm.disk.change -vm $(echo ${list} | jq -c -r .[0]) -disk.label "Hard disk 1" -size 10G
-        govc object.rename $(echo ${list} | jq -c -r .[0]) "${app_profile}-${vs_name}-${backend}"
-        govc vm.power -on=true "${app_profile}-${vs_name}-${backend}"
-        govc vm.network.change -vm "${app_profile}-${vs_name}-${backend}" -net ${lbaas_segment} ethernet-0
+        govc vm.change -vm $(echo ${list} | jq -c -r .[0]) -c 2 -m 2048 -e="disk.enableUUID=1" > /dev/null 2>&1
+        govc vm.disk.change -vm $(echo ${list} | jq -c -r .[0]) -disk.label "Hard disk 1" -size 10G > /dev/null 2>&1
+        govc object.rename $(echo ${list} | jq -c -r .[0]) "${app_profile}-${vs_name}-${backend}" > /dev/null 2>&1
+        govc vm.power -on=true "${app_profile}-${vs_name}-${backend}" > /dev/null 2>&1
+        govc vm.network.change -vm "${app_profile}-${vs_name}-${backend}" -net ${lbaas_segment} ethernet-0 > /dev/null 2>&1
       else
         #
         # Create VM
@@ -60,10 +60,10 @@ if [[ ${operation} == "apply" ]] ; then
             -e "s/\${password}/${GENERIC_PASSWORD}/" \
             -e "s@\${network_ref}@${lbaas_segment}@" \
             -e "s/\${vm_name}/${app_profile}-${vs_name}-${backend}/" /home/ubuntu/templates/options-ubuntu.json.template | tee /tmp/${vs_name}${backend}.json
-        govc library.deploy -options /tmp/${vs_name}${backend}.json /${content_library_name}/$(basename ${ubuntu_ova_url} .ova)
-        govc vm.change -vm "${app_profile}-${vs_name}-${backend}" -c 2 -m 2048 -e="disk.enableUUID=1"
-        govc vm.disk.change -vm "${app_profile}-${vs_name}-${backend}" -disk.label "Hard disk 1" -size 10G
-        govc vm.power -on=true "${app_profile}-${vs_name}-${backend}"
+        govc library.deploy -options /tmp/${vs_name}${backend}.json /${content_library_name}/$(basename ${ubuntu_ova_url} .ova) > /dev/null 2>&1
+        govc vm.change -vm "${app_profile}-${vs_name}-${backend}" -c 2 -m 2048 -e="disk.enableUUID=1" > /dev/null 2>&1
+        govc vm.disk.change -vm "${app_profile}-${vs_name}-${backend}" -disk.label "Hard disk 1" -size 10G > /dev/null 2>&1
+        govc vm.power -on=true "${app_profile}-${vs_name}-${backend}" > /dev/null 2>&1
       fi
     done
   else
@@ -77,7 +77,7 @@ if [[ ${operation} == "destroy" ]] ; then
   if [[ ${list} != "null" ]] ; then
     echo $list | jq -c -r .[] | while read item
     do
-      govc vm.destroy ${item}
+      govc vm.destroy ${item} > /dev/null 2>&1
     done
   else
     echo "no backend VM ${app_profile}-${vs_name}* to be deleted"

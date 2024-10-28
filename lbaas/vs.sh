@@ -64,7 +64,7 @@ if [[ ${operation} == "apply" ]] ; then
                                          "POST" \
                                          "${avi_version}" \
                                          "${lbaas_tenant}" \
-                                         "${json_data}" \
+                                         "$(echo ${json_data} | jq -c -r .)" \
                                          "${json_api_output}"
     tier1_id=$(jq -c -r --arg arg ${tier1_name} '.resource.nsxt_tier1routers[] | select(.name == $arg).id' ${json_api_output})
     /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
@@ -72,7 +72,7 @@ if [[ ${operation} == "apply" ]] ; then
                                          "POST" \
                                          "${avi_version}" \
                                          "${lbaas_tenant}" \
-                                         "${json_data}" \
+                                         "$(echo ${json_data} | jq -c -r .)" \
                                          "${json_api_output}"
     group_id=$(jq -c -r --arg arg ${vs_name} '.resource.nsxt_groups[] | select(.name == $arg).id' ${json_api_output})
     json_data='
@@ -171,7 +171,7 @@ if [[ ${operation} == "apply" ]] ; then
                                          "POST" \
                                          "${avi_version}" \
                                          "${lbaas_tenant}" \
-                                         "${json_data}" \
+                                         "$(echo ${json_data} | jq -c -r .)" \
                                          "${json_api_output}"
   fi
 fi
@@ -197,7 +197,7 @@ if [[ ${operation} == "destroy" ]] ; then
                                          "DELETE" \
                                          "${avi_version}" \
                                          "${lbaas_tenant}" \
-                                         "${json_data}" \
+                                         "$(echo ${json_data} | jq -c -r .)" \
                                          "${json_api_output}"
   else
     echo "no VS ${vs_name}* to be deleted"

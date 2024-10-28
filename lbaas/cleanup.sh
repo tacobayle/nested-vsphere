@@ -40,11 +40,11 @@ do
       }'
       echo "delete Avi vs name ${vs_name}"
       /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
-                                     "api/virtualservice?page_size=-1" \
+                                     "api/macro" \
                                      "DELETE" \
                                      "${avi_version}" \
                                      "${lbaas_tenant}" \
-                                     "${json_data}" \
+                                     "$(echo ${json_data} | jq -c -r .)" \
                                      "${json_api_output}"
       # NSX
       /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
@@ -57,7 +57,7 @@ do
         echo $list | jq -c -r .[] | while read item
         do
            echo "delete vSphere VM name ${item}"
-          govc vm.destroy ${item}
+          govc vm.destroy ${item} > /dev/null 2>&1
         done
       fi
     done
@@ -79,7 +79,7 @@ do
           -e "s/\${password}/${GENERIC_PASSWORD}/" \
           -e "s@\${network_ref}@${lbaas_segment}@" \
           -e "s/\${vm_name}/unassigned-${backend}/" /home/ubuntu/templates/options-ubuntu.json.template | tee /tmp/${backend}.json
-      govc library.deploy -options /tmp/${backend}.json /${content_library_name}/$(basename ${ubuntu_ova_url} .ova)
+      govc library.deploy -options /tmp/${backend}.json /${content_library_name}/$(basename ${ubuntu_ova_url} .ova) > /dev/null 2>&1
     fi
   else
     echo "waiting for on-going stuff"
