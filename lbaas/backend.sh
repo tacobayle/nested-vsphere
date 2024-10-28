@@ -43,27 +43,27 @@ if [[ ${operation} == "apply" ]] ; then
       if [[ ${list} != "null" && $(echo ${list} | jq -c -r '. | length') -gt 0 ]] ; then
         govc vm.change -vm $(echo ${list} | jq -c -r .[0]) -c 2 -m 2048 -e="disk.enableUUID=1" > /dev/null 2>&1
         govc vm.disk.change -vm $(echo ${list} | jq -c -r .[0]) -disk.label "Hard disk 1" -size 10G > /dev/null 2>&1
-        govc object.rename $(echo ${list} | jq -c -r .[0]) "${app_profile}-${vs_name}-${backend}" > /dev/null 2>&1
-        govc vm.power -on=true "${app_profile}-${vs_name}-${backend}" > /dev/null 2>&1
-        govc vm.network.change -vm "${app_profile}-${vs_name}-${backend}" -net ${lbaas_segment} ethernet-0 > /dev/null 2>&1
+        govc object.rename $(echo ${list} | jq -c -r .[0]) "${vs_name}-${backend}" > /dev/null 2>&1
+        govc vm.power -on=true "${vs_name}-${backend}" > /dev/null 2>&1
+        govc vm.network.change -vm "${vs_name}-${backend}" -net ${lbaas_segment} ethernet-0 > /dev/null 2>&1
       else
         #
         # Create VM
         #
         sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
-            -e "s/\${hostname}/${app_profile}-${vs_name}-${backend}/" \
+            -e "s/\${hostname}/${vs_name}-${backend}/" \
             -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
-            -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/userdata_lbaas_backend.yaml.template | tee /tmp/${app_profile}-${vs_name}-${backend} > /dev/null
+            -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/userdata_lbaas_backend.yaml.template | tee /tmp/${vs_name}-${backend} > /dev/null
         #
         sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
-            -e "s@\${base64_userdata}@$(base64 /tmp/${app_profile}-${vs_name}-${backend} -w 0)@" \
+            -e "s@\${base64_userdata}@$(base64 /tmp/${vs_name}-${backend} -w 0)@" \
             -e "s/\${password}/${GENERIC_PASSWORD}/" \
             -e "s@\${network_ref}@${lbaas_segment}@" \
-            -e "s/\${vm_name}/${app_profile}-${vs_name}-${backend}/" /home/ubuntu/templates/options-ubuntu.json.template | tee /tmp/${vs_name}${backend}.json
+            -e "s/\${vm_name}/${vs_name}-${backend}/" /home/ubuntu/templates/options-ubuntu.json.template | tee /tmp/${vs_name}${backend}.json
         govc library.deploy -options /tmp/${vs_name}${backend}.json /${content_library_name}/$(basename ${ubuntu_ova_url} .ova) > /dev/null 2>&1
-        govc vm.change -vm "${app_profile}-${vs_name}-${backend}" -c 2 -m 2048 -e="disk.enableUUID=1" > /dev/null 2>&1
-        govc vm.disk.change -vm "${app_profile}-${vs_name}-${backend}" -disk.label "Hard disk 1" -size 10G > /dev/null 2>&1
-        govc vm.power -on=true "${app_profile}-${vs_name}-${backend}" > /dev/null 2>&1
+        govc vm.change -vm "${vs_name}-${backend}" -c 2 -m 2048 -e="disk.enableUUID=1" > /dev/null 2>&1
+        govc vm.disk.change -vm "${vs_name}-${backend}" -disk.label "Hard disk 1" -size 10G > /dev/null 2>&1
+        govc vm.power -on=true "${vs_name}-${backend}" > /dev/null 2>&1
       fi
     done
   else
@@ -73,13 +73,13 @@ fi
 #
 if [[ ${operation} == "destroy" ]] ; then
   app_profile=$(jq -c -r .app_profile $jsonFile)
-  list=$(govc find -json vm -name "${app_profile}-${vs_name}*")
+  list=$(govc find -json vm -name "${vs_name}*")
   if [[ ${list} != "null" ]] ; then
     echo $list | jq -c -r .[] | while read item
     do
       govc vm.destroy ${item} > /dev/null 2>&1
     done
   else
-    echo "no backend VM ${app_profile}-${vs_name}* to be deleted"
+    echo "no backend VM ${vs_name}* to be deleted"
   fi
 fi

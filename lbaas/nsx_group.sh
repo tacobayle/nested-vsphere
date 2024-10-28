@@ -26,7 +26,7 @@ if [[ ${operation} == "apply" ]] ; then
         "member_type" : "VirtualMachine",
         "key" : "Name",
         "operator" : "STARTSWITH",
-        "value" : "'${app_profile}-${vs_name}'",
+        "value" : "'${vs_name}'",
         "resource_type" : "Condition"
       } ]
     }'
