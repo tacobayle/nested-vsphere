@@ -52,7 +52,7 @@ do
                                          "${lbaas_tenant}" \
                                          "" \
                                          "${json_api_output}"
-    fqdn=$(jq -c -r '.dns_info[0].fqdn' ${json_api_output}
+    fqdn=$(jq -c -r '.dns_info[0].fqdn' ${json_api_output})
     if [ -z "${fqdn}" ]; then
       echo "retrying..."
     else
