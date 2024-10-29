@@ -1,6 +1,6 @@
 {
   "Deployment": "medium",
-  "DiskProvisioning": "flat",
+  "DiskProvisioning": "thin",
   "IPAllocationPolicy": "dhcpPolicy",
   "IPProtocol": "IPv4",
   "PropertyMapping": [

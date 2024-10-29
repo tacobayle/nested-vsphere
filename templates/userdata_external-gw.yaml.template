@@ -105,6 +105,16 @@ write_files:
               echo "            - to: $(echo $cidr_vip | jq -c -r .cidr_vip)" | tee -a /etc/netplan/50-cloud-init.yaml
               echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
             done
+            echo "            - to: ${supervisor_cluster_ingress_cidr}" | tee -a /etc/netplan/50-cloud-init.yaml
+            echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
+            tanzu_namespaces='${tanzu_namespaces}'
+            echo $tanzu_namespaces | jq -c -r .[] | while read ns
+            do
+              if $(echo $ns | jq -e '.ingress_cidr' > /dev/null) ; then
+                echo "            - to: $(echo $ns | jq -c -r .ingress_cidr)" | tee -a /etc/netplan/50-cloud-init.yaml
+                echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
+              fi
+            done
           fi
         fi
         sudo iptables -t nat -A POSTROUTING -s `echo $net | jq -c -r .cidr` -o $ifaceFirstName -j MASQUERADE

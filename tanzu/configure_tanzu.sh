@@ -137,9 +137,9 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
             "${supervisor_cluster_size}" \
             "$(echo ${supervisor_cluster_service_cidr} | cut -d"/" -f1)" \
             "$(echo ${supervisor_cluster_service_cidr} | cut -d"/" -f2)" \
-            "$(ip_netmask_by_prefix $(echo ${management_tanzu_cidr} | cut -d"/" -f2) "   ++++++")" \
+            "255.255.255.0" \
             "${management_tanzu_supervisor_starting_ip}" \
-            "$(nextip $(echo ${management_tanzu_cidr} | cut -d"/" -f1 ))" \
+            "$(echo ${management_tanzu_gw} | cut -d"/" -f1 )" \
             "${management_tanzu_supervisor_count}" \
             "${tanzu_supervisor_dvportgroup}" \
             "${nsx_vds_uuid}" \

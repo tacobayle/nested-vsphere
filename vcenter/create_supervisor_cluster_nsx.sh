@@ -94,4 +94,4 @@ json_data='
   }
 }'
 echo "${json_data}"
-vcenter_api 6 10 "POST" $token "${json_data}" $api_host "api/vcenter/namespace-management/clusters/${cluster_id}?action=enable"
+vcenter_api 2 2 "POST" $token "${json_data}" $api_host "api/vcenter/namespace-management/clusters/${cluster_id}?action=enable"
