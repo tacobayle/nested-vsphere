@@ -114,7 +114,16 @@ write_files:
                 echo "            - to: $(echo $ns | jq -c -r .ingress_cidr)" | tee -a /etc/netplan/50-cloud-init.yaml
                 echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
               fi
+              if $(echo $ns | jq -e '.namespace_cidr' > /dev/null) ; then
+                echo "            - to: $(echo $ns | jq -c -r .namespace_cidr)" | tee -a /etc/netplan/50-cloud-init.yaml
+                echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
+                sudo iptables -t nat -A POSTROUTING -s $(echo $ns | jq -c -r .namespace_cidr) -o $ifaceFirstName -j MASQUERADE
+              fi
             done
+            supervisor_cluster_namespace_cidr='${supervisor_cluster_namespace_cidr}'
+            echo "            - to: ${supervisor_cluster_namespace_cidr}" | tee -a /etc/netplan/50-cloud-init.yaml
+            echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
+            sudo iptables -t nat -A POSTROUTING -s ${supervisor_cluster_namespace_cidr} -o $ifaceFirstName -j MASQUERADE
           fi
         fi
         sudo iptables -t nat -A POSTROUTING -s `echo $net | jq -c -r .cidr` -o $ifaceFirstName -j MASQUERADE

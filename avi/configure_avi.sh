@@ -174,3 +174,9 @@ if [[ ${kind} == "vsphere-avi" ]]; then
     done
   fi
 fi
+#
+# lbaas cleanup
+#
+if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  /home/ubuntu/lbaas/cleanup.sh
+fi

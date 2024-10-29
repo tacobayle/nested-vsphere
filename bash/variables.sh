@@ -1253,6 +1253,8 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   workload_starting_ip="${cidr_app_three_octets}.${workload_starting_ip_last_octet}"
   ip_gw_tanzu=$(jq -c -r --arg arg "tanzu" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   ip_gw_backend=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
+  supervisor_cluster_namespace_cidr="1.1.1.0/24"
+  supervisor_cluster_ingress_cidr="1.1.1.0/24"
 fi
 if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   management_tanzu_segment=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).display_name' ${segment_overlay_file})
@@ -1260,9 +1262,9 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   management_tanzu_gw=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).gateway_address' ${segment_overlay_file})
   management_tanzu_supervisor_starting_ip=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_starting_ip' ${segment_overlay_file})
   management_tanzu_supervisor_count=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_count' ${segment_overlay_file})
-  supervisor_cluster_namespace_cidr=$(jq -c -r '.tanzu.supervisor_cluster.namespace_cidr' $jsonFile)
   supervisor_cluster_namespace_tier0=$(jq -c -r '.tanzu.supervisor_cluster.namespace_tier0' $jsonFile)
   supervisor_cluster_prefix_per_namespace=$(jq -c -r '.tanzu.supervisor_cluster.prefix_per_namespace' $jsonFile)
+  supervisor_cluster_namespace_cidr=$(jq -c -r '.tanzu.supervisor_cluster.namespace_cidr' $jsonFile)
   supervisor_cluster_ingress_cidr=$(jq -c -r '.tanzu.supervisor_cluster.ingress_cidr' $jsonFile)
 fi
 supervisor_cluster_size=$(jq -c -r '.tanzu.supervisor_cluster.size' $jsonFile)

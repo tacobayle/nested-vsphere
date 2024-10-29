@@ -16,7 +16,7 @@ token=$(/bin/bash /home/ubuntu/vcenter/create_vcenter_api_session.sh "$vsphere_n
 # Retrieve Network details and dvportgroup(s)
 #
 vcenter_api 6 10 "GET" $token '' $api_host "api/vcenter/network"
-network_id=$(echo $response_body | jq -r --arg pg "${network_name}" '.[] | select(.name == $pg) | .network')
+network_id=$(echo $response_body | jq -r --arg pg "${network_name}" '.[] | select(.name == $pg).network')
 #echo $tanzu_supervisor_dvportgroup
 echo "   +++ testing if variable network_id is not empty" ; if [ -z "$network_id" ] ; then exit 255 ; fi
 echo '{"network_id":"'${network_id}'"}' | jq -c -r '.' > ${json_output_file}
