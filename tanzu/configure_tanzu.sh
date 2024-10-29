@@ -8,11 +8,17 @@ output_file="/home/ubuntu/tanzu/output.txt"
 # registering Avi in the NSX config
 #
 if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-  /bin/bash /home/ubuntu/nsx/registering_avi_controller.sh \
-              "${ip_nsx}" \
-              "${GENERIC_PASSWORD}" \
-              "${GENERIC_PASSWORD}" \
-              "${ip_avi}"
+  json_data='
+  {
+    "owned_by": "LCM",
+    "cluster_ip": "'${ip_avi}'",
+    "infra_admin_username" : "admin",
+    "infra_admin_password" : "'${GENERIC_PASSWORD}'"
+  }'
+  /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/alb-onboarding-workflow" \
+              "PUT" \
+              $(echo ${json_data} | jq -c -r .)
 fi
 #
 # Create Content Library for tanzu
@@ -57,7 +63,7 @@ retrieve_network_id_json_output="/home/ubuntu/tanzu/retrieve_network_id.json"
   "${api_host}" \
   "${ssoDomain}" \
   "${GENERIC_PASSWORD}" \
-  "${supervisor_network}" \
+  "${management_tanzu_segment}" \
   "${retrieve_network_id_json_output}"
 tanzu_supervisor_dvportgroup=$(jq -c -r .network_id ${retrieve_network_id_json_output})
 #
@@ -88,9 +94,9 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   /bin/bash /home/ubuntu/vcenter/create_supervisor_cluster_vds.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
     "${ip_gw}" \
     "${storage_policy_id}" \
-    "$(jq -r .tanzu.supervisor_cluster.service_cidr $jsonFile | cut -d"/" -f1)" \
-    "$(jq -r .tanzu.supervisor_cluster.service_cidr $jsonFile | cut -d"/" -f2)" \
-    "$(jq -r .tanzu.supervisor_cluster.size $jsonFile)" \
+    "$(echo ${supervisor_cluster_service_cidr} | cut -d"/" -f1)" \
+    "$(echo ${supervisor_cluster_service_cidr} | cut -d"/" -f2)" \
+    "${supervisor_cluster_size}" \
     "255.255.255.0" \
     "${supervisor_starting_ip}" \
     "${ip_gw_tanzu}" \
@@ -115,36 +121,35 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   #
   # retrieve edge cluster id
   #
-  retrieve_network_id_json_output="/home/ubuntu/tanzu/retrieve_namespace_edge_cluster_id.json"
-  /bin/bash /home/ubuntu/nsx/get_edge_cluster.sh \
-           "${ip_nsx}" \
-           "${GENERIC_PASSWORD}" \
-           "$(jq -r .nsx.config.edge_clusters[0].display_name $jsonFile)" \
-           "${retrieve_network_id_json_output}"
-  namespace_edge_cluster_id=$(jq -c -r .namespace_edge_cluster_id ${retrieve_network_id_json_output})
+  file_json_output="/home/ubuntu/tanzu/retrieve_namespace_edge_cluster_id.json"
+  /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "api/v1/edge-clusters" \
+              "${file_json_output}"
+  namespace_edge_cluster_id=$(jq -c -r --arg arg1 "$(echo ${edge_clusters} | jq -r -c .[0].display_name)" '.results[] | select(.display_name == $arg1).id' ${file_json_output})
   #
   # create supervisor cluster
   #
+  nsx_vds_uuid=$(jq -c -r '.[] | select( .name == "uuid").val' /home/ubuntu/vcenter/$(jq -c -r .vds_switches[0].name $jsonFile).json)
   /bin/bash /home/ubuntu/vcenter/create_supervisor_cluster_nsx.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
             "${content_library_id}" \
             "${storage_policy_id}" \
             "${ip_gw}" \
-            "$(jq -r .tanzu.supervisor_cluster.size $jsonFile)" \
-            "$(jq -r .tanzu.supervisor_cluster.service_cidr $jsonFile | cut -d"/" -f1)" \
-            "$(jq -r .tanzu.supervisor_cluster.service_cidr $jsonFile | cut -d"/" -f2)" \
+            "${supervisor_cluster_size}" \
+            "$(echo ${supervisor_cluster_service_cidr} | cut -d"/" -f1)" \
+            "$(echo ${supervisor_cluster_service_cidr} | cut -d"/" -f2)" \
             "$(ip_netmask_by_prefix $(echo ${management_tanzu_cidr} | cut -d"/" -f2) "   ++++++")" \
             "${management_tanzu_supervisor_starting_ip}" \
             "$(nextip $(echo ${management_tanzu_cidr} | cut -d"/" -f1 ))" \
             "${management_tanzu_supervisor_count}" \
             "${tanzu_supervisor_dvportgroup}" \
-            "$(jq -c -r .vds_network_nsx_overlay_id /root/vds_network_nsx_overlay_id.json)" \
-            "$(jq -r .tanzu.supervisor_cluster.namespace_cidr $jsonFile | cut -d"/" -f1)" \
-            "$(jq -r .tanzu.supervisor_cluster.namespace_cidr $jsonFile | cut -d"/" -f2)" \
-            "$(jq -r .tanzu.supervisor_cluster.namespace_tier0 $jsonFile)" \
+            "${nsx_vds_uuid}" \
+            "$(echo ${supervisor_cluster_namespace_cidr} | cut -d"/" -f1)" \
+            "$(echo ${supervisor_cluster_namespace_cidr} | cut -d"/" -f2)" \
+            "${supervisor_cluster_namespace_tier0}" \
             "${namespace_edge_cluster_id}" \
-            "$(jq -r .tanzu.supervisor_cluster.prefix_per_namespace $jsonFile)" \
-            "$(jq -r .tanzu.supervisor_cluster.ingress_cidr $jsonFile | cut -d"/" -f1)" \
-            "$(jq -r .tanzu.supervisor_cluster.ingress_cidr $jsonFile | cut -d"/" -f2)" \
+            "${supervisor_cluster_prefix_per_namespace}" \
+            "$(echo ${supervisor_cluster_ingress_cidr} | cut -d"/" -f1)" \
+            "$(echo ${supervisor_cluster_ingress_cidr} | cut -d"/" -f2)" \
             "${cluster_id}"
 fi
 #

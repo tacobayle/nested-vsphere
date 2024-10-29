@@ -1061,7 +1061,11 @@
     "cert": "tanzu-cert",
     "supervisor_cluster": {
       "size": "TINY",
-      "service_cidr": "10.96.0.0/23"
+      "service_cidr": "10.96.0.0/23",
+      "namespace_cidr": "100.100.64.0/23",
+      "namespace_tier0": "tier0-01",
+      "prefix_per_namespace": "27",
+      "ingress_cidr": "100.100.133.0/24"
     },
     "content_library": {
       "subscription_url": "https://wp-content.vmware.com/v2/latest/lib.json",
