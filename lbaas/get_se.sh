@@ -1,7 +1,5 @@
 #!/bin/bash
 #
-source /home/ubuntu/avi/alb_api.sh
-#
 jsonFile1="${1}"
 output_json_file="${2}"
 results_json="{}"
@@ -24,7 +22,7 @@ else
 fi
 #
 jq -s '.[0] * .[1]' ${jsonFile1} ${jsonFile2} | tee ${jsonFile}
-source /home/ubuntu/bash/variables.sh
+source /home/ubuntu/bash/lbaas.sh
 #
 if $(jq -e '. | has("vs_name")' $jsonFile) ; then
   vs_name=$(jq -c -r .vs_name $jsonFile)

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 jsonFile=$(jq -c -r '.jsonFile' /home/ubuntu/lbaas.json)
-source /home/ubuntu/bash/variables.sh
+source /home/ubuntu/bash/lbaas.sh
 output_json_file="${1}"
 #
 IFS=$'\n'
