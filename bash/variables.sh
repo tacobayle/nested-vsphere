@@ -395,6 +395,7 @@ done
 users=$(jq -c -r '.users' $jsonFile)
 avi_subdomain=$(jq -c -r '.avi.subdomain' $jsonFile)
 avi_config_repo=$(jq -c -r '.avi.config_repo' $jsonFile)
+helm_url=$(jq -c -r '.avi.helm_url' $jsonFile)
 avi_content_library_name=$(jq -c -r '.avi_content_library_name' $jsonFile)
 avi_ipam_first=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f2)

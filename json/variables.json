@@ -497,6 +497,7 @@
     "ipam_pool": "100-149",
     "ips_se_lsc": [151, 152],
     "config_repo": "https://github.com/tacobayle/ansibleAviConfig",
+    "helm_url": "oci://projects.registry.vmware.com/ako/helm-charts/ako",
     "ipam_pool_lsc": "160-179",
     "client": {
       "ips": [11]

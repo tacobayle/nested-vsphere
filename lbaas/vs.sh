@@ -3,7 +3,6 @@
 source /home/ubuntu/bash/functions.sh
 jsonFile="${1}"
 source /home/ubuntu/bash/variables.sh
-source /home/ubuntu/avi/alb_api.sh
 #
 #
 operation=$(jq -c -r .operation $jsonFile)

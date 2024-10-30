@@ -183,6 +183,7 @@ if [[ ${operation} == "apply" ]] ; then
             scp -o StrictHostKeyChecking=no -r /nested-vsphere/${folder} ubuntu@${ip_gw}:/home/ubuntu
           done
           scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
+          # lbaas config.
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/html/* /var/www/html/" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
@@ -192,6 +193,9 @@ if [[ ${operation} == "apply" ]] ; then
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chmod 644 /etc/systemd/system/avi-lbaas.service" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl start avi-lbaas" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
+          # yaml domain update
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_replace_avi_domain.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+          #
           echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
           break
@@ -351,13 +355,15 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
-  if [[ ${kind} == "vsphere-avi" && ${configure_tanzu_supervisor} == "true" ]]; then
-    echo '------------------------------------------------------------' >> ${log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-    echo "Configuration of Tanzu - This should take about 45 minutes" >> ${log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+    if [[ ${configure_tanzu_supervisor} == "true" ]]; then
+      echo '------------------------------------------------------------' >> ${log_file} 2>&1
+      echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+      echo "Configuration of Tanzu - This should take about 45 minutes" >> ${log_file} 2>&1
+      echo "running the following command from the gw: /home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+      echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+    fi
   fi
   #
 fi

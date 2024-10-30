@@ -9,6 +9,8 @@ source /home/ubuntu/bash/variables.sh
 sed -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
     -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
     -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh"
+chmod u+x /home/ubuntu/k8s/k8s-config.sh
+cp /home/ubuntu/k8s/k8s-config.sh /home/ubuntu/tkc/k8s-config.sh
 #
 # ako values templating
 #
