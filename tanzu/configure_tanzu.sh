@@ -184,8 +184,8 @@ if [[ ${configure_tanzu_supervisor} == "true" ]] ; then
   #
   sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
       -e "s/\${sso_domain_name}/${ssoDomain}/" \
-      -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" /home/ubuntu/templates/tanzu_auth_supervisor.sh.template | tee /home/ubuntu/tanzu/tanzu_auth_supervisor.sh > /dev/null
-  chmod u+x /home/ubuntu/tanzu/tanzu_auth_supervisor.sh
+      -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" /home/ubuntu/templates/tanzu_auth_supervisor.sh.template | tee /home/ubuntu/tanzu/auth_supervisor.sh > /dev/null
+  chmod u+x /home/ubuntu/tanzu/auth_supervisor.sh
 fi
 #
 # Namespace creation
@@ -256,9 +256,9 @@ if [[ ${configure_tanzu_supervisor} == "true" && ${configure_tanzu_workload} == 
         -e "s/\${sso_domain_name}/${ssoDomain}/" \
         -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
         -e "s/\${namespace_ref}/${namespace}/" \
-        -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tanzu_auth_tkc.sh.template | tee /home/ubuntu/tkc/tanzu_auth_${tkc_name}.sh > /dev/null
-    chmod u+x /home/ubuntu/tkc/tanzu_auth_${tkc_name}.sh
-    # bash create exec
+        -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tanzu_auth_tkc.sh.template | tee /home/ubuntu/tkc/auth_${tkc_name}.sh > /dev/null
+    chmod u+x /home/ubuntu/tkc/auth_${tkc_name}.sh
+    # bash create tkc exec
     /bin/bash /home/ubuntu/tkc/${tkc_name}_create.sh
     # ako values templating
     serviceEngineGroupName="Default-Group"
