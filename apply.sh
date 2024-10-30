@@ -88,6 +88,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${segments_overlay}@${segments_overlay}@" \
         -e "s@\${supervisor_cluster_ingress_cidr}@${supervisor_cluster_ingress_cidr}@" \
         -e "s@\${supervisor_cluster_namespace_cidr}@${supervisor_cluster_namespace_cidr}@" \
+        -e "s@\${tanzu_namespaces}@${tanzu_namespaces}@" \
         -e "s@\${cidr_nsx_external_three_octets}@${cidr_nsx_external_three_octets}@" \
         -e "s@\${tier0_vip_starting_ip}@${tier0_vip_starting_ip}@" \
         -e "s/\${forwarders_bind}/${forwarders_bind}/" \
