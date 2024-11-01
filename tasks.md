@@ -7,3 +7,6 @@
 
 done:
 - create a readonly shell user in the external-gw
+- create multiple ns in k8s
+
+validated:

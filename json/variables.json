@@ -1045,6 +1045,20 @@
   "k8s_node_memory": 8192,
   "k8s_node_disk": "15G",
   "k8s_apt_packages": ["jq"],
+  "k8s_namespaces": [
+    {
+      "name": "default"
+    },
+    {
+      "name": "avi-system"
+    },
+    {
+      "name": "production"
+    },
+    {
+      "name": "staging"
+    }
+  ],
   "docker_version": "5:24.0.2-1~ubuntu.20.04~focal",
   "pod_cidr": "192.168.0.0/16",
   "app_apt_packages": ["docker.io", "apache2", "jq"],

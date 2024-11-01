@@ -117,6 +117,7 @@ k8s_node_cpu=$(jq -c -r '.k8s_node_cpu' $jsonFile)
 k8s_node_memory=$(jq -c -r '.k8s_node_memory' $jsonFile)
 k8s_node_disk=$(jq -c -r '.k8s_node_disk' $jsonFile)
 k8s_apt_packages=$(jq -c -r '.k8s_apt_packages' $jsonFile)
+k8s_namespaces=$(jq -c -r '.k8s_namespaces' $jsonFile)
 docker_version=$(jq -c -r '.docker_version' $jsonFile)
 pod_cidr=$(jq -c -r '.pod_cidr' $jsonFile)
 #

@@ -1,9 +1,18 @@
 #!/bin/bash
 #
-/home/ubuntu/bin/kubectl create secret docker-registry docker --docker-server=docker.io --docker-username=${docker_registry_username} --docker-password=${docker_registry_password} --docker-email=${docker_registry_email}
-/home/ubuntu/bin/kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"docker\"}]}"
-/home/ubuntu/bin/kubectl create ns avi-system
-/home/ubuntu/bin/kubectl create secret docker-registry docker --docker-server=docker.io --docker-username=${docker_registry_username} --docker-password=${docker_registry_password} --docker-email=${docker_registry_email} -n avi-system
-/home/ubuntu/bin/kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"docker\"}]}" -n avi-system
-/home/ubuntu/bin/kubectl label --overwrite ns avi-system pod-security.kubernetes.io/enforce=privileged
-/home/ubuntu/bin/kubectl label --overwrite ns default pod-security.kubernetes.io/enforce=privileged
+jsonFile=${jsonFile}
+source /home/ubuntu/bash/variables.sh
+#
+for ns in $(seq 0 $(expr $(echo ${k8s_namespaces} | jq -r '. | length') - 1 ))
+do
+  if [[ $(echo ${k8s_namespaces} | jq -c -r .[${ns}].name) == "default" ]]; then
+    /home/ubuntu/bin/kubectl create secret docker-registry docker --docker-server=docker.io --docker-username=${docker_registry_username} --docker-password=${docker_registry_password} --docker-email=${docker_registry_email}
+    /home/ubuntu/bin/kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"docker\"}]}"
+    /home/ubuntu/bin/kubectl label --overwrite ns default pod-security.kubernetes.io/enforce=privileged
+  else
+    /home/ubuntu/bin/kubectl create ns $(echo ${k8s_namespaces} | jq -c -r .[${ns}].name)
+    /home/ubuntu/bin/kubectl create secret docker-registry docker --docker-server=docker.io --docker-username=${docker_registry_username} --docker-password=${docker_registry_password} --docker-email=${docker_registry_email} -n $(echo ${k8s_namespaces} | jq -c -r .[${ns}].name)
+    /home/ubuntu/bin/kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"docker\"}]}" -n $(echo ${k8s_namespaces} | jq -c -r .[${ns}].name)
+    /home/ubuntu/bin/kubectl label --overwrite ns $(echo ${k8s_namespaces} | jq -c -r .[${ns}].name) pod-security.kubernetes.io/enforce=privileged
+  fi
+done
