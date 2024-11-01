@@ -37,7 +37,12 @@
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-gw-http-route-1_based-on-np.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-gw-http-route-2_based-on-np.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-gw-http-route-3_based-on-np.yml",
-    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-gw-http-route-multiple-1-2_based-on-np.yml"
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-gw-http-route-multiple-1-2_based-on-np.yml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/web-production.yaml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/web-staging.yaml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/web-staging_wo_tag.yaml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/egress-production-web.yaml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/egress-staging-web.yaml"
   ],
   "vault": {
     "control_script": {
