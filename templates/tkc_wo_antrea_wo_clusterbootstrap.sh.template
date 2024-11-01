@@ -4,6 +4,7 @@ export KUBECTL_VSPHERE_PASSWORD=${kubectl_password}
 #
 /home/ubuntu/bin/kubectl-vsphere login --insecure-skip-tls-verify --vsphere-username administrator@${sso_domain_name} --server=https://${api_server_cluster_endpoint}
 /home/ubuntu/bin/kubectl config use-context ${namespace_ref}
+/home/ubuntu/bin/kubectl apply -f ${yaml_antrea_path}
 /home/ubuntu/bin/kubectl apply -f ${yaml_path}
 #
 # Wait for tkc cluster to be Provisioned

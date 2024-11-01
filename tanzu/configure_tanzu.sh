@@ -227,6 +227,9 @@ if [[ ${configure_tanzu_supervisor} == "true" && ${configure_tanzu_workload} == 
   do
     namespace=$(echo ${cluster} | jq -c -r .namespace_ref)
     tkc_name=$(echo ${cluster} | jq -c -r .name)
+    # yaml antrea config map templating
+    sed -e "s/\${name}/${tkc_name}/" \
+        -e "s/\${namespace_ref}/${namespace}/" /home/ubuntu/templates/tkc_antrea.yml.template | tee /home/ubuntu/tkc/${tkc_name}-antrea-package.yml > /dev/null
     # yaml cluster templating
     sed -e "s/\${name}/${tkc_name}/" \
         -e "s/\${namespace_ref}/${namespace}/" \
@@ -243,6 +246,7 @@ if [[ ${configure_tanzu_supervisor} == "true" && ${configure_tanzu_workload} == 
         -e "s/\${sso_domain_name}/${ssoDomain}/" \
         -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
         -e "s/\${namespace_ref}/${namespace}/" \
+        -e "s@\${yaml_antrea_path}@/home/ubuntu/tkc/${tkc_name}-antrea-package.yml@" \
         -e "s@\${yaml_path}@/home/ubuntu/tkc/${tkc_name}.yml@" \
         -e "s/\${cluster_name}/${tkc_name}/" /home/ubuntu/templates/tkc_wo_antrea_wo_clusterbootstrap.sh.template | tee /home/ubuntu/tkc/${tkc_name}_create.sh > /dev/null
     chmod u+x /home/ubuntu/tkc/${tkc_name}_create.sh

@@ -1,0 +1,18 @@
+apiVersion: cni.tanzu.vmware.com/v1alpha1
+kind: AntreaConfig
+metadata:
+  name: ${name}-antrea-package
+  namespace: ${namespace_ref}
+spec:
+  antrea:
+    config:
+      featureGates:
+        AntreaProxy: true
+        EndpointSlice: false
+        AntreaPolicy: true
+        Egress: true
+        AntreaTraceflow: true
+        NetworkPolicyStats: true
+        EgressSeparateSubnet: true
+  antreaNSX:
+    enable: true
