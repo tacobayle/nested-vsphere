@@ -100,6 +100,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
         -e "s/\${ip_avi_dns}/${ip_avi_dns}/" \
         -e "s/\${avi_subdomain}/${avi_subdomain}/" \
+        -e "s/\${gw_readonly_user}/${gw_readonly_user}/" \
+        -e "s/\${gw_readonly_password}/${gw_readonly_password}/" \
         -e "s/\${ips_esxi}/${ips_esxi}/" \
         -e "s/\${vcsa_name}/${vcsa_name}/" \
         -e "s/\${esxi_basename}/${esxi_basename}/" \

@@ -18,6 +18,8 @@ domain=$(jq -c -r '.spec.domain' $jsonFile)
 api_host="${vcsa_name}.${domain}"
 folder=$(jq -c -r .spec.folder $jsonFile)
 gw_name="${deployment_name}-gw"
+gw_readonly_user=$(jq -c -r '.gw.readonly_user' $jsonFile)
+gw_readonly_password=$(jq -c -r '.gw.readonly_password' $jsonFile)
 kind=$(jq -c -r '.kind' $jsonFile)
 cluster_basename=$(jq -c -r '.cluster_basename' $jsonFile)
 ip_gw_mgmt=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)

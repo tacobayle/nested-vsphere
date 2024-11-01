@@ -2,7 +2,9 @@
   "gw": {
     "cpu": 4,
     "memory": 4096,
-    "disk": "40G"
+    "disk": "40G",
+    "readonly_user": "readonly",
+    "readonly_password": "ReadOnly123_456"
   },
   "K8s_version_short": "v1.28",
   "directories": ["esxi","yaml-files", ".kube", "openssl", "routes", "vault", "traffic_gen", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "unmanaged_k8s_clusters", "templates", "bin", "k8s", "python", ".ssh"],

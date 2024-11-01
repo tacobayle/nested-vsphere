@@ -245,12 +245,14 @@ if [[ ${configure_tanzu_supervisor} == "true" && ${configure_tanzu_workload} == 
         -e "s/\${namespace_ref}/${namespace}/" \
         -e "s@\${yaml_path}@/home/ubuntu/tkc/${tkc_name}.yml@" \
         -e "s/\${cluster_name}/${tkc_name}/" /home/ubuntu/templates/tkc_wo_antrea_wo_clusterbootstrap.sh.template | tee /home/ubuntu/tkc/${tkc_name}_create.sh > /dev/null
+    chmod u+x /home/ubuntu/tkc/${tkc_name}_create.sh
     # bash cluster delete templating
     sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
         -e "s/\${sso_domain_name}/${ssoDomain}/" \
         -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
         -e "s/\${namespace_ref}/${namespace}/" \
         -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tkc_destroy.sh.template | tee /home/ubuntu/tkc/${tkc_name}_destroy.sh > /dev/null
+    chmod u+x /home/ubuntu/tkc/${tkc_name}_destroy.sh
     # bash auth tkc templating
     sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
         -e "s/\${sso_domain_name}/${ssoDomain}/" \

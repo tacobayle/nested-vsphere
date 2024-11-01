@@ -41,6 +41,13 @@ write_files:
       echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
       netplan apply
       #
+      # create a readonly user
+      #
+      echo "${gw_readonly_user}:${gw_readonly_password}" > /tmp/readonly
+      useradd -p dummy -s /bin/bash readonly
+      chpasswd < /tmp/readonly
+      rm /tmp/readonly
+      #
       # apt install
       #
       sleep 60
