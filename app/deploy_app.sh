@@ -128,11 +128,13 @@ if [[ ${ips_clients} != "null" ]]; then
       ip_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
       prefix_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr' | cut -d"/" -f2)"
       gw_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].gw')"
+      tier1_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].tier1')"
       network_ref_vip="$(echo ${net_client_list} | jq -r -c '.['${net}'].display_name')"
       sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
           -e "s/\${hostname}/${network_ref_vip}-${client_basename}${index}/" \
           -e "s/\${ip_app}/${ip_client}/" \
           -e "s/\${prefix}/${prefix_client}/" \
+          -e "s/\${tier1_client}/${tier1_client}/" \
           -e "s/\${packages}/${app_apt_packages}/" \
           -e "s/\${default_gw}/${gw_client}/" \
           -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/userdata_client.yaml.template | tee /home/ubuntu/app/userdata_client${index}.yaml

@@ -44,6 +44,12 @@ write_files:
         apt install -y $package
       done
       #
+      # lbaas config
+      #
+      echo "{\"tier1\": \"${tier1_client}\"}" | tee /home/ubuntu/tier1.json
+      chown ubuntu /home/ubuntu/tier1.json
+      chgrp ubuntu /home/ubuntu/tier1.json
+      #
       # End of cloud init
       #
       echo "cloud init done" | tee /tmp/cloudInitDone.log

@@ -1,4 +1,5 @@
 to be done:
+- enable IP spoofing for client VMs
 - create readonly user for:
   - vSphere
   - NSX
@@ -144,5 +145,7 @@ done:
 - create multiple ns in k8s
 - add the pod for egress demo
 - Antrea NSX integration
+- update traffic_gen_client.sh.template to handle tier1
+
 
 validated:
