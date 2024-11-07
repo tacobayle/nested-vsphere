@@ -63,6 +63,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
       -e "s@\${sslkeyandcertificate}@$(echo ${sslkeyandcertificate} | jq -c -r '.')@" \
       -e "s@\${sslkeyandcertificate_ref}@${tanzu_cert_name}@" \
       -e "s@\${applicationprofile}@$(echo ${applicationprofile} | jq -c -r '.')@" \
+      -e "s@\${vsdatascriptset}@$(echo ${vsdatascriptset} | jq -c -r '.')@" \
       -e "s@\${httppolicyset}@$(echo ${httppolicyset} | jq -c -r '.')@" \
       -e "s@\${roles}@$(echo ${roles} | jq -c -r '.')@" \
       -e "s@\${tenants}@$(echo ${tenants} | jq -c -r '.')@" \
@@ -113,6 +114,7 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       -e "s@\${sslkeyandcertificate}@$(echo ${sslkeyandcertificate} | jq -c -r '.')@" \
       -e "s@\${sslkeyandcertificate_ref}@${tanzu_cert_name}@" \
       -e "s@\${applicationprofile}@$(echo ${applicationprofile} | jq -c -r '.')@" \
+      -e "s@\${vsdatascriptset}@$(echo ${vsdatascriptset} | jq -c -r '.')@" \
       -e "s@\${httppolicyset}@$(echo ${httppolicyset} | jq -c -r '.')@" \
       -e "s@\${roles}@$(echo "${roles}" | jq -c -r '.')@" \
       -e "s@\${tenants}@$(echo "${tenants}" | jq -c -r '.')@" \

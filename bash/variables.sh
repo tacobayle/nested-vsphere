@@ -292,6 +292,7 @@ fi
 #
 folder_avi=$(jq -c -r '.avi.ctrl_folder' $jsonFile)
 ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .avi.ip_controller $jsonFile)"
+vsdatascriptset=$(jq -c -r '.avi.vsdatascriptset' $jsonFile)
 avi_username=$(jq -c -r '.avi.username' $jsonFile)
 lbaas_username=$(jq -c -r '.avi.lbaas_username' $jsonFile)
 lbaas_tenant=$(jq -c -r '.avi.lbaas_tenant' $jsonFile)

@@ -146,6 +146,7 @@ done:
 - add the pod for egress demo
 - Antrea NSX integration
 - update traffic_gen_client.sh.template to handle tier1
+- datascript creation (ansible)
 
 
 validated:

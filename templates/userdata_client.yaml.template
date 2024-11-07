@@ -44,7 +44,7 @@ write_files:
         apt install -y $package
       done
       #
-      # lbaas config
+      # tier1 setting
       #
       echo "{\"tier1\": \"${tier1_client}\"}" | tee /home/ubuntu/tier1.json
       chown ubuntu /home/ubuntu/tier1.json

@@ -38,6 +38,8 @@ roles: |
   ${roles}
 applicationprofile: |
   ${applicationprofile}
+vsdatascriptset: |
+  ${vsdatascriptset}
 httppolicyset: |
   ${httppolicyset}
 nsxt:

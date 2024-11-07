@@ -38,6 +38,8 @@ users: |
   ${users}
 applicationprofile: |
   ${applicationprofile}
+vsdatascriptset: |
+  ${vsdatascriptset}
 httppolicyset: |
   ${httppolicyset}
 vcenter:
