@@ -148,6 +148,7 @@ done:
 - update traffic_gen_client.sh.template to handle tier1
 - datascript creation (ansible)
 - fix the ptr of the vcsa appliance
+- create yaml file for ingress-regex
 
 
 validated:
