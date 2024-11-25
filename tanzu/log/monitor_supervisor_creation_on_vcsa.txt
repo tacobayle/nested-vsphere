@@ -1,0 +1,1 @@
+tail -f /var/log/vmware/wcp/wcpsvc.log

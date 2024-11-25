@@ -21,8 +21,18 @@ ingress=$(echo $ingress | jq '.spec.rules[1] += {"host": "v2.'${domain}'"}')
 ingress=$(echo $ingress | jq '. | del (.spec.rules[2].host)')
 ingress=$(echo $ingress | jq '.spec.rules[2] += {"host": "v3.'${domain}'"}')
 echo $ingress | yq -y . | tee /home/ubuntu/yaml-files/demo-http-ingress-np.yml > /dev/null
+# ingress-regex - update host
+ingress=$(yq . /home/ubuntu/yaml-files/demo-http-ingress-regex.yml)
+ingress=$(echo $ingress | jq '. | del (.spec.rules[0].host)')
+ingress=$(echo $ingress | jq '.spec.rules[0] += {"host": "ingress-regex.'${domain}'"}')
+echo $ingress | yq -y . | tee /home/ubuntu/yaml-files/demo-http-ingress-regex.yml > /dev/null
 #
 # crd - update fqdn
+#
+crd=$(yq . /home/ubuntu/yaml-files/demo-http-ingress-regex-crd.yml)
+crd=$(echo $crd | jq '. | del (.spec.virtualhost.fqdn)')
+crd=$(echo $crd | jq '.spec.virtualhost += {"fqdn": "ingress-regex.'${domain}'"}')
+echo $crd | yq -y . | tee /home/ubuntu/yaml-files/demo-http-ingress-regex-crd.yml > /dev/null
 #
 crd=$(yq . /home/ubuntu/yaml-files/demo-http-crd-1.yml)
 crd=$(echo $crd | jq '. | del (.spec.virtualhost.fqdn)')

@@ -18,6 +18,8 @@
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/sctp_cnf/sctp-client.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-http-apps.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-http-ingress.yml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-http-ingress-regex.yml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-http-ingress-regex-crd.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-http-ingress-np.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-http-crd-1.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/master/demo-http-apps/demo-http-crd-2.yml",

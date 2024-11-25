@@ -1,0 +1,4 @@
+/usr/lib/vmware-wcp/decryptK8Pwd.py
+
+ssh root@<ip_of_supervisor>
+
