@@ -234,7 +234,7 @@ write_files:
                                       )
                               NS      dns.${domain}.
       \$ORIGIN ${reverse_mgmt}.in-addr.arpa.
-      ${ip_vcsa}            PTR     ${vcsa_name}
+      ${ip_vcsa}            PTR     ${vcsa_name}.${domain}.
       EOT
       #
       if [[ ${ip_nsx} != ${ip_gw} ]]; then

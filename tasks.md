@@ -147,6 +147,7 @@ done:
 - Antrea NSX integration
 - update traffic_gen_client.sh.template to handle tier1
 - datascript creation (ansible)
+- fix the ptr of the vcsa
 
 
 validated:
