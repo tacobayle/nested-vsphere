@@ -1,10 +1,10 @@
 to be done:
-- enable IP spoofing for client VMs
 - create readonly user for:
   - vSphere
   - NSX
   - Avi
 - password will be configured statically in variables.json
+- remove traffic_gen_gw.sh.template
 - allow the capability to change AKO config for each k8s/tkg cluster
 - create the NSX egress infra config:
 
@@ -149,6 +149,7 @@ done:
 - datascript creation (ansible)
 - fix the ptr of the vcsa appliance
 - create yaml file for ingress-regex
+- issue traffic from gw (vsphere-nsx-avi use case)
 
 
 validated:

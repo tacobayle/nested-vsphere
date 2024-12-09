@@ -16,14 +16,14 @@ do
   if [[ $(echo $curl_virtualservice | jq -c -r '.results | length') -gt 0 ]] ; then
     for vs in $(echo $curl_virtualservice | jq -c -r .results[])
     do
-      tier1=$(jq -c -r '.tier1' /home/ubuntu/tier1.json)
-      vrf_name=$(curl -s -k -X GET -H "Content-Type: application/json" -H "X-Avi-Tenant: $tenant" -b avi_cookie.txt $(echo $vs | jq -c -r .vrf_context_ref) | jq -c -r '.name')
-      tier1_match="false"
-      if [[ ${tier1} == ${vrf_name} ]] ; then
-        tier1_match="true"
-      fi
+      #tier1=$(jq -c -r '.tier1' /home/ubuntu/tier1.json)
+      #vrf_name=$(curl -s -k -X GET -H "Content-Type: application/json" -H "X-Avi-Tenant: $tenant" -b avi_cookie.txt $(echo $vs | jq -c -r .vrf_context_ref) | jq -c -r '.name')
+      #tier1_match="false"
+      #if [[ ${tier1} == ${vrf_name} ]] ; then
+      #  tier1_match="true"
+      #fi
       if [[ $(echo $vs | jq -c -r .type) == "VS_TYPE_VH_PARENT" || $(echo $vs | jq -c -r .type) == "VS_TYPE_NORMAL" ]] ; then
-        if [[ tier1 == "dummy" || ${tier1_match} == "true" ]]; then
+        #if [[ tier1 == "dummy" || ${tier1_match} == "true" ]]; then
           for service in $(echo $vs | jq -c -r .services[])
           do
             if [[ $(echo $service | jq -c -r .port) -eq 443 ]] ; then
@@ -66,7 +66,7 @@ do
               echo ++++++
             fi
           done
-        fi
+        #fi
       fi
     done
   fi

@@ -1079,6 +1079,12 @@
     },
     {
       "name": "staging"
+    },
+    {
+      "name": "team-app1"
+    },
+    {
+      "name": "argocd"
     }
   ],
   "docker_version": "5:24.0.2-1~ubuntu.20.04~focal",
