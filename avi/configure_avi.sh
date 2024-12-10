@@ -152,7 +152,7 @@ sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
     -e "s/\${avi_username}/admin/" /home/ubuntu/templates/traffic_gen_client.sh.template | tee /home/ubuntu/avi/traffic_gen_client.sh
 chmod u+x /home/ubuntu/avi/traffic_gen_client.sh
-jq -c -r '.[]' /home/ubuntu/loopback_ips.json | while read ip ; do sudo ip a add ${ip} dev lo: ; done
+jq -c -r '.[]' /home/ubuntu/json/loopback_ips.json | while read ip ; do sudo ip a add ${ip} dev lo: ; done
 crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/avi/traffic_gen_client.sh" | crontab -
 #
 # traffic gen from clients
