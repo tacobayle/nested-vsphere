@@ -140,6 +140,7 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 
 
 done:
+- remove client VMs (only use external gw)
 - create a readonly shell user in the external-gw
 - create multiple ns in k8s
 - add the pod for egress demo

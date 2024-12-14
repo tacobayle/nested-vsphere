@@ -118,41 +118,6 @@ if [[ ${k8s_clusters} != "null" ]]; then
   done
 fi
 #
-# Client VMs client creation
-#
-if [[ ${ips_clients} != "null" ]]; then
-  for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
-  do
-    for net in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
-    do
-      ip_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
-      prefix_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr' | cut -d"/" -f2)"
-      gw_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].gw')"
-      tier1_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].tier1')"
-      network_ref_vip="$(echo ${net_client_list} | jq -r -c '.['${net}'].display_name')"
-      sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
-          -e "s/\${hostname}/${network_ref_vip}-${client_basename}${index}/" \
-          -e "s/\${ip_app}/${ip_client}/" \
-          -e "s/\${prefix}/${prefix_client}/" \
-          -e "s/\${tier1_client}/${tier1_client}/" \
-          -e "s/\${packages}/${app_apt_packages}/" \
-          -e "s/\${default_gw}/${gw_client}/" \
-          -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/userdata_client.yaml.template | tee /home/ubuntu/app/userdata_client${index}.yaml
-      #
-      sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
-          -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_client${index}.yaml -w 0)@" \
-          -e "s/\${password}/${GENERIC_PASSWORD}/" \
-          -e "s@\${network_ref}@${network_ref_vip}@" \
-          -e "s/\${vm_name}/${network_ref_vip}-${client_basename}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-client-${index}.json"
-      #
-  #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
-      govc library.deploy -options "/home/ubuntu/app/options-client-${index}.json" -folder "${folder_client}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
-      govc vm.change -vm "${folder_client}/${network_ref_vip}-${client_basename}${index}" -c ${client_cpu} -m ${client_memory}
-      govc vm.power -on=true "${folder_client}/${network_ref_vip}-${client_basename}${index}"
-    done
-  done
-fi
-#
 # App VMs creation first group // vsphere-avi use case)
 #
 nsx_group_app="true"
@@ -316,38 +281,6 @@ if [[ ${k8s_clusters} != "null" ]]; then
       govc vm.disk.change -vm "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}" -size ${k8s_node_disk}
       govc vm.power -on=true "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}"
       ((kube_starting_ip++))
-    done
-  done
-fi
-#
-# VM client connectivity
-#
-if [[ ${ips_clients} != "null" ]]; then
-  for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
-  do
-    for net in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
-    do
-      ip_client="$(echo ${net_client_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_clients} | jq -c -r .[$(expr ${index} - 1)])"
-      # ssh check
-      retry=60 ; pause=10 ; attempt=1
-      while true ; do
-        echo "attempt $attempt to verify VM app ${ip_client} is ready"
-        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_client}" -q "exit" >/dev/null 2>&1
-        if [[ $? -eq 0 ]]; then
-          echo "VM client ${ip_client} is reachable."
-          if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM client '${ip_client}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-          break
-        else
-          echo "VM client ${ip_client} is not reachable."
-        fi
-        ((attempt++))
-        if [ $attempt -eq $retry ]; then
-          echo "VM client ${ip_client} is not reachable after $attempt attempt"
-          break
-        fi
-        sleep $pause
-      done
-      echo "Ending timestamp: $(date)"
     done
   done
 fi

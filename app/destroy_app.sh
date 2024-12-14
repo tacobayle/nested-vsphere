@@ -17,16 +17,6 @@ fi
 #
 govc library.rm ubuntu
 #
-# Client VMs client deletion // vsphere-avi use case)
-#
-if [[ ${ips_clients} != "null" ]]; then
-  for index in $(seq 1 $(echo ${ips_clients} | jq -c -r '. | length'))
-  do
-    govc vm.power -off=true "${folder_client}/${client_basename}${index}"
-    govc vm.destroy "${folder_client}/${client_basename}${index}"
-  done
-fi
-#
 # App VMs deletion first group // vsphere-avi use case)
 #
 if [[ ${ips_app} != "null" ]]; then
