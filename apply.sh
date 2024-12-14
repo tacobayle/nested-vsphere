@@ -360,7 +360,7 @@ if [[ ${operation} == "apply" ]] ; then
   fi
   #
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
-    if [[ ${configure_tanzu_supervisor} == "true" ]]; then
+    if [[ ${configure_supervisor} == "true" ]]; then
       echo '------------------------------------------------------------' >> ${log_file} 2>&1
       echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
       echo "Configuration of Tanzu - This should take about 45 minutes" >> ${log_file} 2>&1

@@ -7,7 +7,7 @@ output_file="/home/ubuntu/tanzu/output.txt"
 #
 #
 #
-if [[ ${configure_tanzu_supervisor} == "true" ]] ; then
+if [[ ${configure_supervisor} == "true" ]] ; then
   #
   # registering Avi in the NSX config
   #
@@ -190,7 +190,7 @@ fi
 #
 # Namespace creation
 #
-if [[ ${configure_tanzu_supervisor} == "true" && ${configure_tanzu_workload} == "true" ]] ; then
+if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ; then
   for ns in $(echo ${tanzu_namespaces} | jq -c -r .[])
   do
     if [[ ${kind} == "vsphere-avi" ]]; then
@@ -265,7 +265,9 @@ if [[ ${configure_tanzu_supervisor} == "true" && ${configure_tanzu_workload} == 
         -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tanzu_auth_tkc.sh.template | tee /home/ubuntu/tkc/auth_${tkc_name}.sh > /dev/null
     chmod u+x /home/ubuntu/tkc/auth_${tkc_name}.sh
     # bash create tkc exec
-    /bin/bash /home/ubuntu/tkc/${tkc_name}_create.sh
+    if [[ ${configure_workload} == "true" ]] ; then
+      /bin/bash /home/ubuntu/tkc/${tkc_name}_create.sh
+    fi
     # ako values templating
     serviceEngineGroupName="Default-Group"
     shardVSSize="SMALL"
