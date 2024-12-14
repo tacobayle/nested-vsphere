@@ -129,8 +129,6 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${vault_pki_intermediate_role_allow_subdomains}@${vault_pki_intermediate_role_allow_subdomains}@" \
         -e "s@\${vault_pki_intermediate_role_max_ttl}@${vault_pki_intermediate_role_max_ttl}@" \
         -e "s@\${directories}@$(jq -c -r '.directories' $jsonFile)@" \
-        -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
-        -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" \
         -e "s/\${K8s_version_short}/$(jq -c -r '.K8s_version_short' $jsonFile)/" \
         -e "s/\${packages}/$(jq -c -r '.apt_packages' $jsonFile)/" \
         -e "s/\${pip3_packages}/$(jq -c -r '.pip3_packages' $jsonFile)/" \
@@ -196,7 +194,11 @@ if [[ ${operation} == "apply" ]] ; then
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl start avi-lbaas" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
           # yaml domain update
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_replace_avi_domain.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+          sed -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
+              -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" /nested-vsphere/templates/yaml_download_update.sh.template | tee /root/yaml_download_update.sh > /dev/null
+          scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
           #
           echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
           if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi

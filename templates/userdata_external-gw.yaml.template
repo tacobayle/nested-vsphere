@@ -280,16 +280,6 @@ write_files:
       sudo add-apt-repository "deb https://baltocdn.com/helm/stable/debian/ all main"
       apt-get install -y helm
       #
-      # yaml download
-      #
-      cd /home/ubuntu/${yaml_folder}
-      yaml_links='${yaml_links}'
-      echo $yaml_links | jq -c -r .[] | while read yaml_link
-      do
-        sudo -u ubuntu wget $yaml_link
-      done
-      cd -
-      #
       # Patching DNS to localhost
       #
       mv /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.patching_dns
