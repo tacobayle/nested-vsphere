@@ -11,8 +11,7 @@ spec:
       cidrBlocks: ${pods_cidrs}
     serviceDomain: ${serviceDomain}
   topology:
-    class: tanzukubernetescluster
-    # class: builtin-generic-v3.2.0 (this requires the tkg service to be updated to 3.2)
+    class: builtin-generic-v3.2.0 (this requires the tkg service to be updated to 3.2)
     version: ${k8s_version}
     controlPlane:
       replicas: ${control_plane_count}
@@ -31,6 +30,4 @@ spec:
       - name: vmClass
         value: ${vm_class}
       - name: storageClass
-        value: vsan-default-storage-policy
-      - name: defaultStorageClass
         value: vsan-default-storage-policy

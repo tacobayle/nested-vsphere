@@ -54,10 +54,6 @@ fi
 #
 govc object.destroy /${dc}/vm/${folder_app}
 #
-# folder deletion for client
-#
-govc object.destroy /${dc}/vm/${folder_client}
-#
 # folder deletion for k8s cluster
 #
 if [[ ${k8s_clusters} != "null" ]]; then

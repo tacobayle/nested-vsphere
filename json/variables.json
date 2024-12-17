@@ -1057,7 +1057,6 @@
     }
   ],
   "folder_app": "app-vms",
-  "folder_client": "client-vms",
   "app_basename": "app-v1-0",
   "app_basename_second": "app-v2-0",
   "client_basename": "client0",

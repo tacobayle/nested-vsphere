@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             console.log('Success:', data);
-            alert('Load Balancer Created Successfully!');
+            alert('Application Created Successfully!');
         })
         .catch((error) => {
             console.log('Error:', error);

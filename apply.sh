@@ -47,6 +47,8 @@ list_folder=$(govc find -json . -type f)
 list_gw=$(govc find -json vm -name "${gw_name}")
 #
 if [[ ${operation} == "apply" ]] ; then
+  # ova download
+  /nested-vsphere/bash/download_file_from_url_to_location.sh "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "${deployment_name}, Ubuntu OVA" "${SLACK_WEBHOOK_URL}" &
   echo '------------------------------------------------------------' | tee ${log_file}
   echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   echo "Creation of a folder on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
@@ -62,9 +64,8 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
   echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   echo "Creation of an external gw on the underlay infrastructure - This should take 10 minutes" >> ${log_file} 2>&1
-  # ova download
-  download_file_from_url_to_location "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
-  if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  #download_file_from_url_to_location "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
+  #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
   sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/api.js.template | tee /nested-vsphere/html/api.js > /dev/null
   sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/clean-up.js.template | tee /nested-vsphere/html/clean-up.js > /dev/null
@@ -140,6 +141,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${network_ref}@${network_ref_gw}@" \
         -e "s/\${vm_name}/${gw_name}/" /nested-vsphere/templates/options-ubuntu.json.template > "/tmp/options-${gw_name}.json"
     #
+    wait
     govc import.ova --options="/tmp/options-${gw_name}.json" -folder "${folder}" "/root/$(basename ${ubuntu_ova_url})" >> ${log_file} 2>&1
     govc vm.change -vm "${folder}/${gw_name}" -c $(jq -c -r .gw.cpu $jsonFile) -m $(jq -c -r .gw.memory $jsonFile)
     govc vm.network.add -vm "${folder}/${gw_name}" -net "${trunk1}" -net.adapter vmxnet3 >> ${log_file} 2>&1
@@ -151,6 +153,9 @@ if [[ ${operation} == "apply" ]] ; then
     contents="${ip_gw} gw"
     echo "${contents}" | tee -a /etc/hosts > /dev/null
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    #
+    /nested-vsphere/bash/download_file_from_url_to_location.sh "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "${deployment_name}, ESXi ISO" "${SLACK_WEBHOOK_URL}" &
+    #
     echo "pausing for 120 seconds" >> ${log_file} 2>&1
     sleep 120
     # ssh check
@@ -219,11 +224,19 @@ if [[ ${operation} == "apply" ]] ; then
   names="${gw_name}"
   #
   #
+  wait
+  #
+  # Start downloading VCSA ISO remotely
+  #
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" &
+  #
+  #
+  #
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
   echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   echo "Creation of an ESXi hosts on the underlay infrastructure - This should take 10 minutes" >> ${log_file} 2>&1
-  download_file_from_url_to_location "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "ESXi ISO"
-  if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXI downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  # download_file_from_url_to_location "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "ESXi ISO"
+  # if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXI downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
   iso_mount_location="/tmp/esxi_cdrom_mount"
   iso_build_location="/tmp/esxi_cdrom"
@@ -307,6 +320,17 @@ if [[ ${operation} == "apply" ]] ; then
   done
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
+  #
+  #
+  wait
+  if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+    # Start downloading NSX OVA remotely
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${nsx_ova_url}\" \"/home/ubuntu/bin/$(basename ${nsx_ova_url})\" \"${deployment_name}, NSX OVA\" \"${SLACK_WEBHOOK_URL}\"" &
+  fi
+  # Start downloading Avi OVA remotely
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" &
+  # Start downloading Ubuntu OVA remotely
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" &
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
   echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   echo "Creation of VCSA  - This should take about 45 minutes" >> ${log_file} 2>&1
@@ -314,6 +338,7 @@ if [[ ${operation} == "apply" ]] ; then
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
+  wait
   if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1

@@ -140,17 +140,23 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 
 
 done:
-- remove client VMs (only use external gw)
+- asynchronous download of the binaries
+- wait before templating workload clusters and yaml ako values files 
+- remove folder client VMs
 - create a readonly shell user in the external-gw
-- create multiple ns in k8s
 - add the pod for egress demo
-- Antrea NSX integration
-- update traffic_gen_client.sh.template to handle tier1
-- datascript creation (ansible)
-- fix the ptr of the vcsa appliance
-- create yaml file for ingress-regex
-- issue traffic from gw (vsphere-nsx-avi use case)
-- remove traffic_gen_gw.sh.template
+- LBaaS: "Load Balancer Created Successfully!" replaced by "Application Created Successfully!"
 
 
 validated:
+- Antrea NSX integration
+- datascript creation (ansible)
+- create multiple ns in k8s
+- fix the ptr of the VCSA appliance
+- remove traffic_gen_gw.sh.template
+- create yaml file for ingress-regex
+- remove client VMs (only use external gw for traffic)
+- issue traffic from gw (vsphere-nsx-avi use case)
+
+
+

@@ -6,8 +6,8 @@ source /home/ubuntu/bash/variables.sh
 #
 # NSX download
 #
-download_file_from_url_to_location "${nsx_ova_url}" "/home/ubuntu/bin/$(basename ${nsx_ova_url})" "NSX OVA"
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#download_file_from_url_to_location "${nsx_ova_url}" "/home/ubuntu/bin/$(basename ${nsx_ova_url})" "NSX OVA"
+#if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #
 # GOVC check
 #

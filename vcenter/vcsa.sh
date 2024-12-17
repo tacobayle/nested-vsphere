@@ -5,9 +5,9 @@ jsonFile=${1}
 source /home/ubuntu/bash/variables.sh
 echo '------------------------------------------------------------'
 echo "Creation of VCSA  - This should take about 45 minutes"
-download_file_from_url_to_location "${iso_vcenter_url}" "/home/ubuntu/bin/$(basename ${iso_vcenter_url})" "VCSA ISO"
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-echo "ISO VCSA downloaded"
+#download_file_from_url_to_location "${iso_vcenter_url}" "/home/ubuntu/bin/$(basename ${iso_vcenter_url})" "VCSA ISO"
+#if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#echo "ISO VCSA downloaded"
 xorriso -ecma119_map lowercase -osirrox on -indev "/home/ubuntu/bin/$(basename ${iso_vcenter_url})" -extract / /tmp/vcenter_cdrom_mount
 cp -r /tmp/vcenter_cdrom_mount/vcsa-cli-installer/templates/install/vCSA_with_cluster_on_ESXi.json /home/ubuntu/json/
 rm -fr /tmp/vcenter_cdrom

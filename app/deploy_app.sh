@@ -63,8 +63,8 @@ fi
 #
 # Ubuntu download
 #
-download_file_from_url_to_location "${ubuntu_ova_url}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#download_file_from_url_to_location "${ubuntu_ova_url}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
+#if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #
 # GOVC check
 #
@@ -88,17 +88,6 @@ if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_app}'")' >/dev/nu
   echo "ERROR: unable to create folder ${folder_app}: it already exists"
 else
   govc folder.create /${dc}/vm/${folder_app}
-  echo "Ending timestamp: $(date)"
-fi
-#
-# folder creation for client
-#
-list_folder=$(govc find -json . -type f)
-echo "Creation of a folder for the Apps"
-if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_client}'")' >/dev/null ) ; then
-  echo "ERROR: unable to create folder ${folder_client}: it already exists"
-else
-  govc folder.create /${dc}/vm/${folder_client}
   echo "Ending timestamp: $(date)"
 fi
 #

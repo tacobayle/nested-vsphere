@@ -7,8 +7,8 @@ netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.netw
 #
 # Avi download
 #
-download_file_from_url_to_location "${avi_ova_url}" "/home/ubuntu/bin/$(basename ${avi_ova_url})" "AVI OVA"
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#download_file_from_url_to_location "${avi_ova_url}" "/home/ubuntu/bin/$(basename ${avi_ova_url})" "AVI OVA"
+#if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #
 # GOVC check
 #

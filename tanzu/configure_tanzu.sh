@@ -222,6 +222,8 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
   #
   # tkc creation
   #
+  echo "waiting 5 minutes before tkc/ako templating/creation"
+  sleep 300
   cluster_count=1
   for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
   do

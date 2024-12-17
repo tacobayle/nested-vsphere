@@ -1,0 +1,13 @@
+https://vsphere-tmm.github.io/Supervisor-Services/#tkg-service-versions
+https://packages.broadcom.com/artifactory/vsphere-distro/vsphere/iaas/kubernetes-service/3.2.0-package.yaml
+
+https://developer.broadcom.com/xapis/vsphere-automation-api/v8.0U1/vcenter/api/vcenter/namespace-management/clusters/cluster/supervisor-services/supervisor_service/put/
+
+
+
+source /home/ubuntu/bash/functions.sh
+jsonFile=/home/ubuntu/json/nic-vsphere-nsx-avi_apply.json
+source /home/ubuntu/bash/variables.sh
+token=$(/bin/bash /home/ubuntu/vcenter/create_vcenter_api_session.sh "administrator" "${ssoDomain}" "${GENERIC_PASSWORD}" "$api_host")
+vcenter_api 6 10 "GET" $token '' vcsa-01.avi.com "api/vcenter/namespace-management/supervisor-services"
+echo $response_body | jq .
