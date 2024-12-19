@@ -57,7 +57,7 @@ done
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vCenter host https://'${vcsa_name}'.'${domain}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 echo "vCenter host https://${vcsa_name}.${domain} reachable"
 rm -fr "/home/ubuntu/bin/$(basename ${iso_vcenter_url})"
-rm -fr /tmp/vcenter_cdrom
+sudo rm -fr /tmp/vcenter_cdrom
 rm -fr /tmp/vcenter_cdrom_mount
 token=$(/bin/bash /home/ubuntu/vcenter/create_vcenter_api_session.sh "${vsphere_nested_username}" "${ssoDomain}" "${vsphere_nested_password}" "${api_host}")
 vcenter_api 6 10 "PUT" $token '{"enabled":true}' "${api_host}" "api/appliance/access/ssh"

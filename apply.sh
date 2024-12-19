@@ -48,7 +48,7 @@ list_gw=$(govc find -json vm -name "${gw_name}")
 #
 if [[ ${operation} == "apply" ]] ; then
   # ova download
-  /nested-vsphere/bash/download_file_from_url_to_location.sh "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "${deployment_name}, Ubuntu OVA" "${SLACK_WEBHOOK_URL}" &
+  /nested-vsphere/bash/download_file_from_url_to_location.sh "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "${deployment_name}, Ubuntu OVA" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
   echo '------------------------------------------------------------' | tee ${log_file}
   echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   echo "Creation of a folder on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
@@ -156,7 +156,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "${contents}" | tee -a /etc/hosts > /dev/null
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     #
-    /nested-vsphere/bash/download_file_from_url_to_location.sh "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "${deployment_name}, ESXi ISO" "${SLACK_WEBHOOK_URL}" &
+    /nested-vsphere/bash/download_file_from_url_to_location.sh "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "${deployment_name}, ESXi ISO" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
     #
     echo "pausing for 120 seconds" >> ${log_file} 2>&1
     sleep 120
@@ -230,7 +230,7 @@ if [[ ${operation} == "apply" ]] ; then
   #
   # Start downloading VCSA ISO remotely
   #
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" &
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   #
   #
   #
@@ -328,12 +328,12 @@ if [[ ${operation} == "apply" ]] ; then
   wait
   if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     # Start downloading NSX OVA remotely
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${nsx_ova_url}\" \"/home/ubuntu/bin/$(basename ${nsx_ova_url})\" \"${deployment_name}, NSX OVA\" \"${SLACK_WEBHOOK_URL}\"" &
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${nsx_ova_url}\" \"/home/ubuntu/bin/$(basename ${nsx_ova_url})\" \"${deployment_name}, NSX OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   fi
   # Start downloading Avi OVA remotely
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" &
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   # Start downloading Ubuntu OVA remotely
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Ubuntu OVA\" \"${SLACK_WEBHOOK_URL}\"" &
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Ubuntu OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
   echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   echo "Creation of VCSA  - This should take about 45 minutes" >> ${log_file} 2>&1
