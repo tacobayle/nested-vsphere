@@ -319,6 +319,7 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file}
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
+    rm -fr /root/$(basename ${iso_esxi_url})
   done
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
@@ -332,7 +333,7 @@ if [[ ${operation} == "apply" ]] ; then
   # Start downloading Avi OVA remotely
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" &
   # Start downloading Ubuntu OVA remotely
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" &
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Ubuntu OVA\" \"${SLACK_WEBHOOK_URL}\"" &
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
   echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   echo "Creation of VCSA  - This should take about 45 minutes" >> ${log_file} 2>&1

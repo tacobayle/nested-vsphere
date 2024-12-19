@@ -2,7 +2,7 @@
   "gw": {
     "cpu": 4,
     "memory": 4096,
-    "disk": "40G",
+    "disk": "60G",
     "readonly_user": "readonly",
     "readonly_password": "ReadOnly123_456"
   },
