@@ -18,7 +18,7 @@
 <h1>What you need to do</h1>
 <ul>
     <li><a href="tkgs-service.html" target="_blank">Update TKGs service</a></li>
-    <li><a href="tkgs-workload.html" target="_blank">Create a workload cluster</a></li>
+    <li><a href="tkgs-workload.html" target="_blank">Create workload clusters</a></li>
 </ul>
 </body>
 </html>
