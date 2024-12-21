@@ -49,21 +49,21 @@ list_gw=$(govc find -json vm -name "${gw_name}")
 if [[ ${operation} == "apply" ]] ; then
   # ova download
   /nested-vsphere/bash/download_file_from_url_to_location.sh "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "${deployment_name}, Ubuntu OVA" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
+  # esxi iso download
+  /nested-vsphere/bash/download_file_from_url_to_location.sh "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "${deployment_name}, ESXi ISO" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
   echo '------------------------------------------------------------' | tee ${log_file}
-  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-  echo "Creation of a folder on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
+  echo "Starting timestamp folder: $(date)" >> ${log_file} 2>&1
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
     echo "ERROR: unable to create folder ${folder}: it already exists" >> ${log_file} 2>&1
   else
     govc folder.create /${vsphere_dc}/vm/${folder} >> ${log_file} 2>&1
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vsphere external folder '${folder}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Ending timestamp folder: $(date)" >> ${log_file} 2>&1
   fi
   #
   #
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-  echo "Creation of an external gw on the underlay infrastructure - This should take 10 minutes" >> ${log_file} 2>&1
+  echo "Starting timestamp gw: $(date)" >> ${log_file} 2>&1
   #download_file_from_url_to_location "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
   #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
@@ -156,92 +156,14 @@ if [[ ${operation} == "apply" ]] ; then
     contents="${ip_gw} gw"
     echo "${contents}" | tee -a /etc/hosts > /dev/null
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-    #
-    /nested-vsphere/bash/download_file_from_url_to_location.sh "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "${deployment_name}, ESXi ISO" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
-    #
-    echo "pausing for 120 seconds" >> ${log_file} 2>&1
-    sleep 120
-    # ssh check
-    retry=60 ; pause=10 ; attempt=1
-    while true ; do
-      echo "attempt $attempt to verify gw ${gw_name} is ready" >> ${log_file} 2>&1
-      ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q >/dev/null 2>&1
-      if [[ $? -eq 0 ]]; then
-        echo "Gw ${gw_name} is reachable." >> ${log_file} 2>&1
-        #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
-        if [[ $? -eq 0 ]]; then
-          for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
-          do
-            ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
-            name_esxi="${esxi_basename}${esxi}"
-            sed -e "s/\${ip_esxi}/${ip_esxi}/" \
-                -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
-                -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
-                -e "s/\${esxi}/${esxi}/" \
-                -e "s/\${deployment_name}/${deployment_name}/" \
-                -e "s/\${cluster_basename}/${cluster_basename}/" \
-                -e "s/\${name_esxi}/${name_esxi}/" \
-                -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
-            chmod u+x /root/esxi_customization-$esxi.sh
-            scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
-          done
-          echo $folders_to_copy | jq -c -r .[] | while read folder
-          do
-            scp -o StrictHostKeyChecking=no -r /nested-vsphere/${folder} ubuntu@${ip_gw}:/home/ubuntu
-          done
-          scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
-          # lbaas config.
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/html/* /var/www/html/" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chmod 644 /etc/systemd/system/avi-lbaas.service" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl start avi-lbaas" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
-          # yaml domain update
-          sed -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
-              -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" /nested-vsphere/templates/yaml_download_update.sh.template | tee /root/yaml_download_update.sh > /dev/null
-          scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-          # patching /var/www/html/vault.html with vault token
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@dummy_value@\$(jq -c -r '.root_token' ${vault_secret_file_path})@\" /var/www/html/vault.html.tmp | sudo tee /var/www/html/vault.html"
-          #
-          echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
-          if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-          break
-        else
-          echo "Gw ${gw_name}: cloud init is not finished." >> ${log_file} 2>&1
-        fi
-      fi
-      ((attempt++))
-      if [ $attempt -eq $retry ]; then
-        echo "Gw ${gw_name} is unreachable after $attempt attempt" >> ${log_file} 2>&1
-        exit
-      fi
-      sleep $pause
-    done
-    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+    echo "Ending timestamp gw: $(date)" >> ${log_file} 2>&1
   fi
   names="${gw_name}"
   #
   #
-  wait
-  #
-  # Start downloading VCSA ISO remotely
-  #
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
-  #
-  #
   #
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-  echo "Creation of an ESXi hosts on the underlay infrastructure - This should take 10 minutes" >> ${log_file} 2>&1
-  # download_file_from_url_to_location "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "ESXi ISO"
-  # if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXI downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  echo "Starting timestamp esxi: $(date)" >> ${log_file} 2>&1
   #
   iso_mount_location="/tmp/esxi_cdrom_mount"
   iso_build_location="/tmp/esxi_cdrom"
@@ -302,7 +224,79 @@ if [[ ${operation} == "apply" ]] ; then
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${esxi}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     fi
   done
-  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+  echo "Ending timestamp esxi: $(date)" >> ${log_file} 2>&1
+  #
+  # gw ssh check
+  #
+  echo "Starting timestamp gw check: $(date)" >> ${log_file} 2>&1
+  retry=60 ; pause=10 ; attempt=1
+  while true ; do
+    echo "attempt $attempt to verify gw ${gw_name} is ready" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q >/dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+      echo "Gw ${gw_name} is reachable." >> ${log_file} 2>&1
+      #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
+      if [[ $? -eq 0 ]]; then
+        for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
+        do
+          ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
+          name_esxi="${esxi_basename}${esxi}"
+          sed -e "s/\${ip_esxi}/${ip_esxi}/" \
+              -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
+              -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
+              -e "s/\${esxi}/${esxi}/" \
+              -e "s/\${deployment_name}/${deployment_name}/" \
+              -e "s/\${cluster_basename}/${cluster_basename}/" \
+              -e "s/\${name_esxi}/${name_esxi}/" \
+              -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
+          chmod u+x /root/esxi_customization-$esxi.sh
+          scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
+        done
+        echo $folders_to_copy | jq -c -r .[] | while read folder
+        do
+          scp -o StrictHostKeyChecking=no -r /nested-vsphere/${folder} ubuntu@${ip_gw}:/home/ubuntu
+        done
+        scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
+        # lbaas config.
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/html/* /var/www/html/" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chmod 644 /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl start avi-lbaas" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
+        # yaml domain update
+        sed -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
+            -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" /nested-vsphere/templates/yaml_download_update.sh.template | tee /root/yaml_download_update.sh > /dev/null
+        scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+        # patching /var/www/html/vault.html with vault token
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@dummy_value@\$(jq -c -r '.root_token' ${vault_secret_file_path})@\" /var/www/html/vault.html.tmp | sudo tee /var/www/html/vault.html"
+        #
+        echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
+        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+        break
+      else
+        echo "Gw ${gw_name}: cloud init is not finished." >> ${log_file} 2>&1
+      fi
+    fi
+    ((attempt++))
+    if [ $attempt -eq $retry ]; then
+      echo "Gw ${gw_name} is unreachable after $attempt attempt" >> ${log_file} 2>&1
+      exit
+    fi
+    sleep $pause
+  done
+  echo "Ending timestamp gw check: $(date)" >> ${log_file} 2>&1
+  #
+  # Start downloading VCSA ISO remotely
+  #
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+  #
   # affinity rule
   if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
