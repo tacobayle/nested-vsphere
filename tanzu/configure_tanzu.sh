@@ -232,6 +232,7 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
     # yaml antrea config map templating
     sed -e "s/\${name}/${tkc_name}/" \
         -e "s/\${namespace_ref}/${namespace}/" /home/ubuntu/templates/tkc_antrea.yml.template | tee /home/ubuntu/tkc/${tkc_name}-antrea-package.yml > /dev/null
+    sudo cp /home/ubuntu/tkc/${tkc_name}-antrea-package.yml /var/www/html/
     # yaml cluster templating
     sed -e "s/\${name}/${tkc_name}/" \
         -e "s/\${namespace_ref}/${namespace}/" \
@@ -243,6 +244,7 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
         -e "s/\${cluster_count}/${cluster_count}/" \
         -e "s/\${workers_count}/$(echo ${cluster} | jq -c -r .workers_count)/" \
         -e "s/\${vm_class}/$(echo ${cluster} | jq -c -r .vm_class)/" /home/ubuntu/templates/tkc.yml.template | tee /home/ubuntu/tkc/${tkc_name}.yml > /dev/null
+    sudo cp /home/ubuntu/tkc/${tkc_name}.yml /var/www/html/
     # bash cluster create templating
     sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
         -e "s/\${sso_domain_name}/${ssoDomain}/" \

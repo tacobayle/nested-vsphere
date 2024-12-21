@@ -140,17 +140,17 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 
 
 done:
-- create details.html
-- asynchronous download of the binaries
 - wait before templating workload clusters and yaml ako values files 
-- remove folder client VMs
-- create a readonly shell user in the external-gw
 - add the pod for egress demo
-- LBaaS: "Load Balancer Created Successfully!" replaced by "Application Created Successfully!"
-- tkc template for class: builtin-generic-v3.2.0
 
 
 validated:
+- create details.html and other documentation pages
+- asynchronous download of the binaries
+- create a readonly shell user in the external-gw
+- tkc template for class: builtin-generic-v3.2.0
+- LBaaS: "Load Balancer Created Successfully!" replaced by "Application Created Successfully!"
+- remove folder client VMs
 - Antrea NSX integration
 - datascript creation (ansible)
 - create multiple ns in k8s

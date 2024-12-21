@@ -1156,7 +1156,7 @@
       {
         "name": "ns1-cluster-1-provider",
         "namespace_ref": "ns1",
-        "k8s_version": "v1.29.4---vmware.3-fips.1-tkg.1",
+        "k8s_version": "v1.30.1---vmware.1-fips-tkg.5",
         "control_plane_count": 1,
         "vm_class": "best-effort-small",
         "workers_count": 1,
@@ -1168,7 +1168,7 @@
       {
         "name": "ns2-cluster-1-tenant",
         "namespace_ref": "ns2",
-        "k8s_version": "v1.29.4---vmware.3-fips.1-tkg.1",
+        "k8s_version": "v1.30.1---vmware.1-fips-tkg.5",
         "control_plane_count": 1,
         "vm_class": "best-effort-small",
         "workers_count": 1,
@@ -1178,9 +1178,9 @@
         "se_in_provider_context": false
       },
       {
-        "name": "ns3-cluster-1",
+        "name": "ns3-cluster-1-provider",
         "namespace_ref": "ns3",
-        "k8s_version": "v1.29.4---vmware.3-fips.1-tkg.1",
+        "k8s_version": "v1.30.1---vmware.1-fips-tkg.5",
         "control_plane_count": 1,
         "vm_class": "best-effort-small",
         "workers_count": 1,

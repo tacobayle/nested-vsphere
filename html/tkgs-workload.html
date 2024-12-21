@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create a workload cluster</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+</style>
+</head>
+<body>
+<h1>Create a workload cluster</h1>
+<ul>
+    <li>Create cluster1 (from the external gw)</li>
+    <br>
+    <table>
+        <tr>
+            <th>Antrea Config Yaml manifest</th>
+            <td><a href="ns1-cluster-1-provider-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Cluster Yaml manifest</th>
+            <td><a href="ns1-cluster-1-provider.yml" target="_blank">Cluster Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Commands from the external gw</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./ns1-cluster-1-provider_create.sh
+    </code></pre>
+            </td>
+        </tr>
+        <tr>
+            <th>Authenticate to the cluster</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./auth_ns1-cluster-1-provider.sh
+    </code></pre>
+            </td>
+        </tr>
+        <tr>
+            <th>Create name spaces and docker account</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./k8s-config.sh
+    </code></pre>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+    <li>Create cluster2 (from the external gw)</li>
+    <br>
+    <table>
+        <tr>
+            <th>Antrea Config Yaml manifest</th>
+            <td><a href="ns2-cluster-1-tenant-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Cluster Yaml manifest</th>
+            <td><a href="ns2-cluster-1-tenant.yml" target="_blank">Cluster Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Commands from the external gw</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./ns1-cluster-1-provider_create.sh
+    </code></pre>
+            </td>
+        </tr>
+        <tr>
+            <th>Authenticate to the cluster</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./auth_ns2-cluster-1-tenant.sh
+    </code></pre>
+            </td>
+        </tr>
+        <tr>
+            <th>Create name spaces and docker account</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./k8s-config.sh
+    </code></pre>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+    <li>Create cluster3 (from the external gw)</li>
+    <br>
+    <table>
+        <tr>
+            <th>Antrea Config Yaml manifest</th>
+            <td><a href="ns3-cluster-1-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Cluster Yaml manifest</th>
+            <td><a href="ns3-cluster-1.yml" target="_blank">Cluster Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Commands from the external gw</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./ns1-cluster-1-provider_create.sh
+    </code></pre>
+            </td>
+        </tr>
+        <tr>
+            <th>Authenticate to the cluster</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./auth_ns3-cluster-1.sh
+    </code></pre>
+            </td>
+        </tr>
+        <tr>
+            <th>Create name spaces and docker account</th>
+            <td>
+    <pre><code>
+cd /home/ubuntu/tkc
+./k8s-config.sh
+    </code></pre>
+            </td>
+        </tr>
+    </table>
+</ul>
+</body>
+</html>
