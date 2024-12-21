@@ -1,5 +1,4 @@
 to be done:
-- update vault token in the html page
 - create readonly user for:
   - vSphere
   - NSX
@@ -143,6 +142,8 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 done:
 - wait before templating workload clusters and yaml ako values files 
 - add the pod for egress demo
+- update vault token in the html page
+
 
 
 validated:
