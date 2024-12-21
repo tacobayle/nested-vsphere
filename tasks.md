@@ -4,6 +4,7 @@ to be done:
   - NSX
   - Avi
 - password will be configured statically in variables.json
+- update vault token in the html page
 - allow the capability to change AKO config for each k8s/tkg cluster
 - create the NSX egress infra config:
 
@@ -143,7 +144,6 @@ done:
 - deploy gw and esxi simultaneously
 - wait before templating workload clusters and yaml ako values files 
 - add the pod for egress demo
-- update vault token in the html page
 
 
 
