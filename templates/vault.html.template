@@ -6,7 +6,7 @@
 <body>
 <h1>Vault Details</h1>
 <ul>
-    <li><a href="https://{ip_gw}:8200" target="_blank">Vault</a></li>
+    <li><a href="https://${ip_gw}:8200" target="_blank">Vault WebUI</a></li>
     <li>Vault Token: dummy_value</li>
 </ul>
 </body>

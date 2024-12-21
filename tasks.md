@@ -1,4 +1,5 @@
 to be done:
+- update vault token in the html page
 - create readonly user for:
   - vSphere
   - NSX
