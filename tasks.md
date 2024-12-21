@@ -140,6 +140,7 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 
 
 done:
+- deploy gw and esxi simultaneously
 - wait before templating workload clusters and yaml ako values files 
 - add the pod for egress demo
 - update vault token in the html page
