@@ -87,6 +87,10 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   #
   certificatemanagementprofile=$(echo ${certificatemanagementprofile} | jq '.[0].script_params[2] += {"value": "'$(jq -c -r '.root_token' ${vault_secret_file_path})'"}')
   #
+  # patching certificatemanagementprofile with vault token
+  #
+  sed -e "s@dummy_value@$(jq -c -r '.root_token' ${vault_secret_file_path})@" /var/www/html/vault.html.tmp | sudo tee /var/www/html/vault.html
+  #
   # Network mgmt
   #
   network_management=$(echo ${segments_overlay} | jq -c -r '.[] | select( .avi_mgmt == true)')

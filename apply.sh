@@ -274,8 +274,6 @@ if [[ ${operation} == "apply" ]] ; then
         scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
         ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
         ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-        # patching /var/www/html/vault.html with vault token
-        # ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@dummy_value@\$(jq -c -r '.root_token' ${vault_secret_file_path})@\" /var/www/html/vault.html.tmp | sudo tee /var/www/html/vault.html"
         #
         echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
         if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
