@@ -361,6 +361,8 @@ write_files:
           echo "ssl_dhparam /etc/ssl/certs/dhparam.pem;" | tee -a /etc/nginx/snippets/ssl-params.conf
           #
           # nginx config file
+          mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.old
+          sed "s/listen 80 default_server/#listen 80 default_server/g" /etc/nginx/sites-available/default.old | tee /etc/nginx/sites-available/default
           mv /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.old
           echo "server {" | tee /etc/nginx/sites-enabled/default
           echo "	listen 443 ssl default_server;" | tee -a /etc/nginx/sites-enabled/default
