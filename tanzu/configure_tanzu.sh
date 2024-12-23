@@ -319,6 +319,18 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
                                  --arg arg2 "$(echo ${cidr_vip_full} | cut -d"/" -f1)" \
                                  '.results[] | select(.cloud_ref == $arg1 and .configured_subnets != null and .configured_subnets[0].prefix.ip_addr.addr == $arg2)' ${json_api_output} | jq .name)
     fi
+    if $(echo ${cluster} | jq -e '.ako_api_gateway' > /dev/null) ; then
+      if [[ $(echo ${cluster} | jq -c -r .ako_api_gateway) == "true" ]]; then
+        echo "defaulting to AKO version 1.12.1 with gatewayApi for cluster ${tkc_name}"
+        ako_template_file_name="values_api_gw.yml.$(echo ${cluster} | jq -c -r .pods_cidrs).template"
+      else
+        echo "defaulting to AKO version 1.12.1 without gatewayApi for cluster ${tkc_name}"
+        ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .pods_cidrs).template"
+      fi
+    else
+      echo "defaulting to AKO version 1.12.1 without gatewayApi  for cluster ${tkc_name}"
+      ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .pods_cidrs).template"
+    fi
     sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
         -e "s/\${clusterName}/${tkc_name}/" \
         -e "s/\${cniPlugin}/${cniPlugin}/" \
@@ -332,7 +344,8 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
         -e "s/\${cloudName}/${avi_cloud_name}/" \
         -e "s/\${controllerHost}/${ip_avi}/" \
         -e "s/\${tenant}/$(echo ${cluster} | jq -c -r .avi_tenant_name)/" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values.yml.1.12.1.template | tee /home/ubuntu/tkc/ako_${tkc_name}_values.yml > /dev/null
+        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/${ako_template_file_name} | tee /home/ubuntu/tkc/ako_${tkc_name}_values.yml > /dev/null
+    sudo cp /home/ubuntu/tkc/ako_${tkc_name}_values.yml /var/www/html/
     ((cluster_count++))
   done
 fi

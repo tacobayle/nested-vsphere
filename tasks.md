@@ -4,7 +4,6 @@ to be done:
   - NSX
   - Avi
 - password will be configured statically in variables.json
-- allow the capability to change AKO config for each k8s/tkg cluster
 - Avi SE folders
 - logs in html page and/or in container logs
 - progress in html page
@@ -143,6 +142,7 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 
 
 done:
+- allow the capability to change AKO config for each k8s/tkg cluster
 - deploy gw and esxi simultaneously
 - wait before templating workload clusters and yaml ako values files 
 - add the pod for egress demo

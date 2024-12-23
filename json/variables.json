@@ -1163,7 +1163,8 @@
         "services_cidrs": ["10.97.0.0/24"],
         "pods_cidrs": ["10.245.0.0/21"],
         "avi_tenant_name": "ns1",
-        "se_in_provider_context": true
+        "se_in_provider_context": true,
+        "ako_version": "1.12.1"
       },
       {
         "name": "ns2-cluster-1-tenant",
@@ -1175,7 +1176,9 @@
         "services_cidrs": ["10.97.0.0/24"],
         "pods_cidrs": ["10.245.0.0/21"],
         "avi_tenant_name": "ns2",
-        "se_in_provider_context": false
+        "se_in_provider_context": false,
+        "ako_version": "1.12.1",
+        "ako_api_gateway": true
       },
       {
         "name": "ns3-cluster-1-provider",
@@ -1187,7 +1190,8 @@
         "services_cidrs": ["10.97.0.0/24"],
         "pods_cidrs": ["10.245.0.0/21"],
         "avi_tenant_name": "ns3",
-        "se_in_provider_context": true
+        "se_in_provider_context": true,
+        "ako_version": "1.12.1"
       }
     ]
   }

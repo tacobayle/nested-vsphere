@@ -13,9 +13,13 @@ table, th, td {
 <body>
 <h1>Create a workload cluster</h1>
 <ul>
-    <li>Create cluster1 (from the external gw)</li>
+    <li>Create cluster1</li>
     <br>
     <table>
+        <tr>
+            <th>vSphere Namespaces</th>
+            <td>ns1</td>
+        </tr>
         <tr>
             <th>Antrea Config Yaml manifest</th>
             <td><a href="ns1-cluster-1-provider-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
@@ -51,12 +55,20 @@ cd /home/ubuntu/tkc
     </code></pre>
             </td>
         </tr>
+        <tr>
+            <th>AKO values Yaml</th>
+            <td><a href="ako_ns1-cluster-1-provider_values.yml" target="_blank">AKO values Yaml</a></td>
+        </tr>
     </table>
     <br>
     <br>
-    <li>Create cluster2 (from the external gw)</li>
+    <li>Create cluster2</li>
     <br>
     <table>
+        <tr>
+            <th>vSphere Namespaces</th>
+            <td>ns2</td>
+        </tr>
         <tr>
             <th>Antrea Config Yaml manifest</th>
             <td><a href="ns2-cluster-1-tenant-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
@@ -92,12 +104,20 @@ cd /home/ubuntu/tkc
     </code></pre>
             </td>
         </tr>
+        <tr>
+            <th>AKO values Yaml</th>
+            <td><a href="ako_ns2-cluster-1-tenant_values.yml" target="_blank">AKO values Yaml</a></td>
+        </tr>
     </table>
     <br>
     <br>
-    <li>Create cluster3 (from the external gw)</li>
+    <li>Create cluster3</li>
     <br>
     <table>
+        <tr>
+            <th>vSphere Namespaces</th>
+            <td>ns3</td>
+        </tr>
         <tr>
             <th>Antrea Config Yaml manifest</th>
             <td><a href="ns3-cluster-1-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
@@ -132,6 +152,10 @@ cd /home/ubuntu/tkc
 ./k8s-config.sh
     </code></pre>
             </td>
+        </tr>
+        <tr>
+            <th>AKO values Yaml</th>
+            <td><a href="ako_ns3-cluster-1-provider_values.yml" target="_blank">AKO values Yaml</a></td>
         </tr>
     </table>
 </ul>
