@@ -58,14 +58,14 @@ if [[ ${operation} == "apply" ]] ; then
       "username": "admin",
       "password": "'${GENERIC_PASSWORD}'"
     }'
-    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
-                                         "api/nsxt/tier1s?page_size=-1" \
-                                         "POST" \
-                                         "${avi_version}" \
-                                         "${lbaas_tenant}" \
-                                         "$(echo ${json_data} | jq -c -r .)" \
-                                         "${json_api_output}"
-    tier1_id=$(jq -c -r --arg arg ${tier1_name} '.resource.nsxt_tier1routers[] | select(.name == $arg).id' ${json_api_output})
+#    /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
+#                                         "api/nsxt/tier1s?page_size=-1" \
+#                                         "POST" \
+#                                         "${avi_version}" \
+#                                         "${lbaas_tenant}" \
+#                                         "$(echo ${json_data} | jq -c -r .)" \
+#                                         "${json_api_output}"
+#    tier1_id=$(jq -c -r --arg arg ${tier1_name} '.resource.nsxt_tier1routers[] | select(.name == $arg).id' ${json_api_output})
     /home/ubuntu/avi/avi_api_object.sh "${lbaas_username}" "${GENERIC_PASSWORD}" "${ip_avi}" \
                                          "api/nsxt/groups?page_size=-1" \
                                          "POST" \
@@ -110,7 +110,7 @@ if [[ ${operation} == "apply" ]] ; then
         "vsvip_ref_data": {
           "name": "vsvip-'${vs_name}'",
           "cloud_ref": "/api/cloud/?name='${nsx_cloud_name}'",
-          "tier1_lr": "'${tier1_id}'",
+          "vrf_context_ref": "/api/vrfcontext/?name='${tier1_name}'",
           "vip":
             [
               {
@@ -139,7 +139,7 @@ if [[ ${operation} == "apply" ]] ; then
         "pool_ref_data": {
           "name": "'${vs_name}'-pool",
           "enabled": true,
-          "tier1_lr": "'${tier1_id}'",
+          "vrf_ref": "/api/vrfcontext/?name='${tier1_name}'",
           "cloud_ref": "/api/cloud/?name='${nsx_cloud_name}'",
           "lb_algorithm": "LB_ALGORITHM_LEAST_CONNECTIONS",
           "nsx_securitygroup": ["'${group_id}'"],

@@ -148,6 +148,7 @@ done:
 - add the pod for egress demo
 - update vault token in the html page
 - http web server disable http
+- LBaaS: use vrf_ref (for pool) and vrf_context_ref (for vs_vip) instead of tier1_lr
 
 
 

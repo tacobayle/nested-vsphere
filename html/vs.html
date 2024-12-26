@@ -29,7 +29,7 @@
             <span style="color:blue;"><font size="-1"><i>${waf_policy_name}</i></font></span><br>
             <span style="color:blue;"><font size="-1"><i>${cert_name}</i></font></span><br>
             <span style="color:blue;"><font size="-1"><i>${vsvip_name}</i></font></span><br>
-            <span style="color:blue;"><font size="-1"><i>${tier1_id}</i></font></span><br>
+            <span style="color:blue;"><font size="-1"><i>${tier1_name}</i></font></span><br>
             <span style="color:blue;"><font size="-1"><i>${mask}</i></font></span><br>
             <span style="color:blue;"><font size="-1"><i>${cidr}</i></font></span><br>
             <span style="color:blue;"><font size="-1"><i>${fqdn}</i></font></span><br>
@@ -61,7 +61,7 @@
     "vsvip_ref_data": {
       "name": <span style="color:blue;">${vsvip_name}</span>,
       "cloud_ref": "/api/cloud/?name=<span style="color:blue;">${cloud_name}"</span>,
-      "tier1_lr": <span style="color:blue;">${tier1_id}</span>,
+      "vrf_context_ref": "/api/vrfcontext/?name=<span style="color:blue;">${tier1_name}"</span>,
       "vip":
         [
           {
@@ -90,7 +90,7 @@
     "pool_ref_data": {
       "name": <span style="color:blue;">${pool_name}</span>,
       "enabled": true,
-      "tier1_lr": <span style="color:blue;">${tier1_id}</span>,
+      "vrf_ref": "/api/vrfcontext/?name=<span style="color:blue;">${tier1_name}"</span>,
       "cloud_ref": "/api/cloud/?name=<span style="color:blue;">${cloud_name}"</span>,
       "lb_algorithm": "LB_ALGORITHM_LEAST_CONNECTIONS",
       "nsx_securitygroup": [<span style="color:blue;">${group_id}</span>],
