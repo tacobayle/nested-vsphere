@@ -61,6 +61,8 @@ nsxt:
       content_library: ${content_library_name}
   service_engine_groups: |
     ${service_engine_groups}
+  network_services: |
+    ${network_services}
   pools: |
     ${pools}
   pool_groups: |

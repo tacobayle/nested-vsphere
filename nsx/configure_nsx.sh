@@ -689,6 +689,9 @@ do
         }
       ]
     }'
+  if [[ $(echo ${item} | jq -r -c .vip_preserve_ip) == "true" ]]; then
+    json_data=$(echo ${json_data} | jq -c -r '. += {"advanced_config": {"hybrid": false, "multicast": true, "inter_router": false, "local_egress": false, "urpf_mode": "NONE", "connectivity": "ON"}}')
+  fi
   /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
               "policy/api/v1/infra/segments/$(echo ${item} | jq -r -c .display_name)" \
               "PUT" \

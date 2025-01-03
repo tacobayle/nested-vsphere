@@ -142,6 +142,15 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 
 
 done:
+- create a scenario for preserve client ip:
+  - create a new dedicated tier1
+  - create a new segment with urpf_mode disabled (for the VIP)
+  - create a new segment for servers
+  - create a new NSX group for backend 
+  - create a dedicated seg with HA active standby
+  - create a new network service linked with proper SEG, VRF and floating IP
+  - create a new application profile with preserve_ip enabled
+  - create a new VS with the application profile
 - allow the capability to change AKO config for each k8s/tkg cluster
 - deploy gw and esxi simultaneously
 - wait before templating workload clusters and yaml ako values files 

@@ -435,6 +435,19 @@
             "TIER1_CONNECTED",
             "TIER1_LB_VIP"
           ]
+        },
+        {
+          "tier0": "tier0-0",
+          "display_name": "tier1-03",
+          "edge_cluster_name": "edge-cluster-01",
+          "ha_mode": "ACTIVE_STANDBY",
+          "lb": true,
+          "dhcp_server": "dhcp-0",
+          "route_advertisement_types": [
+            "TIER1_STATIC_ROUTES",
+            "TIER1_CONNECTED",
+            "TIER1_LB_VIP"
+          ]
         }
       ],
       "segments_overlay":
@@ -465,12 +478,13 @@
           "backend": true
         },
         {
-          "display_name": "segment-server-2",
-          "tier1": "tier1-02",
+          "display_name": "segment-server-2-preserve-ip",
+          "tier1": "tier1-03",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
           "transport_zone": "tz_overlay",
-          "backend": true
+          "backend": true,
+          "server_preserve_ip": true
         },
         {
           "display_name": "segment-vip-1",
@@ -490,6 +504,15 @@
           "avi_ipam_pool_vip": "11-99",
           "transport_zone": "tz_overlay",
           "lbaas_public": true
+        },
+        {
+          "display_name": "segment-vip-3-preserve-ip",
+          "tier1": "tier1-03",
+          "dhcp_ranges": ["50-99"],
+          "avi_ipam_pool_se": "210-230",
+          "avi_ipam_pool_vip": "11-99",
+          "transport_zone": "tz_overlay",
+          "vip_preserve_ip": true
         }
       ],
       "segment_overlay_file": "/tmp/segments_overlay.json"
@@ -526,6 +549,7 @@
     "client": {
       "ips": [11]
     },
+    "preserve_ip_floating": 100,
     "app": {
       "first": {
         "ips": [11, 12]
@@ -813,9 +837,9 @@
   ],
   "avi_content_library_name": "content_library_avi_se",
   "playbook_vcenter": "vcenter.yml",
-  "tag_vcenter": "v2.53",
+  "tag_vcenter": "v2.54",
   "playbook_nsx": "nsx.yml",
-  "tag_nsx": "v2.53",
+  "tag_nsx": "v2.54",
   "service_engine_groups": [
     {
       "name": "Default-Group",
@@ -866,6 +890,38 @@
         "enabled": true,
         "duration": 0
       }
+    },
+    {
+      "name": "preserve_ip",
+      "ha_mode": "HA_MODE_LEGACY_ACTIVE_STANDBY",
+      "algo": "PLACEMENT_ALGO_DISTRIBUTED",
+      "min_scaleout_per_vs": 2,
+      "max_vs_per_se": 100,
+      "vcenter_folder": "seg-preserve_ip",
+      "buffer_se": 0,
+      "extra_shared_config_memory": 0,
+      "vcpus_per_se": 1,
+      "memory_per_se": 2048,
+      "disk_per_se": 15,
+      "realtime_se_metrics": {
+        "enabled": true,
+        "duration": 0
+      },
+      "vip_preserve_ip": true
+    }
+  ],
+  "network_services": [
+    {
+      "name": "netsvc-preserve-ip",
+      "service_type": "ROUTING_SERVICE",
+      "enable_routing": false,
+      "routing_by_linux_ipstack": false,
+      "enable_vmac": false,
+      "enable_vip_on_all_interfaces": true,
+      "advertise_backend_networks": false,
+      "graceful_restart": false,
+      "enable_auto_gateway": false,
+      "vip_preserve_ip": true
     }
   ],
   "applicationprofile" : [
@@ -983,6 +1039,46 @@
           ]
         }
       }
+    },
+    {
+      "name": "preserve-ip",
+      "vip_preserve_ip": true,
+      "type": "APPLICATION_PROFILE_TYPE_HTTP",
+      "http_profile": {
+        "allow_dots_in_header_name": false,
+        "client_body_timeout": 30000,
+        "client_header_timeout": 10000,
+        "client_max_body_size": 0,
+        "client_max_header_size": 12,
+        "client_max_request_size": 48,
+        "collect_client_tls_fingerprint": false,
+        "connection_multiplexing_enabled": false,
+        "detect_ntlm_app": true,
+        "disable_keepalive_posts_msie6": true,
+        "disable_sni_hostname_check": false,
+        "enable_chunk_merge": true,
+        "enable_fire_and_forget": false,
+        "enable_request_body_buffering": false,
+        "enable_request_body_metrics": false,
+        "fwd_close_hdr_for_bound_connections": true,
+        "hsts_enabled": false,
+        "hsts_max_age": 365,
+        "hsts_subdomains_enabled": true,
+        "http2_profile": {
+          "enable_http2_server_push": false,
+          "http2_initial_window_size": 64,
+          "max_http2_concurrent_pushes_per_connection": 10,
+          "max_http2_concurrent_streams_per_connection": 128,
+          "max_http2_control_frames_per_connection": 1000,
+          "max_http2_empty_data_frames_per_connection": 1000,
+          "max_http2_header_field_size": 4096,
+          "max_http2_queued_frames_to_client_per_connection": 1000,
+          "max_http2_requests_per_connection": 1000
+        }
+      },
+      "preserve_client_ip": true,
+      "preserve_client_port": true,
+      "preserve_dest_ip_port": false
     }
   ],
   "httppolicyset": [

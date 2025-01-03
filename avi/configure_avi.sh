@@ -131,6 +131,7 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       -e "s@\${networks_data}@$(echo ${net_client_list} | jq -c -r '.')@" \
       -e "s@\${content_library_name}@${avi_content_library_name}@" \
       -e "s@\${service_engine_groups}@$(echo "${service_engine_groups}" | jq -c -r '.')@" \
+      -e "s@\${network_services}@$(echo "${network_services}" | jq -c -r '.')@" \
       -e "s@\${pools}@$(echo ${pools} | jq -c -r '.')@" \
       -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
       -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_nsx.yml.template | tee /home/ubuntu/avi/avi_values.yml

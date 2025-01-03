@@ -109,7 +109,6 @@ fi
 #
 # App VMs creation first group // vsphere-avi use case)
 #
-nsx_group_app="true"
 if [[ ${ips_app} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
   do
@@ -143,46 +142,53 @@ if [[ ${ips_app} != "null" ]]; then
       govc library.deploy -options "/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
       govc vm.change -vm "${folder_app}/${network_ref_app}-${app_basename}${index}" -c ${app_cpu} -m ${app_memory}
       govc vm.power -on=true "${folder_app}/${network_ref_app}-${app_basename}${index}"
-      if [[ ${nsx_group_app} == "true" && ${kind} == "vsphere-nsx-avi" ]]; then
-        # create nsx group with tag criteria
-        /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                    "policy/api/v1/infra/domains/default/groups/${nsx_group_app_name}" \
-                    "PUT" \
-                    "{\"display_name\": \"${nsx_group_app_name}\",
-                      \"expression\": [
-                        {
-                          \"member_type\": \"VirtualMachine\",
-                          \"value\": \"${nsx_group_app_tag}\",
-                          \"key\": \"Tag\",
-                          \"operator\": \"EQUALS\",
-                          \"resource_type\": \"Condition\"
-                        }
-                      ]
-                    }"
-        echo "waiting for 60 seconds"
-        sleep 60
-        # retrieve the external_id of the first VM
-        file_json_output="/home/ubuntu/nsx/vms.json"
-        /bin/bash /home/ubuntu/nsx/get_object.sh \ "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                    "api/v1/fabric/virtual-machines" \
-                    "${file_json_output}"
-        external_id=$(jq -c -r --arg arg1 "${network_ref_app}-${app_basename}${index}" '.results[] | select(.display_name == $arg1).external_id' ${file_json_output})
-        # tag the first vm
-        /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                    "policy/api/v1/infra/tags/tag-operations/${nsx_group_app_tag}" \
-                    "PUT" \
-                    "{\"tag\": {
-                         \"tag\": \"${nsx_group_app_tag}\"
-                       },
-                      \"apply_to\": [
-                        {
-                          \"resource_type\": \"VirtualMachine\",
-                          \"resource_ids\": [\"${external_id}\"]
-                        }
-                      ]
-                    }"
+      if [[ (${kind} == "vsphere-nsx-avi") ]]; then
+        for net_vip in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
+        do
+          if [[ $(echo ${net_app_first_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
+            tier1_name="$(echo ${net_client_list} | jq -r -c '.['${net_vip}'].tier1')"
+            # create nsx group with tag criteria
+            /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                        "policy/api/v1/infra/domains/default/groups/${nsx_group_app_name}" \
+                        "PUT" \
+                        "{\"display_name\": \"${nsx_group_app_name}_${network_ref_app}_${tier1_name}\",
+                          \"expression\": [
+                            {
+                              \"member_type\": \"VirtualMachine\",
+                              \"value\": \"${nsx_group_app_tag}_${network_ref_app}_${tier1_name}\",
+                              \"key\": \"Tag\",
+                              \"operator\": \"EQUALS\",
+                              \"resource_type\": \"Condition\"
+                            }
+                          ]
+                        }"
+            echo "waiting for 60 seconds"
+            sleep 60
+            if [[ ${index} == 1 ]]; then
+              # retrieve the external_id of the first VM
+              file_json_output="/home/ubuntu/nsx/vms.json"
+              /bin/bash /home/ubuntu/nsx/get_object.sh \ "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                          "api/v1/fabric/virtual-machines" \
+                          "${file_json_output}"
+              external_id=$(jq -c -r --arg arg1 "${network_ref_app}-${app_basename}${index}" '.results[] | select(.display_name == $arg1).external_id' ${file_json_output})
+              # tag the first vm
+              /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                          "policy/api/v1/infra/tags/tag-operations/${nsx_group_app_tag}" \
+                          "PUT" \
+                          "{\"tag\": {
+                               \"tag\": \"${nsx_group_app_tag}_${network_ref_app}_${tier1_name}\"
+                             },
+                            \"apply_to\": [
+                              {
+                                \"resource_type\": \"VirtualMachine\",
+                                \"resource_ids\": [\"${external_id}\"]
+                              }
+                            ]
+                          }"
+            fi
+          fi
+        done
       fi
-      nsx_group_app="false"
     done
   done
 fi
