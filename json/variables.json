@@ -437,11 +437,10 @@
           ]
         },
         {
-          "tier0": "tier0-0",
+          "tier0": "tier0-01",
           "display_name": "tier1-03",
           "edge_cluster_name": "edge-cluster-01",
           "ha_mode": "ACTIVE_STANDBY",
-          "lb": true,
           "dhcp_server": "dhcp-0",
           "route_advertisement_types": [
             "TIER1_STATIC_ROUTES",
