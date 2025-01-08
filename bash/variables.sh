@@ -668,76 +668,6 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
             virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
           fi
         done
-        httppolicy='
-        {
-          "http_request_policy": {
-            "rules": [
-              {
-                "match": {
-                  "path": {
-                    "match_criteria": "CONTAINS",
-                    "match_str": [
-                      "hello",
-                      "world"
-                    ]
-                  }
-                },
-                "name": "Rule 1",
-                "rewrite_url_action": {
-                  "path": {
-                    "tokens": [
-                      {
-                        "str_value": "index.html",
-                        "type": "URI_TOKEN_TYPE_STRING"
-                      }
-                    ],
-                    "type": "URI_PARAM_TYPE_TOKENIZED"
-                  },
-                  "query": {
-                    "keep_query": true
-                  }
-                },
-                "switching_action": {
-                  "action": "HTTP_SWITCHING_SELECT_POOL",
-                  "pool_ref": "/api/pool?name=pool1_'${network_ref_app}'_'${tier1_name}'",
-                  "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
-                }
-              },
-              {
-                "match": {
-                  "path": {
-                    "match_criteria": "CONTAINS",
-                    "match_str": [
-                      "avi"
-                    ]
-                  }
-                },
-                "name": "Rule 2",
-                "rewrite_url_action": {
-                  "path": {
-                    "tokens": [
-                      {
-                        "str_value": "",
-                        "type": "URI_TOKEN_TYPE_STRING"
-                      }
-                    ],
-                    "type": "URI_PARAM_TYPE_TOKENIZED"
-                  },
-                  "query": {
-                    "keep_query": true
-                  }
-                },
-                "switching_action": {
-                  "action": "HTTP_SWITCHING_SELECT_POOL",
-                  "pool_ref": "/api/pool?name=pool2_'${network_ref_app}'_'${tier1_name}'",
-                  "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
-                }
-              }
-            ]
-          },
-          "name": "http-request-policy-content-switching"
-        }'
-        httppolicyset=$(jq '. += [$new_item]' --argjson new_item "${httppolicy}" <<< "${httppolicyset}")
         #
         # pools and pool groups that are created only on the first app segments - which has not the server_preserve_ip flag
         #
@@ -745,6 +675,77 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
            && $(echo ${net_app_list} | jq -r -c '.['${net}'].tier1') == ${tier1_name} \
            && ${one_done} == "false" ]]; then
           one_done="true"
+          #
+          httppolicy='
+          {
+            "http_request_policy": {
+              "rules": [
+                {
+                  "match": {
+                    "path": {
+                      "match_criteria": "CONTAINS",
+                      "match_str": [
+                        "hello",
+                        "world"
+                      ]
+                    }
+                  },
+                  "name": "Rule 1",
+                  "rewrite_url_action": {
+                    "path": {
+                      "tokens": [
+                        {
+                          "str_value": "index.html",
+                          "type": "URI_TOKEN_TYPE_STRING"
+                        }
+                      ],
+                      "type": "URI_PARAM_TYPE_TOKENIZED"
+                    },
+                    "query": {
+                      "keep_query": true
+                    }
+                  },
+                  "switching_action": {
+                    "action": "HTTP_SWITCHING_SELECT_POOL",
+                    "pool_ref": "/api/pool?name=pool1_'${network_ref_app}'_'${tier1_name}'",
+                    "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
+                  }
+                },
+                {
+                  "match": {
+                    "path": {
+                      "match_criteria": "CONTAINS",
+                      "match_str": [
+                        "avi"
+                      ]
+                    }
+                  },
+                  "name": "Rule 2",
+                  "rewrite_url_action": {
+                    "path": {
+                      "tokens": [
+                        {
+                          "str_value": "",
+                          "type": "URI_TOKEN_TYPE_STRING"
+                        }
+                      ],
+                      "type": "URI_PARAM_TYPE_TOKENIZED"
+                    },
+                    "query": {
+                      "keep_query": true
+                    }
+                  },
+                  "switching_action": {
+                    "action": "HTTP_SWITCHING_SELECT_POOL",
+                    "pool_ref": "/api/pool?name=pool2_'${network_ref_app}'_'${tier1_name}'",
+                    "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
+                  }
+                }
+              ]
+            },
+            "name": "http-request-policy-content-switching"
+          }'
+          httppolicyset=$(jq '. += [$new_item]' --argjson new_item "${httppolicy}" <<< "${httppolicyset}")
           #
           # dns vs
           #
@@ -802,6 +803,30 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                         "avi_app_server_ips": '$(echo ${ips_app_second_full} | jq -c -r .)'
                       }')
             pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+            #
+            #
+            virtual_service_http="{}"
+            virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
+                               "name": "'${tier1_name}''${nsx_avi_basename}'content-switching",
+                               "type": "V4",
+                               "tier1": "'${tier1_name}'",
+                               "cidr": "'${cidr_vip_prefix}'",
+                               "network_ref": "'${network_ref_vip}'",
+                               "pool_group_ref": "pg1",
+                               "http_policies": [{"http_policy_set_ref": "/api/httppolicyset?name=http-request-policy-content-switching", "index": 11}],
+                               "se_group_ref": "private",
+                               "services": [
+                                             {
+                                               "port": 80,
+                                               "enable_ssl": false
+                                              },
+                                              {
+                                                "port": 443,
+                                                "enable_ssl": true
+                                              }
+                               ]
+                    }')
+            virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
             #
             #
             virtual_service_http="{}"

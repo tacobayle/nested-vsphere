@@ -235,7 +235,7 @@
       "segments":
       [
         {
-          "display_name": "segment-external",
+          "display_name": "seg-external",
           "vlan_ids": [0],
           "transport_zone": "tz_vlan",
           "description": "Segment configured for tier0 external connectivity",
@@ -373,19 +373,19 @@
       "tier0s":
       [
         {
-          "display_name": "tier0-01",
+          "display_name": "t0-01",
           "edge_cluster_name": "edge-cluster-01",
           "ha_mode": "ACTIVE_STANDBY",
           "interfaces": [
             {
               "edge_name": "edge-01",
-              "segment_name": "segment-external",
+              "segment_name": "seg-external",
               "type": "EXTERNAL",
               "display_name": "if-ext-0"
             },
             {
               "edge_name": "edge-02",
-              "segment_name": "segment-external",
+              "segment_name": "seg-external",
               "type": "EXTERNAL",
               "display_name": "if-ext-1"
             }
@@ -414,8 +414,8 @@
       "tier1s":
       [
         {
-          "tier0": "tier0-01",
-          "display_name": "tier1-01",
+          "tier0": "t0-01",
+          "display_name": "t1-01",
           "edge_cluster_name": "edge-cluster-01",
           "ha_mode": "ACTIVE_STANDBY",
           "lb": true,
@@ -427,8 +427,8 @@
           ]
         },
         {
-          "tier0": "tier0-01",
-          "display_name": "tier1-02",
+          "tier0": "t0-01",
+          "display_name": "t1-02",
           "dhcp_server": "dhcp-0",
           "route_advertisement_types": [
             "TIER1_STATIC_ROUTES",
@@ -437,8 +437,8 @@
           ]
         },
         {
-          "tier0": "tier0-01",
-          "display_name": "tier1-03",
+          "tier0": "t0-01",
+          "display_name": "t1-03",
           "edge_cluster_name": "edge-cluster-01",
           "ha_mode": "ACTIVE_STANDBY",
           "dhcp_server": "dhcp-0",
@@ -452,16 +452,16 @@
       "segments_overlay":
       [
         {
-          "display_name": "segment-mgmt-avi",
-          "tier1": "tier1-01",
+          "display_name": "seg-mgmt-avi",
+          "tier1": "t1-01",
           "transport_zone": "tz_overlay",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
           "avi_mgmt": true
         },
         {
-          "display_name": "segment-mgmt-tanzu-supervisor",
-          "tier1": "tier1-01",
+          "display_name": "seg-mgmt-tanzu-supervisor",
+          "tier1": "t1-01",
           "tanzu_supervisor_starting_ip": "130",
           "tanzu_supervisor_count": 5,
           "transport_zone": "tz_overlay",
@@ -469,16 +469,16 @@
           "avi_ipam_pool_se": "210-230"
         },
         {
-          "display_name": "segment-server-1",
-          "tier1": "tier1-01",
+          "display_name": "seg-server-1",
+          "tier1": "t1-01",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
           "transport_zone": "tz_overlay",
           "backend": true
         },
         {
-          "display_name": "segment-server-2-preserve-ip",
-          "tier1": "tier1-03",
+          "display_name": "seg-server-2-preserve-ip",
+          "tier1": "t1-03",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
           "transport_zone": "tz_overlay",
@@ -486,8 +486,8 @@
           "server_preserve_ip": true
         },
         {
-          "display_name": "segment-vip-1",
-          "tier1": "tier1-01",
+          "display_name": "seg-vip-1",
+          "tier1": "t1-01",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
           "avi_ipam_pool_vip": "11-99",
@@ -496,8 +496,8 @@
           "lbaas_private": true
         },
         {
-          "display_name": "segment-vip-2",
-          "tier1": "tier1-02",
+          "display_name": "seg-vip-2",
+          "tier1": "t1-02",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
           "avi_ipam_pool_vip": "11-99",
@@ -505,8 +505,8 @@
           "lbaas_public": true
         },
         {
-          "display_name": "segment-vip-3-preserve-ip",
-          "tier1": "tier1-03",
+          "display_name": "seg-vip-3-preserve-ip",
+          "tier1": "t1-03",
           "dhcp_ranges": ["50-99"],
           "avi_ipam_pool_se": "210-230",
           "avi_ipam_pool_vip": "11-99",
@@ -527,7 +527,7 @@
         "datascript": [
           {
             "evt": "VS_DATASCRIPT_EVT_HTTP_REQ",
-            "script": "-- HTTP_REQUEST\\ntimer=120\\ndefault_pool = 'tier1-01-pool1'\\npinned_server_port = 80\\nif avi.http.get_query('s', 'true') then\\n  avi.vs.reqvar.uri_value = 's:' .. avi.http.get_query('s', 'true')\\n  avi.vs.log('URI_VALUE: ' .. avi.vs.reqvar.uri_value)\\nend\\n-- if header provided\\nif avi.vs.reqvar.uri_value then\\n  -- lookup server using uri value for existing mapping in persistence table\\n  avi.vs.reqvar.pinned_server_ip = avi.vs.table_lookup(avi.vs.reqvar.uri_value )\\n  if avi.vs.reqvar.pinned_server_ip  then\\n     avi.vs.log('PINNED_SERVER_IP: ' .. avi.vs.reqvar.pinned_server_ip)\\n  end\\n  avi.vs.log('PINNED_SERVER_PORT: ' .. pinned_server_port)\\n  if avi.vs.reqvar.pinned_server_ip and avi.pool.get_server_status(default_pool, avi.vs.reqvar.pinned_server_ip, pinned_server_port) == 1 then\\n    avi.pool.select(default_pool, avi.vs.reqvar.pinned_server_ip)\\n  else\\n    avi.vs.log('TABLE_REMOVE: ' .. avi.vs.reqvar.uri_value)\\n    avi.vs.table_remove(avi.vs.reqvar.uri_value )\\n    avi.vs.log('DEFAULT SERVER SELECTION')\\n    avi.pool.select(default_pool)\\n  end\\nend"
+            "script": "-- HTTP_REQUEST\\ntimer=120\\ndefault_pool = 'pool1_seg-server-1_t1-01'\\npinned_server_port = 80\\nif avi.http.get_query('s', 'true') then\\n  avi.vs.reqvar.uri_value = 's:' .. avi.http.get_query('s', 'true')\\n  avi.vs.log('URI_VALUE: ' .. avi.vs.reqvar.uri_value)\\nend\\n-- if header provided\\nif avi.vs.reqvar.uri_value then\\n  -- lookup server using uri value for existing mapping in persistence table\\n  avi.vs.reqvar.pinned_server_ip = avi.vs.table_lookup(avi.vs.reqvar.uri_value )\\n  if avi.vs.reqvar.pinned_server_ip  then\\n     avi.vs.log('PINNED_SERVER_IP: ' .. avi.vs.reqvar.pinned_server_ip)\\n  end\\n  avi.vs.log('PINNED_SERVER_PORT: ' .. pinned_server_port)\\n  if avi.vs.reqvar.pinned_server_ip and avi.pool.get_server_status(default_pool, avi.vs.reqvar.pinned_server_ip, pinned_server_port) == 1 then\\n    avi.pool.select(default_pool, avi.vs.reqvar.pinned_server_ip)\\n  else\\n    avi.vs.log('TABLE_REMOVE: ' .. avi.vs.reqvar.uri_value)\\n    avi.vs.table_remove(avi.vs.reqvar.uri_value )\\n    avi.vs.log('DEFAULT SERVER SELECTION')\\n    avi.pool.select(default_pool)\\n  end\\nend"
           },
           {
             "evt": "VS_DATASCRIPT_EVT_HTTP_RESP",
@@ -836,9 +836,9 @@
   ],
   "avi_content_library_name": "content_library_avi_se",
   "playbook_vcenter": "vcenter.yml",
-  "tag_vcenter": "v2.55",
+  "tag_vcenter": "v2.58",
   "playbook_nsx": "nsx.yml",
-  "tag_nsx": "v2.55",
+  "tag_nsx": "v2.58",
   "service_engine_groups": [
     {
       "name": "Default-Group",
@@ -1202,7 +1202,7 @@
       "size": "TINY",
       "service_cidr": "10.96.0.0/23",
       "namespace_cidr": "100.100.64.0/23",
-      "namespace_tier0": "tier0-01",
+      "namespace_tier0": "t0-01",
       "prefix_per_namespace": "27",
       "ingress_cidr": "100.100.133.0/24"
     },
@@ -1239,7 +1239,7 @@
       {
         "name": "ns2",
         "namespace_cidr": "100.100.66.0/23",
-        "namespace_tier0": "tier0-01",
+        "namespace_tier0": "t0-01",
         "prefix_per_namespace": "26",
         "ingress_cidr": "100.100.134.0/24"
       },
