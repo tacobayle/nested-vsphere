@@ -112,12 +112,12 @@ fi
 if [[ ${ips_app} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
   do
-    for net in $(seq 0 $(($(echo ${net_app_first_list} | jq -c -r '. | length')-1)))
+    for net in $(seq 0 $(($(echo ${net_app_list} | jq -c -r '. | length')-1)))
     do
-      ip_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
-      prefix_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr' | cut -d"/" -f2)"
-      gw_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].gw')"
-      network_ref_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].display_name')"
+      ip_app="$(echo ${net_app_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+      prefix_app="$(echo ${net_app_list} | jq -r -c '.['${net}'].cidr' | cut -d"/" -f2)"
+      gw_app="$(echo ${net_app_list} | jq -r -c '.['${net}'].gw')"
+      network_ref_app="$(echo ${net_app_list} | jq -r -c '.['${net}'].display_name')"
       sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
           -e "s/\${hostname}/${network_ref_app}-${app_basename}${index}/" \
           -e "s/\${ip_app}/${ip_app}/" \
@@ -145,7 +145,7 @@ if [[ ${ips_app} != "null" ]]; then
       if [[ (${kind} == "vsphere-nsx-avi") ]]; then
         for net_vip in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
         do
-          if [[ $(echo ${net_app_first_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
+          if [[ $(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
             tier1_name="$(echo ${net_client_list} | jq -r -c '.['${net_vip}'].tier1')"
             # create nsx group with tag criteria
             /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
@@ -198,10 +198,10 @@ fi
 if [[ ${ips_app_second} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
   do
-    ip_app="$(echo ${net_app_first_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app_second} | jq -c -r .[$(expr ${index} - 1)])"
-    prefix_app="$(echo ${net_app_first_list} | jq -r -c '.[0].cidr' | cut -d"/" -f2)"
-    gw_app="$(echo ${net_app_first_list} | jq -r -c '.[0].gw')"
-    network_ref_app="$(echo ${net_app_first_list} | jq -r -c '.[0].display_name')"
+    ip_app="$(echo ${net_app_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app_second} | jq -c -r .[$(expr ${index} - 1)])"
+    prefix_app="$(echo ${net_app_list} | jq -r -c '.[0].cidr' | cut -d"/" -f2)"
+    gw_app="$(echo ${net_app_list} | jq -r -c '.[0].gw')"
+    network_ref_app="$(echo ${net_app_list} | jq -r -c '.[0].display_name')"
     sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s/\${hostname}/${network_ref_app}-${app_basename_second}${index}/" \
         -e "s/\${ip_app}/${ip_app}/" \
@@ -285,9 +285,9 @@ fi
 if [[ ${ips_app} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
   do
-    for net in $(seq 0 $(($(echo ${net_app_first_list} | jq -c -r '. | length')-1)))
+    for net in $(seq 0 $(($(echo ${net_app_list} | jq -c -r '. | length')-1)))
     do
-      ip_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+      ip_app="$(echo ${net_app_list} | jq -r -c '.['${net}'].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
       # ssh check
       retry=60 ; pause=10 ; attempt=1
       while true ; do
@@ -315,9 +315,9 @@ fi
 # VM app connectivity second group
 #
 if [[ ${ips_app_second} != "null" ]]; then
-  for index in $(seq 1 $(echo ${net_app_first_list} | jq -c -r '. | length'))
+  for index in $(seq 1 $(echo ${net_app_list} | jq -c -r '. | length'))
   do
-    ip_app="$(echo ${net_app_first_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
+    ip_app="$(echo ${net_app_list} | jq -r -c '.[0].cidr_three_octets').$(echo ${ips_app} | jq -c -r .[$(expr ${index} - 1)])"
     # ssh check
     retry=60 ; pause=10 ; attempt=1
     while true ; do

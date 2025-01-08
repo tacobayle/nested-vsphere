@@ -189,12 +189,10 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   segment_count=0
   amount_of_segment=$((${supernet_overlay_third_octet} + $(jq '.nsx.config.segments_overlay | length' $jsonFile) - 1))
   net_client_list=[]
-  net_app_first_list=[]
-  net_app_second_list=[]
+  net_app_list=[]
   vip_subnet_index=0
   for i in $(seq ${supernet_overlay_third_octet} ${amount_of_segment})
   do
-    net_app_first_list_flag=0
     cidr="${supernet_first_two_octets}.$i.0/24"
     cidr_three_octets="${supernet_first_two_octets}.$i"
     cidr_vip_subnet="${supernet_vip_first_two_octets}.$(($supernet_vip_third_octet+$vip_subnet_index)).0/24"
@@ -215,7 +213,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     fi
     if [[ $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq '.backend') == "true" ]] ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"backend": true}')
-      net_app_first_list=$(echo ${net_app_first_list} | jq '. += [
+      net_app_list=$(echo ${net_app_list} | jq '. += [
                                                                     {
                                                                       "cidr": "'${cidr}'",
                                                                       "display_name": "'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].display_name' $jsonFile)'",
@@ -228,7 +226,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
                                                                  ]')
       if [[ $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq '.server_preserve_ip') == "true" ]] ; then
         segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"server_preserve_ip": true}')
-        net_app_first_list=$(echo ${net_app_first_list} | jq '.[-1] += {"server_preserve_ip": true}')
+        net_app_list=$(echo ${net_app_list} | jq '.[-1] += {"server_preserve_ip": true}')
       fi
     fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.avi_mgmt' > /dev/null) ; then
@@ -488,8 +486,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   network_ref_vip="avi-vip"
   network_ref_app="avi-app-backend"
   net_client_list='[{"cidr_three_octets": "'${cidr_vip_three_octets}'", "cidr": "'${cidr_vip_full}'", "tier1": "dummy", "gw": "'${gw_client}'", "display_name": "'${network_ref_vip}'"}]'
-  net_app_first_list='[{"cidr_three_octets": "'${cidr_app_three_octets}'", "cidr": "'${cidr_app}'", "tier1": "", "gw": "'${gw_app}'", "display_name": "'${network_ref_app}'"}]'
-  net_app_second_list='[{"cidr_three_octets": "'${cidr_app_three_octets}'", "cidr": "'${cidr_app}'", "tier1": "", "gw": "'${gw_app}'", "display_name": "'${network_ref_app}'"}]'
+  net_app_list='[{"cidr_three_octets": "'${cidr_app_three_octets}'", "cidr": "'${cidr_app}'", "tier1": "", "gw": "'${gw_app}'", "display_name": "'${network_ref_app}'"}]'
   #
   lsc_ips_mgmt=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_se_mgmt_three_octets}'." + (. | tostring))')
   lsc_ips_backend=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_app_three_octets}'." + (. | tostring))')
@@ -588,13 +585,13 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
       network_ref_vip="$(echo ${net_client_list} | jq -r -c '.['${net_vip}'].display_name')"
       tier1_name="$(echo ${net_client_list} | jq -r -c '.['${net_vip}'].tier1')"
       se_group_ref="$(echo ${net_client_list} | jq -r -c '.['${net_vip}'].se_group_ref')"
-      for net in $(seq 0 $(($(echo ${net_app_first_list} | jq -c -r '. | length')-1)))
+      for net in $(seq 0 $(($(echo ${net_app_list} | jq -c -r '. | length')-1)))
       do
-        network_ref_app="$(echo ${net_app_first_list} | jq -r -c '.['${net}'].display_name')"
-        server_preserve_ip=$(echo ${net_app_first_list} | jq -r -c '.['${net}'].server_preserve_ip')
-        ips_app_full=$(echo "$(jq -c -r '.avi.app.first.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets')'." + (. | tostring))')
+        network_ref_app="$(echo ${net_app_list} | jq -r -c '.['${net}'].display_name')"
+        server_preserve_ip=$(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip')
+        ips_app_full=$(echo "$(jq -c -r '.avi.app.first.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_list} | jq -r -c '.['${net}'].cidr_three_octets')'." + (. | tostring))')
         if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-          if [[ $(echo ${net_app_first_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
+          if [[ $(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
             pool="{}"
             pool=$(echo ${pool} | jq '. += {
                         "name": "'${nsx_group_app_tag}_${network_ref_app}_${tier1_name}'",
@@ -637,7 +634,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
         vs_names='["hello-world", "avi", "waf"]'
         for pool_ports_index in $(seq 0 $(($(echo ${pool_ports} | jq -c -r '. | length')-1)))
         do
-          if [[ $(echo ${net_app_first_list} | jq -r -c '.['${net}'].server_preserve_ip') == "false" ]] && [[ $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') == "false" ]]; then
+          if [[ $(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip') == "false" ]] && [[ $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') == "false" ]]; then
             pool="{}"
             pool=$(echo ${pool} | jq '. += {
                         "name": "pool'$((${pool_ports_index} + 1))'_'${network_ref_app}'_'${tier1_name}'",
@@ -744,8 +741,8 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
         #
         # pools and pool groups that are created only on the first app segments - which has not the server_preserve_ip flag
         #
-        if [[ $(echo ${net_app_first_list} | jq -r -c '.['${net}'].server_preserve_ip') == "false" \
-           && $(echo ${net_app_first_list} | jq -r -c '.['${net}'].tier1') == ${tier1_name} \
+        if [[ $(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip') == "false" \
+           && $(echo ${net_app_list} | jq -r -c '.['${net}'].tier1') == ${tier1_name} \
            && ${one_done} == "false" ]]; then
           one_done="true"
           #
@@ -765,7 +762,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
           #
           # pool group
           #
-          ips_app_second_full=$(echo "$(jq -c -r '.avi.app.second.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_first_list} | jq -r -c '.['${net}'].cidr_three_octets')'." + (. | tostring))')
+          ips_app_second_full=$(echo "$(jq -c -r '.avi.app.second.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_list} | jq -r -c '.['${net}'].cidr_three_octets')'." + (. | tostring))')
           if [[ ${ips_app_second} != "null" ]]; then
             pool_groups='
             [
