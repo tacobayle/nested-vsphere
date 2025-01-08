@@ -676,6 +676,26 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
            && ${one_done} == "false" ]]; then
           one_done="true"
           #
+          pool="{}"
+          pool=$(echo ${pool} | jq '. += {
+                      "name": "pool1-cs_'${network_ref_app}'_'${tier1_name}'",
+                      "default_server_port": '$(echo ${pool_ports} | jq -c -r .[0])',
+                      "tier1": "'${tier1_name}'",
+                      "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                      "type": "ip-based",
+                      "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+                    }')
+          pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
+          pool="{}"
+          pool=$(echo ${pool} | jq '. += {
+                      "name": "pool2-cs_'${network_ref_app}'_'${tier1_name}'",
+                      "default_server_port": '$(echo ${pool_ports} | jq -c -r .[1])',
+                      "tier1": "'${tier1_name}'",
+                      "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
+                      "type": "ip-based",
+                      "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
+                    }')
+          pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
           httppolicy='
           {
             "http_request_policy": {
@@ -707,7 +727,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                   },
                   "switching_action": {
                     "action": "HTTP_SWITCHING_SELECT_POOL",
-                    "pool_ref": "/api/pool?name=pool1_'${network_ref_app}'_'${tier1_name}'",
+                    "pool_ref": "/api/pool?name=pool1-cs_'${network_ref_app}'_'${tier1_name}'",
                     "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
                   }
                 },
@@ -737,7 +757,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                   },
                   "switching_action": {
                     "action": "HTTP_SWITCHING_SELECT_POOL",
-                    "pool_ref": "/api/pool?name=pool2_'${network_ref_app}'_'${tier1_name}'",
+                    "pool_ref": "/api/pool?name=pool2-cs_'${network_ref_app}'_'${tier1_name}'",
                     "status_code": "HTTP_LOCAL_RESPONSE_STATUS_CODE_200"
                   }
                 }
@@ -812,7 +832,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                                "tier1": "'${tier1_name}'",
                                "cidr": "'${cidr_vip_prefix}'",
                                "network_ref": "'${network_ref_vip}'",
-                               "pool_group_ref": "pg1",
+                               "pool_ref": "pool1_'${network_ref_app}'_'${tier1_name}'",
                                "http_policies": [{"http_policy_set_ref": "/api/httppolicyset?name=http-request-policy-content-switching", "index": 11}],
                                "se_group_ref": "private",
                                "services": [
