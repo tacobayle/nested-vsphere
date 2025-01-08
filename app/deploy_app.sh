@@ -9,7 +9,7 @@ source /home/ubuntu/bash/variables.sh
 sed -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
     -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
     -e "s@\${jsonFile}@${jsonFile}@" \
-    -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh"
+    -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh" >/dev/null 2>&1
 chmod u+x /home/ubuntu/k8s/k8s-config.sh
 cp /home/ubuntu/k8s/k8s-config.sh /home/ubuntu/tkc/k8s-config.sh
 #
@@ -142,7 +142,7 @@ if [[ ${ips_app} != "null" ]]; then
       govc library.deploy -options "/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
       govc vm.change -vm "${folder_app}/${network_ref_app}-${app_basename}${index}" -c ${app_cpu} -m ${app_memory}
       govc vm.power -on=true "${folder_app}/${network_ref_app}-${app_basename}${index}"
-      if [[ (${kind} == "vsphere-nsx-avi") ]]; then
+      if [[ ${kind} == "vsphere-nsx-avi" && ${index} == 1 ]]; then
         for net_vip in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
         do
           if [[ $(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
@@ -164,28 +164,26 @@ if [[ ${ips_app} != "null" ]]; then
                         }"
             echo "waiting for 60 seconds"
             sleep 60
-            if [[ ${index} == 1 ]]; then
-              # retrieve the external_id of the first VM
-              file_json_output="/home/ubuntu/nsx/vms.json"
-              /bin/bash /home/ubuntu/nsx/get_object.sh \ "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                          "api/v1/fabric/virtual-machines" \
-                          "${file_json_output}"
-              external_id=$(jq -c -r --arg arg1 "${network_ref_app}-${app_basename}${index}" '.results[] | select(.display_name == $arg1).external_id' ${file_json_output})
-              # tag the first vm
-              /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                          "policy/api/v1/infra/tags/tag-operations/${nsx_group_app_tag}_${network_ref_app}_${tier1_name}" \
-                          "PUT" \
-                          "{\"tag\": {
-                               \"tag\": \"${nsx_group_app_tag}_${network_ref_app}_${tier1_name}\"
-                             },
-                            \"apply_to\": [
-                              {
-                                \"resource_type\": \"VirtualMachine\",
-                                \"resource_ids\": [\"${external_id}\"]
-                              }
-                            ]
-                          }"
-            fi
+            # retrieve the external_id of the first VM
+            file_json_output="/home/ubuntu/nsx/vms.json"
+            /bin/bash /home/ubuntu/nsx/get_object.sh \ "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                        "api/v1/fabric/virtual-machines" \
+                        "${file_json_output}"
+            external_id=$(jq -c -r --arg arg1 "${network_ref_app}-${app_basename}${index}" '.results[] | select(.display_name == $arg1).external_id' ${file_json_output})
+            # tag the first vm
+            /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                        "policy/api/v1/infra/tags/tag-operations/${nsx_group_app_tag}_${network_ref_app}_${tier1_name}" \
+                        "PUT" \
+                        "{\"tag\": {
+                             \"tag\": \"${nsx_group_app_tag}_${network_ref_app}_${tier1_name}\"
+                           },
+                          \"apply_to\": [
+                            {
+                              \"resource_type\": \"VirtualMachine\",
+                              \"resource_ids\": [\"${external_id}\"]
+                            }
+                          ]
+                        }"
           fi
         done
       fi
