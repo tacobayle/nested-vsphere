@@ -149,7 +149,7 @@ if [[ ${ips_app} != "null" ]]; then
             tier1_name="$(echo ${net_client_list} | jq -r -c '.['${net_vip}'].tier1')"
             # create nsx group with tag criteria
             /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                        "policy/api/v1/infra/domains/default/groups/${nsx_group_app_name}" \
+                        "policy/api/v1/infra/domains/default/groups/${nsx_group_app_name}_${network_ref_app}_${tier1_name}" \
                         "PUT" \
                         "{\"display_name\": \"${nsx_group_app_name}_${network_ref_app}_${tier1_name}\",
                           \"expression\": [
@@ -173,7 +173,7 @@ if [[ ${ips_app} != "null" ]]; then
               external_id=$(jq -c -r --arg arg1 "${network_ref_app}-${app_basename}${index}" '.results[] | select(.display_name == $arg1).external_id' ${file_json_output})
               # tag the first vm
               /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                          "policy/api/v1/infra/tags/tag-operations/${nsx_group_app_tag}" \
+                          "policy/api/v1/infra/tags/tag-operations/${nsx_group_app_tag}_${network_ref_app}_${tier1_name}" \
                           "PUT" \
                           "{\"tag\": {
                                \"tag\": \"${nsx_group_app_tag}_${network_ref_app}_${tier1_name}\"
