@@ -146,7 +146,7 @@ done:
   - create a new dedicated tier1
   - create a new segment with urpf_mode disabled (for the VIP)
   - create a new segment for servers
-  - create a new NSX group for backend 
+  - create a new NSX group for backend pool
   - create a dedicated seg with HA active standby
   - create a new network service linked with proper SEG, VRF and floating IP
   - create a new application profile with preserve_ip enabled
