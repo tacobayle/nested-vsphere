@@ -832,7 +832,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                                "tier1": "'${tier1_name}'",
                                "cidr": "'${cidr_vip_prefix}'",
                                "network_ref": "'${network_ref_vip}'",
-                               "pool_ref": "pool1_'${network_ref_app}'_'${tier1_name}'",
+                               "pool_ref": "pool1-cs_'${network_ref_app}'_'${tier1_name}'",
                                "http_policies": [{"http_policy_set_ref": "/api/httppolicyset?name=http-request-policy-content-switching", "index": 11}],
                                "se_group_ref": "private",
                                "services": [
