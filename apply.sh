@@ -17,7 +17,7 @@ deployment_name=$(jq -c -r .metadata.name $jsonFile_kube)
 if [[ ${operation} == "apply" || ${operation} == "destroy" ]] ; then log_file="/nested-vsphere/log/${deployment_name}_${operation}.stdout" ; fi
 if [[ ${operation} != "apply" && ${operation} != "destroy" ]] ; then echo "ERROR: Unsupported operation" ; exit 255 ; fi
 jsonFile="/root/${deployment_name}_${operation}.json"
-jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} | tee ${jsonFile}
+jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} > ${jsonFile}
 #
 # add env variables in json
 #
