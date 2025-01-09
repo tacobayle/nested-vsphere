@@ -914,6 +914,11 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                                                 }
                                  ]
                       }')
+              if [[ $(echo ${tenants} | jq -c -r --arg arg1 "${tenant}" '.[] | select(.name == $arg1).config_settings.se_in_provider_context') == "false" ]] ; then
+                virtual_service_http=$(echo ${virtual_service_http} | jq '. += {"se_group_ref": "Default-Group"}')
+              else
+                virtual_service_http=$(echo ${virtual_service_http} | jq '. += {"se_group_ref": "'${se_group_ref}'"}')
+              fi
               virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
             done
           done
