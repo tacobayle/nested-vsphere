@@ -29,7 +29,7 @@ fi
 list_folder=$(govc find -json . -type f)
 echo "Deletion of a folder for the Avi ctrl"
 if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_avi}'")' >/dev/null ) ; then
-  govc object.destroy /${vsphere_dc}/vm/${folder_avi} >> /dev/null 2>&1
+  govc object.destroy /${dc}/vm/${folder_avi} >> /dev/null 2>&1
 else
   echo "ERROR: unable to delete folder ${folder_avi}: it does not exist"
 fi
