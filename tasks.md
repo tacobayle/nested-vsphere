@@ -151,7 +151,8 @@ done:
   - create a new network service linked with proper SEG, VRF and floating IP
   - create a new application profile with preserve_ip enabled
   - create a new VS with the application profile
-- allow the capability to change AKO config for each k8s/tkg cluster
+- update tkgs-workload.html with copied capability
+- allow the capability to change AKO config for each k8s/tkg cluster from variables.json
 - deploy gw and esxi simultaneously
 - wait before templating workload clusters and yaml ako values files 
 - add the pod for egress demo

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Example</title>
+    <style>
+.code-box {
+  border: 1px solid #ccc;
+  padding: 10px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+
+<h1>Code Example</h1>
+
+<div class="code-box">
+    <code>
+        &lt;?php<br>
+        echo "Hello, world!";<br>
+        ?&gt;
+    </code>
+</div>
+
+<button onclick="copyToClipboard()">Copy Code</button>
+
+<script>
+function copyToClipboard() {
+  // Create a temporary textarea element
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = document.querySelector('.code-box code').textContent;
+  document.body.appendChild(tempTextarea);
+
+  // Select and copy the text
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  // Remove the temporary textarea
+  document.body.removeChild(tempTextarea);
+
+  // Provide feedback to the user
+  alert('Code copied to clipboard!');
+}
+</script>
+
+</body>
+</html>

@@ -8,6 +8,12 @@ table, th, td {
   border-collapse: collapse;
   text-align: left;
 }
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
 </style>
 </head>
 <body>
@@ -30,29 +36,32 @@ table, th, td {
         </tr>
         <tr>
             <th>Commands from the external gw</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
 ./ns1-cluster-1-provider_create.sh
     </code></pre>
+<button onclick="copyToClipboard(0)">Copy Code</button>
             </td>
         </tr>
         <tr>
             <th>Authenticate to the cluster</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
 ./auth_ns1-cluster-1-provider.sh
     </code></pre>
+<button onclick="copyToClipboard(1)">Copy Code</button>
             </td>
         </tr>
         <tr>
             <th>Create namespaces and docker account</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
 ./k8s-config.sh
     </code></pre>
+<button onclick="copyToClipboard(2)">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -79,29 +88,32 @@ cd /home/ubuntu/tkc
         </tr>
         <tr>
             <th>Commands from the external gw</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
-./ns1-cluster-1-provider_create.sh
+./ns2-cluster-1-tenant_create.sh
     </code></pre>
+<button onclick="copyToClipboard(3)">Copy Code</button>
             </td>
         </tr>
         <tr>
             <th>Authenticate to the cluster</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
 ./auth_ns2-cluster-1-tenant.sh
     </code></pre>
+<button onclick="copyToClipboard(4)">Copy Code</button>
             </td>
         </tr>
         <tr>
             <th>Create namespaces and docker account</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
 ./k8s-config.sh
     </code></pre>
+<button onclick="copyToClipboard(5)">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -128,29 +140,32 @@ cd /home/ubuntu/tkc
         </tr>
         <tr>
             <th>Commands from the external gw</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
-./ns1-cluster-1-provider_create.sh
+./ns3-cluster-1-provider_create.sh
     </code></pre>
+<button onclick="copyToClipboard(6)">Copy Code</button>
             </td>
         </tr>
         <tr>
             <th>Authenticate to the cluster</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
 ./auth_ns3-cluster-1.sh
     </code></pre>
+<button onclick="copyToClipboard(7)">Copy Code</button>
             </td>
         </tr>
         <tr>
             <th>Create namespaces and docker account</th>
-            <td>
+            <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
 ./k8s-config.sh
     </code></pre>
+<button onclick="copyToClipboard(8)">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -159,5 +174,22 @@ cd /home/ubuntu/tkc
         </tr>
     </table>
 </ul>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
 </body>
 </html>
