@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Create Workload Clusters</title>
+    <title>Workload Clusters</title>
     <style>
 table, th, td {
   border: 1px solid black;
@@ -17,9 +17,9 @@ table, th, td {
 </style>
 </head>
 <body>
-<h1>Create Workload Clusters</h1>
+<h1>Workload Clusters</h1>
 <ul>
-    <li>Create cluster1</li>
+    <li>cluster1</li>
     <br>
     <table>
         <tr>
@@ -35,7 +35,7 @@ table, th, td {
             <td><a href="ns1-cluster-1-provider.yml" target="_blank">Cluster Yaml manifest</a></td>
         </tr>
         <tr>
-            <th>Commands from the external gw</th>
+            <th>Commands from the external gw to create cluster1</th>
             <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
@@ -59,6 +59,7 @@ cd /home/ubuntu/tkc
             <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
+./auth_ns1-cluster-1-provider.sh
 ./k8s-config.sh
     </code></pre>
 <button onclick="copyToClipboard(2)">Copy Code</button>
@@ -68,10 +69,20 @@ cd /home/ubuntu/tkc
             <th>AKO values Yaml</th>
             <td><a href="ako_ns1-cluster-1-provider_values.yml" target="_blank">AKO values Yaml</a></td>
         </tr>
+        <tr>
+            <th>Install AKO via helm</th>
+            <td class="code-box">
+    <pre><code>
+helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version 1.12.1 \
+-f /home/ubuntu/tkc/ako_ns1-cluster-1-provider_values.yml --namespace=avi-system
+    </code></pre>
+<button onclick="copyToClipboard(3)">Copy Code</button>
+            </td>
+        </tr>
     </table>
     <br>
     <br>
-    <li>Create cluster2</li>
+    <li>cluster2</li>
     <br>
     <table>
         <tr>
@@ -87,13 +98,13 @@ cd /home/ubuntu/tkc
             <td><a href="ns2-cluster-1-tenant.yml" target="_blank">Cluster Yaml manifest</a></td>
         </tr>
         <tr>
-            <th>Commands from the external gw</th>
+            <th>Commands from the external gw to create cluster2</th>
             <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
 ./ns2-cluster-1-tenant_create.sh
     </code></pre>
-<button onclick="copyToClipboard(3)">Copy Code</button>
+<button onclick="copyToClipboard(4)">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -103,7 +114,7 @@ cd /home/ubuntu/tkc
 cd /home/ubuntu/tkc
 ./auth_ns2-cluster-1-tenant.sh
     </code></pre>
-<button onclick="copyToClipboard(4)">Copy Code</button>
+<button onclick="copyToClipboard(5)">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -111,19 +122,30 @@ cd /home/ubuntu/tkc
             <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
+./auth_ns2-cluster-1-tenant.sh
 ./k8s-config.sh
     </code></pre>
-<button onclick="copyToClipboard(5)">Copy Code</button>
+<button onclick="copyToClipboard(6)">Copy Code</button>
             </td>
         </tr>
         <tr>
             <th>AKO values Yaml</th>
             <td><a href="ako_ns2-cluster-1-tenant_values.yml" target="_blank">AKO values Yaml</a></td>
         </tr>
+        <tr>
+            <th>Install AKO via helm</th>
+            <td class="code-box">
+    <pre><code>
+helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version 1.12.1 \
+-f /home/ubuntu/tkc/ako_ns2-cluster-1-tenant_values.yml --namespace=avi-system
+    </code></pre>
+<button onclick="copyToClipboard(7)">Copy Code</button>
+            </td>
+        </tr>
     </table>
     <br>
     <br>
-    <li>Create cluster3</li>
+    <li>cluster3</li>
     <br>
     <table>
         <tr>
@@ -139,7 +161,7 @@ cd /home/ubuntu/tkc
             <td><a href="ns3-cluster-1.yml" target="_blank">Cluster Yaml manifest</a></td>
         </tr>
         <tr>
-            <th>Commands from the external gw</th>
+            <th>Commands from the external gw to create cluster3</th>
             <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
@@ -163,6 +185,7 @@ cd /home/ubuntu/tkc
             <td class="code-box">
     <pre><code>
 cd /home/ubuntu/tkc
+./auth_ns3-cluster-1.sh
 ./k8s-config.sh
     </code></pre>
 <button onclick="copyToClipboard(8)">Copy Code</button>
@@ -171,6 +194,16 @@ cd /home/ubuntu/tkc
         <tr>
             <th>AKO values Yaml</th>
             <td><a href="ako_ns3-cluster-1-provider_values.yml" target="_blank">AKO values Yaml</a></td>
+        </tr>
+        <tr>
+            <th>Install AKO via helm</th>
+            <td class="code-box">
+    <pre><code>
+helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version 1.12.1 \
+-f /home/ubuntu/tkc/ako_ns3-cluster-1-provider_values.yml --namespace=avi-system
+    </code></pre>
+<button onclick="copyToClipboard(9)">Copy Code</button>
+            </td>
         </tr>
     </table>
 </ul>
