@@ -322,14 +322,14 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
     if $(echo ${cluster} | jq -e '.ako_api_gateway' > /dev/null) ; then
       if [[ $(echo ${cluster} | jq -c -r .ako_api_gateway) == "true" ]]; then
         echo "defaulting to AKO version 1.12.1 with gatewayApi for cluster ${tkc_name}"
-        ako_template_file_name="values_api_gw.yml.$(echo ${cluster} | jq -c -r .pods_cidrs).template"
+        ako_template_file_name="values_api_gw.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
       else
         echo "defaulting to AKO version 1.12.1 without gatewayApi for cluster ${tkc_name}"
-        ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .pods_cidrs).template"
+        ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
       fi
     else
       echo "defaulting to AKO version 1.12.1 without gatewayApi  for cluster ${tkc_name}"
-      ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .pods_cidrs).template"
+      ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
     fi
     sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
         -e "s/\${clusterName}/${tkc_name}/" \
