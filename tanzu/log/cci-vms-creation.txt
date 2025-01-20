@@ -1,0 +1,89 @@
+apiVersion: vmoperator.vmware.com/v1alpha1
+kind: VirtualMachine
+metadata:
+  name: ns4-vm1
+  namespace: ns4
+  labels:
+    vm-selector: ns4-vm1
+    vm-lb-o5d5: vm-lb-selector
+spec:
+  className: best-effort-xsmall
+  imageName: vmi-b8d6a5cb9dc109b9c
+  storageClass: vsan-default-storage-policy
+  powerState: poweredOn
+  vmMetadata:
+    secretName: ns4-vm1-bootstrap-secret
+    transport: CloudInit
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ns4-vm1-bootstrap-secret
+  namespace: ns4
+  labels:
+    vm-selector: ns4-vm1
+stringData:
+  user-data: |
+        #cloud-config
+        users:
+          - default
+
+        ssh_pwauth: True
+
+        chpasswd:
+          list: |
+            ubuntu:my_new_password
+          expire: False
+
+        hostname: ns4-vm1
+
+        write_files:
+          - content: |
+              #!/bin/bash
+              #
+              # apt install
+              #
+              apt update
+              apt install -y jq
+              packages='["apache2"]'
+              echo $packages | jq -c -r .[] | while read package
+              do
+                apt install -y $package
+              done
+              #
+              # Apache
+              #
+              my_ip=$(ip -j -c -r a | jq '.[] | select(.ifindex == 2).addr_info[0].local')
+              mv /var/www/html/index.html /var/www/html/index.html.old
+              echo -e "Hello World - Version 1.0 - Node is $(hostname) - IP is ${my_ip}" | sudo tee /var/www/html/index.html
+              #
+              # End of cloud init
+              #
+              echo "cloud init done" | tee /tmp/cloudInitDone.log
+            path: /opt/bootstrap.sh
+            permissions: 0755
+
+          - content: |
+              ubuntu ALL=(ALL) NOPASSWD:ALL
+            path: /etc/sudoers.d/ubuntu
+
+        runcmd:
+          - /opt/bootstrap.sh
+
+  ssh-public-keys: |
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCTCN5ogIvjxZIg8y4TmfxBN3+K7ROb52IAp/ma/nos7dq/0x+P7bEJBb2fPE1GysyD28lsugB0V6pLltR/iEULJsi+bO9BSTIOhRdxBG0v0XRgQINTxZRCuooEV+ZMgR1v8F3Qs2sXATgQbjSSa+rn39bNYbj0kUXuw4TWG9sZiGBJBIZwfsU4pZiZZlwBSuVz10mn8Fgf4y5g3uVTqtO203qBOb0QDJ0RzYy/ZdW7xldX31t2OoaiHBAKKXNEWM00L127NTfw3OjQh6NWJmwwZN2ID5uE98jvekYATO/+WRuQvfiKIbBnKYrlYB7ZG3uDuBxzLwA024FiInXIY0RSMtj5/1yictB1082ox+iDZNa/UdgOaeeVmFfJFQp+jTBlCrvfsGcejqu+swIEKhpCIMOPYdyRVoV7OlaO1mapzkQULkAhiIw3rXqr6uNXd89yLskgfT1jjIoAKrfb2gQGVQoS5Q/ldZSBtaBQRLoN08wX7vARsinIeRcW56hXIgM= ubuntu@nic-vsphere-nsx-avi-gw
+---
+apiVersion: vmoperator.vmware.com/v1alpha1
+kind: VirtualMachineService
+metadata:
+  name: vm-lb-o5d5
+  namespace: ns4
+spec:
+  selector:
+    vm-lb-o5d5: vm-lb-selector
+  type: LoadBalancer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
