@@ -201,7 +201,7 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
     fi
     if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       if $(echo $ns | jq -e '.tkc' > /dev/null) ; then
-        if [[ ${echo $ns | jq -e '.tkc'} == "true" ]]; then
+        if [[ $(echo $ns | jq -e '.tkc') == "true" ]]; then
           if $(echo $ns | jq -e '.ingress_cidr' > /dev/null) ; then
             /bin/bash /home/ubuntu/vcenter/create_namespaces_nsx_overwrite_network.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
                       "$(jq -r .tanzu.vm_classes $jsonFile)" \
@@ -222,7 +222,7 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
         fi
       fi
       if $(echo $ns | jq -e '.vm' > /dev/null) ; then
-        if [[ ${echo $ns | jq -e '.vm'} == "true" ]]; then
+        if [[ $(echo $ns | jq -e '.vm') == "true" ]]; then
           retrieve_cl_uuid_json_output="/home/ubuntu/tanzu/retrieve_cl_uuid.json"
           retrieve_cl_uuid_json_key="cl_uuid"
           /bin/bash /home/ubuntu/vcenter/retrieve_cl_uuid_from_name.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \

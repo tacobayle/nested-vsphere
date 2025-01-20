@@ -401,7 +401,7 @@ if [[ ${kind} == "vsphere-nsx-avi" ]] ; then
                     "PUT" \
                     "{\"enabled\": true,
                       \"ip_address\": \"${nsx_vip_ip}\",
-                      \"ports\": '${lb_vip_ports}',
+                      \"ports\": ${lb_vip_ports},
                       \"lb_persistence_profile_path\": \"${lb_persistence_profile_path}\",
                       \"lb_service_path\": \"${lb_path}\",
                       \"pool_path\": \"${pool_path}\",
