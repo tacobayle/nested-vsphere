@@ -971,6 +971,8 @@ supervisor_starting_ip_last_octet=$(jq -r '.tanzu.supervisor_starting_ip' $jsonF
 supervisor_count_ip=$(jq -r '.tanzu.supervisor_count_ip' $jsonFile)
 workload_starting_ip_last_octet=$(jq -r '.tanzu.workload_starting_ip' $jsonFile)
 workload_count_ip=$(jq -r '.tanzu.workload_count_ip' $jsonFile)
+supervisor_cluster_size=$(jq -c -r '.tanzu.supervisor_cluster.size' $jsonFile)
+supervisor_cluster_service_cidr=$(jq -c -r '.tanzu.supervisor_cluster.service_cidr' $jsonFile)
 if [[ ${kind} == "vsphere-avi" ]]; then
   management_tanzu_segment="tanzu"
   worker_network="avi-app-backend"
@@ -980,6 +982,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   ip_gw_backend=$(jq -c -r --arg arg "avi-app-backend" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   supervisor_cluster_namespace_cidr="1.1.1.0/24"
   supervisor_cluster_ingress_cidr="1.1.1.0/24"
+  tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)
 fi
 if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   management_tanzu_segment=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).display_name' ${segment_overlay_file})
@@ -989,12 +992,42 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   management_tanzu_supervisor_count=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_count' ${segment_overlay_file})
   supervisor_cluster_namespace_tier0=$(jq -c -r '.tanzu.supervisor_cluster.namespace_tier0' $jsonFile)
   supervisor_cluster_prefix_per_namespace=$(jq -c -r '.tanzu.supervisor_cluster.prefix_per_namespace' $jsonFile)
-  supervisor_cluster_namespace_cidr=$(jq -c -r '.tanzu.supervisor_cluster.namespace_cidr' $jsonFile)
-  supervisor_cluster_ingress_cidr=$(jq -c -r '.tanzu.supervisor_cluster.ingress_cidr' $jsonFile)
+  #supervisor_cluster_namespace_cidr=$(jq -c -r '.tanzu.supervisor_cluster.namespace_cidr' $jsonFile)
+  supervisor_supernet_namespace=$(jq -c -r '.spec.tanzu.supernet_namespace' $jsonFile)
+  supervisor_cluster_namespace_cidr="$(echo ${supervisor_supernet_namespace} | cut -d'.' -f1-3).0/$(jq -c -r '.tanzu.supervisor_cluster.namespace_cidr_prefix' $jsonFile)"
+  supervisor_supernet_namespace_first_two_octets=$(echo "${supervisor_supernet_namespace}" | cut -d'.' -f1-2)
+  supervisor_supernet_namespace_third_octet=$(echo "${supervisor_supernet_namespace}" | cut -d'.' -f3)
+  tanzu_namespace_third_octet_increment=$(jq -c -r '.tanzu.supervisor_cluster.namespace_third_octet_increment' $jsonFile)
+  new_supervisor_supernet_namespace_third_octet=$((supervisor_supernet_namespace_third_octet + tanzu_namespace_third_octet_increment))
+  tanzu_supernet_vip=$(jq -c -r '.spec.tanzu.supernet_vip' $jsonFile)
+  tanzu_supernet_vip_first_two_octets=$(echo "${tanzu_supernet_vip}" | cut -d'.' -f1-2)
+  tanzu_supernet_vip_third_octet=$(echo "${tanzu_supernet_vip}" | cut -d'.' -f3)
+  supervisor_cluster_ingress_cidr="$(echo ${tanzu_supernet_vip} | cut -d'.' -f1-3).0/$(jq -c -r '.tanzu.supervisor_cluster.ingress_cidr_prefix' $jsonFile)"
+  tanzu_supernet_vip_third_octet_increment=$(jq -c -r '.tanzu.supervisor_cluster.ingress_third_octet_increment' $jsonFile)
+  new_supervisor_cluster_ingress_third_octet=$((tanzu_supernet_vip_third_octet + tanzu_supernet_vip_third_octet_increment))
+  #
+  # tanzu_namespaces - rewrite tanzu_namespaces if tanzu.namespaces[].network_overwrite is true
+  #
+  tanzu_namespaces_temp=$(jq -c -r '.tanzu.namespaces' $jsonFile)
+  tanzu_namespaces_file=$(jq -c -r '.tanzu.tanzu_namespaces_file' $jsonFile)
+  tanzu_namespaces="[]"
+  echo ${tanzu_namespaces_temp} | jq -c -r .[] | while read item
+  do
+    if $(echo ${item} | jq -e '.network_overwrite' > /dev/null) ; then
+      if [[ $(echo ${item} | jq -c -r '.network_overwrite') == "true" ]] ; then
+        tanzu_namespace_third_octet_increment=$(echo ${item} | jq -c -r '.namespace_third_octet_increment')
+        tanzu_supernet_vip_third_octet_increment=$(echo ${item} | jq -c -r '.ingress_third_octet_increment')
+        item=$(echo ${item} | jq '. += {"namespace_cidr": "'${supervisor_supernet_namespace_first_two_octets}'.'${new_supervisor_supernet_namespace_third_octet}'.0/'$(echo ${item} | jq -c -r '.namespace_prefix')'"}')
+        item=$(echo ${item} | jq '. += {"ingress_cidr": "'${tanzu_supernet_vip_first_two_octets}'.'${new_supervisor_cluster_ingress_third_octet}'.0/'$(echo ${item} | jq -c -r '.ingress_cidr_prefix')'"}')
+        new_supervisor_supernet_namespace_third_octet=$((new_supervisor_supernet_namespace_third_octet + tanzu_namespace_third_octet_increment))
+        new_supervisor_cluster_ingress_third_octet=$((new_supervisor_cluster_ingress_third_octet + tanzu_supernet_vip_third_octet_increment))
+      fi
+    fi
+    tanzu_namespaces=$(echo ${tanzu_namespaces} | jq '. += ['$(echo ${item} | jq -c -r '.')']')
+    echo ${tanzu_namespaces} | tee ${tanzu_namespaces_file} > /dev/null 2>&1
+  done
+  tanzu_namespaces=$(jq -c -r . ${tanzu_namespaces_file})
 fi
-supervisor_cluster_size=$(jq -c -r '.tanzu.supervisor_cluster.size' $jsonFile)
-supervisor_cluster_service_cidr=$(jq -c -r '.tanzu.supervisor_cluster.service_cidr' $jsonFile)
-tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)
 tkc_clusters=$(jq -c -r '.tanzu.tkc_clusters' $jsonFile)
 for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
 do

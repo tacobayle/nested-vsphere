@@ -1212,6 +1212,7 @@
   "client_cpu": 2,
   "client_memory": 2048,
   "tanzu": {
+    "tanzu_namespaces_file": "/tmp/tanzu_namespaces_file",
     "supervisor_starting_ip": 11,
     "supervisor_count_ip": 5,
     "workload_starting_ip": 61,
@@ -1220,10 +1221,12 @@
     "supervisor_cluster": {
       "size": "TINY",
       "service_cidr": "10.96.0.0/23",
-      "namespace_cidr": "100.100.64.0/23",
+      "namespace_cidr_prefix": "23",
+      "namespace_third_octet_increment": "2",
+      "ingress_cidr_prefix": "24",
+      "ingress_third_octet_increment": "1",
       "namespace_tier0": "t0-01",
-      "prefix_per_namespace": "27",
-      "ingress_cidr": "100.100.133.0/24"
+      "prefix_per_namespace": "27"
     },
     "content_library": {
       "subscription_url": "https://wp-content.vmware.com/v2/latest/lib.json",
@@ -1259,10 +1262,13 @@
       {
         "name": "ns2",
         "tkc": true,
-        "namespace_cidr": "100.100.66.0/23",
+        "network_overwrite": true,
+        "namespace_prefix": "23",
+        "namespace_third_octet_increment": "2",
         "namespace_tier0": "t0-01",
         "prefix_per_namespace": "26",
-        "ingress_cidr": "100.100.134.0/24"
+        "ingress_cidr_prefix": "24",
+        "ingress_third_octet_increment": "1"
       },
       {
         "name": "ns3",

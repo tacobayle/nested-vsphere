@@ -142,6 +142,7 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 
 
 done:
+- configure tanzu using tanzu.supernet_namespace and tanzu.supernet_vip
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"
   - rewrite tier1s if "lb: true" by adding "nsx_vip_cidr" coming from ".spec.nsx.supernet_vip"
