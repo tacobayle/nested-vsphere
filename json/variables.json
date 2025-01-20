@@ -418,7 +418,6 @@
           "display_name": "t1-01",
           "edge_cluster_name": "edge-cluster-01",
           "ha_mode": "ACTIVE_STANDBY",
-          "lb": true,
           "dhcp_server": "dhcp-0",
           "route_advertisement_types": [
             "TIER1_STATIC_ROUTES",
@@ -445,6 +444,17 @@
           "route_advertisement_types": [
             "TIER1_STATIC_ROUTES",
             "TIER1_CONNECTED",
+            "TIER1_LB_VIP"
+          ]
+        },
+        {
+          "tier0": "t0-01",
+          "display_name": "t1-04",
+          "edge_cluster_name": "edge-cluster-01",
+          "ha_mode": "ACTIVE_STANDBY",
+          "lb": true,
+          "dhcp_server": "dhcp-0",
+          "route_advertisement_types": [
             "TIER1_LB_VIP"
           ]
         }
@@ -514,7 +524,16 @@
           "vip_preserve_ip": true
         }
       ],
-      "segment_overlay_file": "/tmp/segments_overlay.json"
+      "segment_overlay_file": "/tmp/segments_overlay.json",
+      "tier1s_overlay_file": "/tmp/tier1s.json",
+      "nsx_vip_last_octet": 11,
+      "lb_size": "SMALL",
+      "lb_basename": "nsx-lb",
+      "lb_vip_ports": ["443"],
+      "lb_persistence_profile_path": "/infra/lb-persistence-profiles/default-source-ip-lb-persistence-profile",
+      "lb_application_profile_path": "/infra/lb-app-profiles/default-http-lb-app-profile",
+      "lb_app_cert": "app_cert",
+      "lb_ssl_profile_path": "/infra/lb-client-ssl-profiles/default-high-compatibility-client-ssl-profile"
     }
   },
   "avi": {
@@ -1234,17 +1253,25 @@
     ],
     "namespaces": [
       {
-        "name": "ns1"
+        "name": "ns1",
+        "tkc": true
       },
       {
         "name": "ns2",
+        "tkc": true,
         "namespace_cidr": "100.100.66.0/23",
         "namespace_tier0": "t0-01",
         "prefix_per_namespace": "26",
         "ingress_cidr": "100.100.134.0/24"
       },
       {
-        "name": "ns3"
+        "name": "ns3",
+        "tkc": true
+      },
+      {
+        "name": "ns4",
+        "vm": true,
+        "content_library_name": "ubuntu"
       }
     ],
     "tkc_clusters": [

@@ -1,0 +1,15 @@
+- deploy the cci service
+- create an ingressclass (needs to be done through sshing the supervisor cluster)
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: avi-lb
+spec:
+  controller: ako.vmware.com/avi-lb
+  parameters:
+    apiGroup: ako.vmware.com
+    kind: IngressParameters
+    name: external-lb
+- create a ns for vms
+- associate content library
+- associate policies (RBAC, storage)

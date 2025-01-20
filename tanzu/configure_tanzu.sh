@@ -200,22 +200,42 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
                 "$(echo $ns | jq -c -r .name)"
     fi
     if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-      if $(echo $ns | jq -e '.ingress_cidr' > /dev/null) ; then
-        /bin/bash /home/ubuntu/vcenter/create_namespaces_nsx_overwrite_network.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
-                  "$(jq -r .tanzu.vm_classes $jsonFile)" \
-                  "${storage_policy_id}" \
-                  "$(echo $ns | jq -c -r .name)" \
-                  "$(echo $ns | jq -c -r .ingress_cidr | cut -d"/" -f1)" \
-                  "$(echo $ns | jq -c -r .ingress_cidr | cut -d"/" -f2)" \
-                  "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f1)" \
-                  "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f2)" \
-                  "$(echo $ns | jq -c -r .namespace_tier0)" \
-                  "$(echo $ns | jq -c -r .prefix_per_namespace)"
-      else
-        /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
-                  "$(jq -r .tanzu.vm_classes $jsonFile)" \
-                  "${storage_policy_id}" \
-                  "$(echo $ns | jq -c -r .name)"
+      if $(echo $ns | jq -e '.tkc' > /dev/null) ; then
+        if [[ ${echo $ns | jq -e '.tkc'} == "true" ]]; then
+          if $(echo $ns | jq -e '.ingress_cidr' > /dev/null) ; then
+            /bin/bash /home/ubuntu/vcenter/create_namespaces_nsx_overwrite_network.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+                      "$(jq -r .tanzu.vm_classes $jsonFile)" \
+                      "${storage_policy_id}" \
+                      "$(echo $ns | jq -c -r .name)" \
+                      "$(echo $ns | jq -c -r .ingress_cidr | cut -d"/" -f1)" \
+                      "$(echo $ns | jq -c -r .ingress_cidr | cut -d"/" -f2)" \
+                      "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f1)" \
+                      "$(echo $ns | jq -c -r .namespace_cidr | cut -d"/" -f2)" \
+                      "$(echo $ns | jq -c -r .namespace_tier0)" \
+                      "$(echo $ns | jq -c -r .prefix_per_namespace)"
+          else
+            /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+                      "$(jq -r .tanzu.vm_classes $jsonFile)" \
+                      "${storage_policy_id}" \
+                      "$(echo $ns | jq -c -r .name)"
+          fi
+        fi
+      fi
+      if $(echo $ns | jq -e '.vm' > /dev/null) ; then
+        if [[ ${echo $ns | jq -e '.vm'} == "true" ]]; then
+          retrieve_cl_uuid_json_output="/home/ubuntu/tanzu/retrieve_cl_uuid.json"
+          retrieve_cl_uuid_json_key="cl_uuid"
+          /bin/bash /home/ubuntu/vcenter/retrieve_cl_uuid_from_name.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+                    "$(echo $ns | jq -c -r .content_library_name)" \
+                    "${retrieve_cl_uuid_json_output}" \
+                    "${retrieve_cl_uuid_json_key}"
+          cl_uuid=$(jq -c -r .${retrieve_cl_uuid_json_key} ${retrieve_cl_uuid_json_output})
+          /bin/bash /home/ubuntu/vcenter/create_namespaces_vm.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
+                    "$(jq -r .tanzu.vm_classes $jsonFile)" \
+                    "${storage_policy_id}" \
+                    "$(echo $ns | jq -c -r .name)" \
+                    "${cl_uuid}"
+        fi
       fi
     fi
   done

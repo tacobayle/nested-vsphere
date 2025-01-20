@@ -142,6 +142,18 @@ ubuntu@nic-vsphere-nsx-avi-gw:~/yaml-files$
 
 
 done:
+- create a NSX-T LB for migration scenario:
+  - create a new dedicated tier1 with "lb: true"
+  - rewrite tier1s if "lb: true" by adding "nsx_vip_cidr" coming from ".spec.nsx.supernet_vip"
+  - create routes in the gw for the tier1 that have "lb: true"
+  - create NSX lb
+  - create NSX pool lb
+  - create NSX cert ca
+  - create NSX app ca
+  - create NSX VS
+- create a Tanzu ns for VM service:
+  - create the ns4
+  - associate the policies and content library specific for vms
 - create a scenario for preserve client ip:
   - create a new dedicated tier1
   - create a new segment with urpf_mode disabled (for the VIP)

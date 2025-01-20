@@ -178,13 +178,42 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   tier0s=$(jq -c -r .nsx.config.tier0s $jsonFile)
   tier0_starting_ip=11
   tier0_vip_starting_ip=211
-  tier1s=$(jq -c -r .nsx.config.tier1s $jsonFile)
   supernet_overlay=$(jq -c -r '.spec.nsx.supernet_overlay' $jsonFile)
   supernet_vip=$(jq -c -r '.spec.avi.supernet_vip' $jsonFile)
-  supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
-  supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
   supernet_vip_first_two_octets=$(echo "${supernet_vip}" | cut -d'.' -f1-2)
   supernet_vip_third_octet=$(echo "${supernet_vip}" | cut -d'.' -f3)
+  supernet_nsx_vip=$(jq -c -r '.spec.nsx.supernet_vip' $jsonFile)
+  supernet_nsx_vip_first_two_octets=$(echo "${supernet_nsx_vip}" | cut -d'.' -f1-2)
+  supernet_nsx_vip_third_octet=$(echo "${supernet_nsx_vip}" | cut -d'.' -f3)
+  nsx_vip_last_octet=$(jq -c -r '.nsx.config.nsx_vip_last_octet' $jsonFile)
+  nsx_lb_size=$(jq -c -r '.nsx.config.lb_size' $jsonFile)
+  nsx_lb_basename=$(jq -c -r '.nsx.config.lb_basename' $jsonFile)
+  lb_vip_ports=$(jq -c -r '.nsx.config.lb_vip_ports' $jsonFile)
+  lb_persistence_profile_path=$(jq -c -r '.nsx.config.lb_persistence_profile_path' $jsonFile)
+  lb_application_profile_path=$(jq -c -r '.nsx.config.lb_application_profile_path' $jsonFile)
+  lb_app_cert=$(jq -c -r '.nsx.config.lb_app_cert' $jsonFile)
+  lb_ssl_profile_path=$(jq -c -r '.nsx.config.lb_ssl_profile_path' $jsonFile)
+  #
+  # tier1s - add nsx_vip_cidr if .nsx.config.tier1s[].lb is true
+  #
+  tier1s_spec=$(jq -c -r .nsx.config.tier1s $jsonFile)
+  tier1s_file=$(jq -c -r '.nsx.config.tier1s_overlay_file' $jsonFile)
+  tier1s="[]"
+  echo ${tier1s_spec} | jq -c -r .[] | while read item
+  do
+    if $(echo ${item} | jq -e '.lb' > /dev/null) ; then
+      if [[ $(echo ${item} | jq -c -r '.lb') == "true" ]] ; then
+        item=$(echo ${item} | jq '. += {"nsx_vip_cidr": "'${supernet_nsx_vip_first_two_octets}'.'${supernet_nsx_vip_third_octet}'.0/24"}')
+        ((supernet_nsx_vip_third_octet++))
+      fi
+    fi
+    tier1s=$(echo ${tier1s} | jq '. += ['$(echo ${item} | jq -c -r '.')']')
+    echo ${tier1s} | tee ${tier1s_file} > /dev/null 2>&1
+  done
+  tier1s=$(jq -c -r . ${tier1s_file})
+  #
+  supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
+  supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
   segments_overlay="[]"
   segment_count=0
   amount_of_segment=$((${supernet_overlay_third_octet} + $(jq '.nsx.config.segments_overlay | length' $jsonFile) - 1))

@@ -99,6 +99,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${domain}/${domain}/g" \
         -e "s/\${kind}/${kind}/g" \
         -e "s@\${net_client_list}@$(echo ${net_client_list} | jq -c -r '.')@g" \
+        -e "s@\${tier1s}@$(echo ${tier1s} | jq -c -r '.')@g" \
         -e "s@\${jsonFile}@$(basename ${jsonFile})@g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
         -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
