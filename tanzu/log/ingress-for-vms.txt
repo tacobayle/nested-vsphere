@@ -13,3 +13,84 @@ spec:
 - create a ns for vms
 - associate content library
 - associate policies (RBAC, storage)
+
+
+- create VM:
+
+apiVersion: vmoperator.vmware.com/v1alpha2
+kind: VirtualMachine
+metadata:
+  annotations:
+    virtualmachine.vmoperator.vmware.com/first-boot-done: "true"
+    vmoperator.vmware.com/created-at-build-version: 0.1.0+c9e2c82+1.8.6+f61a84e+23879899
+    vmoperator.vmware.com/created-at-schema-version: v1alpha2
+  creationTimestamp: "2025-01-21T09:07:39Z"
+  finalizers:
+  - virtualmachine.vmoperator.vmware.com
+  generation: 1
+  labels:
+    topology.kubernetes.io/zone: vmware-system-legacy
+    vm-lb-peza: vm-lb-selector
+    vm-selector: vm-22pl
+  name: vm-22pl
+  namespace: ns4
+  resourceVersion: "334375"
+  uid: c627906f-3ffd-463b-8882-ea21d3c6dfe3
+spec:
+  bootstrap:
+    cloudInit:
+      rawCloudConfig:
+        key: user-data
+        name: vm-22pl-bootstrap-secret
+  className: best-effort-xsmall
+  imageName: vmi-f06398cf2e810ef91
+  network:
+    interfaces:
+    - name: eth0
+      network:
+        apiVersion: vmware.com/v1alpha1
+        kind: VirtualNetwork
+        name: ""
+  powerOffMode: Hard
+  powerState: PoweredOn
+  restartMode: Hard
+  storageClass: vsan-default-storage-policy
+  suspendMode: Hard
+
+
+- create VMservice:
+
+apiVersion: vmoperator.vmware.com/v1alpha1
+kind: VirtualMachineService
+metadata:
+  name: vm-22pl
+  namespace: ns4
+spec:
+  selector:
+    vm-lb-peza: vm-lb-selector
+  type: ClusterIP
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+
+- Create the Ingress:
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress
+spec:
+  ingressClassName: avi-lb
+  rules:
+    - host: ingress-vm.app.avi.com #Provide Your Hostname here
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: vm-22pl
+                port:
+                  number: 80

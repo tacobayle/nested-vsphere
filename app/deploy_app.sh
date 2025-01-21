@@ -382,6 +382,7 @@ if [[ ${kind} == "vsphere-nsx-avi" ]] ; then
         echo 'authorityKeyIdentifier=keyid,issuer
         basicConstraints=CA:FALSE
         keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+        extendedKeyUsage=serverAuth, clientAuth
         subjectAltName = @alt_names
         [alt_names]
         ' | tee ${directory}/${lb_app_cert}.v3.ext >/dev/null 2>&1

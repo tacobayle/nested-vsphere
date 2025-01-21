@@ -11,6 +11,7 @@ to be done:
 
 
 done:
+- add self service portal demo link in details.html
 - configure tanzu using tanzu.supernet_namespace and tanzu.supernet_vip
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"
@@ -24,17 +25,13 @@ done:
 - create a Tanzu ns for VM service:
   - create the ns4
   - associate the policies and content library specific for vms
-- update tkgs-workload.html with copied capability
 - allow the capability to change AKO config for each k8s/tkg cluster from variables.json
-- wait before templating workload clusters and yaml ako values files 
 - add the pod for egress demo
-- update vault token in the html page
-- http web server disable http
-- LBaaS: use vrf_ref (for pool) and vrf_context_ref (for vs_vip) instead of tier1_lr
 
 
 
 validated:
+- LBaaS: use vrf_ref (for pool) and vrf_context_ref (for vs_vip) instead of tier1_lr
 - create a scenario for preserve client ip:
   - create a new dedicated tier1
   - create a new segment with urpf_mode disabled (for the VIP)
@@ -44,9 +41,13 @@ validated:
   - create a new network service linked with proper SEG, VRF and floating IP
   - create a new application profile with preserve_ip enabled
   - create a new VS with the application profile
+- update tkgs-workload.html with copied capability
+- update vault token in the html page
+- http web server disable http
 - deploy gw and esxi simultaneously
 - create details.html and other documentation pages
 - asynchronous download of the binaries
+- wait before templating workload clusters and yaml ako values files
 - create a readonly shell user in the external-gw
 - tkc template for class: builtin-generic-v3.2.0
 - LBaaS: "Load Balancer Created Successfully!" replaced by "Application Created Successfully!"
@@ -59,6 +60,7 @@ validated:
 - create yaml file for ingress-regex
 - remove client VMs (only use external gw for traffic)
 - issue traffic from gw (vsphere-nsx-avi use case)
+
 
 
 
