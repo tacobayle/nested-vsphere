@@ -7,6 +7,7 @@ to be done:
 - Avi SE folders
 - logs in html page and/or in container logs
 - progress in html page
+- create an auth scrip for ns4 (VM namespace)
 
 
 
