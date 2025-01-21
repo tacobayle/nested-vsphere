@@ -61,7 +61,3 @@ validated:
 - create yaml file for ingress-regex
 - remove client VMs (only use external gw for traffic)
 - issue traffic from gw (vsphere-nsx-avi use case)
-
-
-
-
