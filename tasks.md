@@ -24,18 +24,8 @@ done:
 - create a Tanzu ns for VM service:
   - create the ns4
   - associate the policies and content library specific for vms
-- create a scenario for preserve client ip:
-  - create a new dedicated tier1
-  - create a new segment with urpf_mode disabled (for the VIP)
-  - create a new segment for servers
-  - create a new NSX group for backend pool
-  - create a dedicated seg with HA active standby
-  - create a new network service linked with proper SEG, VRF and floating IP
-  - create a new application profile with preserve_ip enabled
-  - create a new VS with the application profile
 - update tkgs-workload.html with copied capability
 - allow the capability to change AKO config for each k8s/tkg cluster from variables.json
-- deploy gw and esxi simultaneously
 - wait before templating workload clusters and yaml ako values files 
 - add the pod for egress demo
 - update vault token in the html page
@@ -45,6 +35,16 @@ done:
 
 
 validated:
+- create a scenario for preserve client ip:
+  - create a new dedicated tier1
+  - create a new segment with urpf_mode disabled (for the VIP)
+  - create a new segment for servers
+  - create a new NSX group for backend pool
+  - create a dedicated seg with HA active standby
+  - create a new network service linked with proper SEG, VRF and floating IP
+  - create a new application profile with preserve_ip enabled
+  - create a new VS with the application profile
+- deploy gw and esxi simultaneously
 - create details.html and other documentation pages
 - asynchronous download of the binaries
 - create a readonly shell user in the external-gw

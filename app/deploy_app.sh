@@ -409,7 +409,7 @@ if [[ ${kind} == "vsphere-nsx-avi" ]] ; then
                       \"client_ssl_profile_binding\": {
                         \"ssl_profile_path\": \"${lb_ssl_profile_path}\",
                         \"default_certificate_path\": \"/infra/certificates/${display_name}-${lb_app_cert}\",
-                        \"client_auth\": "IGNORE",
+                        \"client_auth\": \"IGNORE\",
                         \"certificate_chain_depth\": 3
                       },
                       \"resource_type\": \"LBVirtualServer\",
