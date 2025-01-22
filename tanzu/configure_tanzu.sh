@@ -193,6 +193,13 @@ fi
 if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ; then
   for ns in $(echo ${tanzu_namespaces} | jq -c -r .[])
   do
+    # bash auth ns templating
+    sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
+        -e "s/\${sso_domain_name}/${ssoDomain}/" \
+        -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
+        -e "s/\${namespace_ref}/$(echo ${ns} | jq -c -r .name)/" /home/ubuntu/templates/tanzu_auth_ns.sh.template | tee /home/ubuntu/tanzu/auth_$(echo ${ns} | jq -c -r .name).sh > /dev/null
+    chmod u+x /home/ubuntu/tanzu/auth_$(echo ${ns} | jq -c -r .name).sh
+    #
     if [[ ${kind} == "vsphere-avi" ]]; then
       /bin/bash /home/ubuntu/vcenter/create_namespaces.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}" \
                 "$(jq -r .tanzu.vm_classes $jsonFile)" \

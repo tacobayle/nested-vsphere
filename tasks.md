@@ -7,12 +7,12 @@ to be done:
 - Avi SE folders
 - logs in html page and/or in container logs
 - progress in html page
-- create an auth scrip for ns4 (VM namespace)
 
 
 
 done:
 - add self service portal demo link in details.html
+- create an auth scrip for ns
 - configure tanzu using tanzu.supernet_namespace and tanzu.supernet_vip
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"
@@ -28,6 +28,7 @@ done:
   - associate the policies and content library specific for vms
 - allow the capability to change AKO config for each k8s/tkg cluster from variables.json
 - add the pod for egress demo
+
 
 
 
