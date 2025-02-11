@@ -137,6 +137,8 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${directories}@$(jq -c -r '.directories' $jsonFile)@" \
         -e "s/\${K8s_version_short}/$(jq -c -r '.K8s_version_short' $jsonFile)/" \
         -e "s/\${packages}/$(jq -c -r '.apt_packages' $jsonFile)/" \
+        -e "s/\${pip3_packages}/$(jq -c -r '.pip3_packages' $jsonFile)/" \
+        -e "s/\${ip_vcsa}/${ip_vcsa}/" /nested-vsphere/templates/userdata_external-gw.yaml.template | tee /tmp/${gw_name}_userdata.yaml > /dev/null
         # the following needs to be uncommented if kickstart file needs to be consumed by http
         # -e "s@\${deployment_name}@${deployment_name}@" \
         # -e "s@\${esxi_basename}@${esxi_basename}@" \
@@ -150,8 +152,6 @@ if [[ ${operation} == "apply" ]] ; then
         # -e "s/\${vlan_id_vmotion}/$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
         # -e "s/\${vlan_id_vsan}/$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
         # -e "s/\${iso_esxi_url}/$(basename ${iso_esxi_url})/" \
-        -e "s/\${pip3_packages}/$(jq -c -r '.pip3_packages' $jsonFile)/" \
-        -e "s/\${ip_vcsa}/${ip_vcsa}/" /nested-vsphere/templates/userdata_external-gw.yaml.template | tee /tmp/${gw_name}_userdata.yaml > /dev/null
     #
     sed -e "s#\${public_key}#$(awk '{printf "%s\\n", $0}' /root/.ssh/id_rsa.pub | awk '{length=$0; print substr($0, 1, length-2)}')#" \
         -e "s@\${base64_userdata}@$(base64 /tmp/${gw_name}_userdata.yaml -w 0)@" \
