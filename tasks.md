@@ -33,6 +33,7 @@ done:
 
 
 validated:
+- ESXi boots on cdrom based on SATA controller
 - LBaaS: use vrf_ref (for pool) and vrf_context_ref (for vs_vip) instead of tier1_lr
 - create a scenario for preserve client ip:
   - create a new dedicated tier1
