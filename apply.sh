@@ -249,7 +249,7 @@ if [[ ${operation} == "apply" ]] ; then
       vcenter_api 2 2 "POST" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm/${esxi_nested_vm_id}/hardware/adapter/sata"
       # adding a cdrom based on sata
       json_data='{"type": "SATA", "start_connected": true, "backing": {"iso_file": "['${GOVC_DATASTORE}'] '${deployment_name}'-tmp/'$(basename ${iso_location}-${esxi}.iso)'","type": "ISO_FILE"}}'
-      vcenter_api 2 2 "POST" $token "${json_data}" ams-cm2w1-vc1.ams.broadcom.net "api/vcenter/vm/vm-4941/hardware/cdrom"
+      vcenter_api 2 2 "POST" $token "${json_data}" ams-cm2w1-vc1.ams.broadcom.net "api/vcenter/vm/${esxi_nested_vm_id}/hardware/cdrom"
       # adding a cdrom based on IDE
       # govc device.cdrom.add -vm "${folder}/${name_esxi}" > /dev/null
       # govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
