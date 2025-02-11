@@ -241,7 +241,7 @@ if [[ ${operation} == "apply" ]] ; then
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXi '${esxi}' uploaded "}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       names="${names} ${name_esxi}"
       govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}" > /dev/null
-      token=$(/bin/bash nested-vsphere/vcenter/create_vcenter_api_session.sh "${GOVC_USERNAME}" "" "${GOVC_PASSWORD}" "$(basename ${GOVC_URL})")
+      token=$(/bin/bash /nested-vsphere/vcenter/create_vcenter_api_session.sh "${GOVC_USERNAME}" "" "${GOVC_PASSWORD}" "$(basename ${GOVC_URL})")
       vcenter_api 2 2 "GET" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm"
       esxi_nested_vm_id=$(echo ${response_body}  | jq -c -r --arg arg "${name_esxi}" '.[] | select(.name == $arg).vm')
       # adding a SATA controller
