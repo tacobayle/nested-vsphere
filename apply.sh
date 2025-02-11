@@ -246,7 +246,7 @@ if [[ ${operation} == "apply" ]] ; then
       esxi_nested_vm_id=$(echo ${response_body}  | jq -c -r --arg arg "${name_esxi}" '.[] | select(.name == $arg).vm')
       # adding a SATA controller
       json_data='{"type": "AHCI"}'
-      vcenter_api 2 2 "POST" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm/vm-4941/hardware/adapter/sata"
+      vcenter_api 2 2 "POST" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm/${esxi_nested_vm_id}/hardware/adapter/sata"
       # adding a cdrom based on sata
       json_data='{"type": "SATA", "start_connected": true, "backing": {"iso_file": "['${GOVC_DATASTORE}'] '${deployment_name}'-tmp/'$(basename ${iso_location}-${esxi}.iso)'","type": "ISO_FILE"}}'
       vcenter_api 2 2 "POST" $token "${json_data}" ams-cm2w1-vc1.ams.broadcom.net "api/vcenter/vm/vm-4941/hardware/cdrom"
