@@ -502,7 +502,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
       retry=60 ; pause=10 ; attempt=1
       while true ; do
         echo "attempt $attempt to verify VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is ready"
-        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" -q >/dev/null 2>&1
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" -q "exit" >/dev/null 2>&1
         if [[ $? -eq 0 ]]; then
           echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} is reachable."
           ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "test -f /tmp/cloudInitDone.log" 2>/dev/null

@@ -270,7 +270,7 @@ if [[ ${operation} == "apply" ]] ; then
   retry=60 ; pause=10 ; attempt=1
   while true ; do
     echo "attempt $attempt to verify gw ${gw_name} is ready" >> ${log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q >/dev/null 2>&1
+    ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q "exit" >/dev/null 2>&1
     if [[ $? -eq 0 ]]; then
       echo "Gw ${gw_name} is reachable." >> ${log_file} 2>&1
       #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
