@@ -18,7 +18,10 @@ do
       exit
     fi
 done
-sleep 20
+#
+# the following sleep should be replaced by an API call to monitor the ESXi API status
+#
+sleep 90
 govc host.storage.info -json -rescan | jq -c -r '.storageDeviceInfo.scsiLun[] | select( .deviceType == "disk" ) | .deviceName' | while read item
 do
   govc host.storage.mark -ssd ${item} > /dev/null

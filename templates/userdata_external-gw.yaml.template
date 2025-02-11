@@ -396,6 +396,43 @@ write_files:
           #
           service nginx restart
       fi
+      # the following needs to be uncommented if kickstart file needs to be consumed by http
+      # if [[ $(basename ${iso_esxi_url}) == "VMware-VMvisor-Installer-9.0.0.0.24528266.x86_64.iso" ]]; then
+      #  cd /var/www/html/
+      #  mkdir kickstart
+      #  count_esxi=1
+      #  echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
+      #  do
+      #    echo "accepteula" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "rootpw \"${password}\"" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "install --ignoressd --firstdisk --overwritevmfs --ignoreprereqwarnings --ignoreprereqerrors --forceunsupportedinstall" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "keyboard 'US Default'" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "network --bootproto=static --device=vmnic0 --ip=${cidr_mgmt_three_octets}.${ip_esxi} --netmask=${netmask_mgmt} --nameserver=${ip_gw} --hostname=${deployment_name}-${esxi_basename}${count_esxi}.${domain} --gateway=${gateway} --vlanid=${vlan_id_mgmt}" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "reboot" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "%firstboot --interpreter=busybox" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface remove --interface-name=vmk0" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface add --interface-name=vmk0 --portgroup-name=\"Management Network\"" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface ipv4 set --interface-name=vmk0 --ipv4=${cidr_mgmt_three_octets}.${ip_esxi} --netmask=${netmask_mgmt} --type=static"  | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface tag add -i vmk0 -t Management" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip route ipv4 add -g ${ip_gw} -n 0.0.0.0/0"
+      #    echo "esxcli network vswitch standard portgroup set -p \"Management Network\" -v ${vlan_id_mgmt}" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network vswitch standard portgroup set -p \"VM Network\" -v ${vlan_id_mgmt}" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network vswitch standard portgroup add -p \"VMotion Network\" -v \"vSwitch0\"" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network vswitch standard portgroup set -p \"VMotion Network\" -v ${vlan_id_vmotion}" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface add --interface-name=vmk1 --portgroup-name=\"VMotion Network\"" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface ipv4 set --interface-name=vmk1 --ipv4=${cidr_vmotion_three_octets}.${ip_esxi} --netmask=${netmask_vmotion} --type=static" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "network ip interface tag add -i vmk1 -t VMotion" | tee -a kickstart/KS${count_esxi}.CFG | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network vswitch standard portgroup add -p \"VSAN Network\" -v \"vSwitch0\"" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network vswitch standard portgroup set -p \"VSAN Network\" -v ${vlan_id_vsan}" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface add --interface-name=vmk2 --portgroup-name=\"VSAN Network\"" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface ipv4 set --interface-name=vmk2 --ipv4=${cidr_vsan_three_octets}.${ip_esxi} --netmask=${netmask_vsan} --type=static" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli network ip interface tag add -i vmk2 -t VSAN" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "vim-cmd hostsvc/enable_ssh" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "vim-cmd hostsvc/start_ssh" | tee -a kickstart/KS${count_esxi}.CFG
+      #    echo "esxcli system ntp set --server ${ip_gw} --enabled true" | tee -a kickstart/KS${count_esxi}.CFG
+      #    ((count_esxi++))
+      #  done
+      #fi
       #
       # End of cloud init
       #

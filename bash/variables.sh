@@ -357,38 +357,43 @@ avi_ctrl_name=$(jq -c -r '.avi.ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 avi_version=$(jq -c -r .spec.avi.version $jsonFile)
-import_sslkeyandcertificate_ca='[{"name": "'${vault_pki_intermediate_name}'",
-                                  "cert": {"path": "'${vault_pki_intermediate_cert_path_signed}'"}},
-                                 {"name": "'${vault_pki_name}'",
-                                  "cert": {"path": "'${vault_pki_cert_path}'"}}]'
+if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  import_sslkeyandcertificate_ca='[{"name": "'${vault_pki_intermediate_name}'",
+                                    "cert": {"path": "'${vault_pki_intermediate_cert_path_signed}'"}},
+                                   {"name": "'${vault_pki_name}'",
+                                    "cert": {"path": "'${vault_pki_cert_path}'"}}]'
+  certificatemanagementprofile='[
+                                  {
+                                    "name": "'${vault_certificate_management_profile}'",
+                                    "run_script_ref": "/api/alertscriptconfig/?name='${vault_control_script_name}'",
+                                    "script_params": [
+                                      {
+                                        "is_dynamic": false,
+                                        "is_sensitive": false,
+                                        "name": "vault_addr",
+                                        "value": "https://'${ip_gw}':8200"
+                                      },
+                                      {
+                                        "is_dynamic": false,
+                                        "is_sensitive": false,
+                                        "name": "vault_path",
+                                        "value": "/v1/'${vault_pki_intermediate_name}'/sign/'${vault_pki_intermediate_role_name}'"
+                                      },
+                                      {
+                                        "is_dynamic": false,
+                                        "is_sensitive": true,
+                                        "name": "vault_token",
+                                        "value": "dummy_value"
+                                      }
+                                    ]
+                                  }
+                                ]'
+else
+  import_sslkeyandcertificate_ca='[]'
+  certificatemanagementprofile='[]'
+fi
 vault_certificate_management_profile=$(jq -c -r .vault.certificate_mgmt_profile.name $jsonFile)
 vault_control_script_name=$(jq -c -r .vault.control_script.name $jsonFile)
-certificatemanagementprofile='[
-                                {
-                                  "name": "'${vault_certificate_management_profile}'",
-                                  "run_script_ref": "/api/alertscriptconfig/?name='${vault_control_script_name}'",
-                                  "script_params": [
-                                    {
-                                      "is_dynamic": false,
-                                      "is_sensitive": false,
-                                      "name": "vault_addr",
-                                      "value": "https://'${ip_gw}':8200"
-                                    },
-                                    {
-                                      "is_dynamic": false,
-                                      "is_sensitive": false,
-                                      "name": "vault_path",
-                                      "value": "/v1/'${vault_pki_intermediate_name}'/sign/'${vault_pki_intermediate_role_name}'"
-                                    },
-                                    {
-                                      "is_dynamic": false,
-                                      "is_sensitive": true,
-                                      "name": "vault_token",
-                                      "value": "dummy_value"
-                                    }
-                                  ]
-                                }
-                              ]'
 alertscriptconfig='[{"action_script": {"path": "'$(jq -c -r .vault.control_script.path $jsonFile)'"},
                                       "name": "'$(jq -c -r .vault.control_script.name $jsonFile)'"},
                     {"action_script": {"path": "'$(jq -c -r .avi_slack.path $jsonFile)'"},

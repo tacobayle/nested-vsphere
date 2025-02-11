@@ -12,7 +12,7 @@ to be done:
 
 done:
 - add self service portal demo link in details.html
-- create an auth scrip for ns
+- create an auth script for ns
 - configure tanzu using tanzu.supernet_namespace and tanzu.supernet_vip
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"

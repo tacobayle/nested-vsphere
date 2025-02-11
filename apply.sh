@@ -2,6 +2,7 @@
 #
 source /nested-vsphere/bash/download_file.sh
 source /nested-vsphere/bash/ip.sh
+source nested-vsphere/bash/functions.sh
 #
 rm -f /root/govc.error
 jsonFile_kube="${1}"
@@ -136,6 +137,19 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${directories}@$(jq -c -r '.directories' $jsonFile)@" \
         -e "s/\${K8s_version_short}/$(jq -c -r '.K8s_version_short' $jsonFile)/" \
         -e "s/\${packages}/$(jq -c -r '.apt_packages' $jsonFile)/" \
+        # the following needs to be uncommented if kickstart file needs to be consumed by http
+        # -e "s@\${deployment_name}@${deployment_name}@" \
+        # -e "s@\${esxi_basename}@${esxi_basename}@" \
+        # -e "s/\${cidr_vmotion_three_octets}/${cidr_vmotion_three_octets}/g" \
+        # -e "s/\${cidr_vsan_three_octets}/${cidr_vsan_three_octets}/g" \
+        # -e "s/\${netmask_mgmt}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
+        # -e "s/\${netmask_vmotion}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
+        # -e "s/\${netmask_vsan}/$(ip_netmask_by_prefix $(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")/" \
+        # -e "s/\${gateway}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)/" \
+        # -e "s/\${vlan_id_mgmt}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+        # -e "s/\${vlan_id_vmotion}/$(jq -c -r --arg arg "VMOTION" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+        # -e "s/\${vlan_id_vsan}/$(jq -c -r --arg arg "VSAN" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)/" \
+        # -e "s/\${iso_esxi_url}/$(basename ${iso_esxi_url})/" \
         -e "s/\${pip3_packages}/$(jq -c -r '.pip3_packages' $jsonFile)/" \
         -e "s/\${ip_vcsa}/${ip_vcsa}/" /nested-vsphere/templates/userdata_external-gw.yaml.template | tee /tmp/${gw_name}_userdata.yaml > /dev/null
     #
@@ -176,6 +190,13 @@ if [[ ${operation} == "apply" ]] ; then
   mkdir -p ${iso_build_location}
   cp -r ${iso_mount_location}/* ${iso_build_location}
   rm -fr ${iso_mount_location}
+  # the following needs to be uncommented if kickstart file needs to be consumed by http
+  #  if [[ $(basename ${iso_esxi_url}) != "VMware-VMvisor-Installer-9.0.0.0.24528266.x86_64.iso" ]]; then
+  #    echo "Modifying ${iso_build_location}/${boot_cfg_location}" >> ${log_file} 2>&1
+  #    echo "kernelopt=runweasel ks=cdrom:/KS_CUST.CFG" | tee -a ${iso_build_location}/${boot_cfg_location}
+  #  else
+  #    cp ${iso_build_location}/${boot_cfg_location} /root/boot.cfg.ori
+  #  fi
   echo "Modifying ${iso_build_location}/${boot_cfg_location}" >> ${log_file} 2>&1
   echo "kernelopt=runweasel ks=cdrom:/KS_CUST.CFG" | tee -a ${iso_build_location}/${boot_cfg_location}
   #
@@ -207,6 +228,12 @@ if [[ ${operation} == "apply" ]] ; then
           -e "s/\${domain}/${domain}/" \
           -e "s/\${gateway}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)/" /nested-vsphere/templates/ks_cust.cfg.template | tee ${iso_build_location}/ks_cust.cfg > /dev/null
           echo "Modifying ${iso_build_location}/ks_cust.cfg" >> ${log_file} 2>&1
+      # the following needs to be uncommented if kickstart file needs to be consumed by http
+      #      if [[ $(basename ${iso_esxi_url}) == "VMware-VMvisor-Installer-9.0.0.0.24528266.x86_64.iso" ]]; then
+      #        cp /root/boot.cfg.ori ${iso_build_location}/${boot_cfg_location}
+      #        echo "Modifying ${iso_build_location}/${boot_cfg_location}" >> ${log_file} 2>&1
+      #        echo "kernelopt=runweasel ks=http://${ip_gw}/kickstart/KS${esxi}.CFG nameserver=${ip_gw} ip=${cidr_mgmt_three_octets}.${ip_esxi} mask=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++") gateway=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile) vlanid=$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)" | tee -a ${iso_build_location}/${boot_cfg_location}
+      #      fi
       echo "Building new ISO for ESXi ${esxi}" >> ${log_file} 2>&1
       xorrisofs -relaxed-filenames -J -R -o "${iso_location}-${esxi}.iso" -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efiboot.img -no-emul-boot ${iso_build_location}
       echo "Uploading new ISO for ESXi ${esxi} to datastore" >> ${log_file} 2>&1
@@ -214,8 +241,18 @@ if [[ ${operation} == "apply" ]] ; then
       if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXi '${esxi}' uploaded "}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       names="${names} ${name_esxi}"
       govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}" > /dev/null
-      govc device.cdrom.add -vm "${folder}/${name_esxi}" > /dev/null
-      govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
+      token=$(/bin/bash nested-vsphere/vcenter/create_vcenter_api_session.sh "${GOVC_USERNAME}" "" "${GOVC_PASSWORD}" "$(basename ${GOVC_URL})")
+      vcenter_api 2 2 "GET" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm"
+      esxi_nested_vm_id=$(echo ${response_body}  | jq -c -r --arg arg "${name_esxi}" '.[] | select(.name == $arg).vm')
+      # adding a SATA controller
+      json_data='{"type": "AHCI"}'
+      vcenter_api 2 2 "POST" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm/vm-4941/hardware/adapter/sata"
+      # adding a cdrom based on sata
+      json_data='{"type": "SATA", "start_connected": true, "backing": {"iso_file": "['${GOVC_DATASTORE}'] '${deployment_name}'-tmp/'$(basename ${iso_location}-${esxi}.iso)'","type": "ISO_FILE"}}'
+      vcenter_api 2 2 "POST" $token "${json_data}" ams-cm2w1-vc1.ams.broadcom.net "api/vcenter/vm/vm-4941/hardware/cdrom"
+      # adding a cdrom based on IDE
+      # govc device.cdrom.add -vm "${folder}/${name_esxi}" > /dev/null
+      # govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
       govc vm.change -vm "${folder}/${name_esxi}" -nested-hv-enabled > /dev/null
       govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk1 -size $(jq -c -r .spec.esxi.disk_flash_size $jsonFile) > /dev/null
       govc vm.disk.create -vm "${folder}/${name_esxi}" -name ${name_esxi}/disk2 -size $(jq -c -r .spec.esxi.disk_capacity_size $jsonFile) > /dev/null
@@ -260,21 +297,25 @@ if [[ ${operation} == "apply" ]] ; then
         done
         scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
         # lbaas config.
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/html/* /var/www/html/" >> ${log_file}
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service" >> ${log_file}
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chmod 644 /etc/systemd/system/avi-lbaas.service" >> ${log_file}
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl start avi-lbaas" >> ${log_file}
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
+        if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/html/* /var/www/html/" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chmod 644 /etc/systemd/system/avi-lbaas.service" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl start avi-lbaas" >> ${log_file}
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
+        fi
         # yaml domain update
-        sed -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
-            -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" /nested-vsphere/templates/yaml_download_update.sh.template | tee /root/yaml_download_update.sh > /dev/null
-        scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
-        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+        if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+          sed -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
+              -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" /nested-vsphere/templates/yaml_download_update.sh.template | tee /root/yaml_download_update.sh > /dev/null
+          scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
+          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+        fi
         #
         echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
         if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
@@ -326,10 +367,14 @@ if [[ ${operation} == "apply" ]] ; then
     # Start downloading NSX OVA remotely
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${nsx_ova_url}\" \"/home/ubuntu/bin/$(basename ${nsx_ova_url})\" \"${deployment_name}, NSX OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   fi
-  # Start downloading Avi OVA remotely
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
-  # Start downloading Ubuntu OVA remotely
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Ubuntu OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+  #
+  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+    # Start downloading Avi OVA remotely
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+    # Start downloading Ubuntu OVA remotely
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Ubuntu OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+  fi
+  #
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
   echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
   echo "Creation of VCSA  - This should take about 45 minutes" >> ${log_file} 2>&1
