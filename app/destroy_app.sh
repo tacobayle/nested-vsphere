@@ -22,8 +22,8 @@ govc library.rm ubuntu
 if [[ ${ips_app} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app} | jq -c -r '. | length'))
   do
-    govc vm.power -off=true "${folder_app}/${app_basename}${index}"
-    govc vm.destroy "${folder_app}/${app_basename}${index}"
+    govc vm.power -off=true "${folder_app}/${network_ref_app}-${app_basename}${index}"
+    govc vm.destroy "${folder_app}/${network_ref_app}-${app_basename}${index}"
   done
 fi
 #
@@ -32,8 +32,8 @@ fi
 if [[ ${ips_app_second} != "null" ]]; then
   for index in $(seq 1 $(echo ${ips_app_second} | jq -c -r '. | length'))
   do
-    govc vm.power -off=true "${folder_app}/${app_basename_second}${index}"
-    govc vm.destroy "${folder_app}/${app_basename_second}${index}"
+    govc vm.power -off=true "${folder_app}/${network_ref_app}-${app_basename_second}${index}"
+    govc vm.destroy "${folder_app}/${network_ref_app}-${app_basename_second}${index}"
   done
 fi
 #
@@ -42,7 +42,7 @@ fi
 if [[ ${k8s_clusters} != "null" ]]; then
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
-    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
+    for index_ip in $(seq 1 2)
     do
       govc vm.power -off=true "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}"
       govc vm.destroy "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}"
@@ -62,3 +62,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     govc object.destroy /${dc}/vm/${k8s_basename}${index}
   done
 fi
+#
+# clear ssh keys
+#
+rm /home/ubuntu/.ssh/known_hosts

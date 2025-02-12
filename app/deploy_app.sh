@@ -224,6 +224,7 @@ fi
 # VM k8s_clusters creation
 #
 if [[ ${k8s_clusters} != "null" ]]; then
+  kube_increment_ip=0
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
     K8s_version="$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')"
@@ -240,7 +241,8 @@ if [[ ${k8s_clusters} != "null" ]]; then
         gw_client=$(echo ${segments_overlay} | jq -r -c '.[] | select(.kube == "true").gateway_address' | cut -d"/" -f1)
         network_ref_vip=$(echo ${segments_overlay} | jq -r -c '.[] | select(.kube == "true").display_name')
       fi
-      ip_k8s_node="${cidr_vip_three_octets}.${kube_starting_ip}"
+      kube_last_octet=$((kube_starting_ip+kube_increment_ip))
+      ip_k8s_node="${cidr_vip_three_octets}.${kube_last_octet}"
       if [[ ${index_ip} -eq 1 ]]; then
         node_type="master"
       else
@@ -273,7 +275,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
       govc vm.change -vm "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}" -c ${k8s_node_cpu} -m ${k8s_node_memory}
       govc vm.disk.change -vm "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}" -size ${k8s_node_disk}
       govc vm.power -on=true "${k8s_basename}${index}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}"
-      ((kube_starting_ip++))
+      ((kube_increment_ip++))
     done
   done
 fi
@@ -486,40 +488,42 @@ fi
 # VM k8s_clusters check and config
 #
 if [[ ${k8s_clusters} != "null" ]]; then
+  kube_increment_ip=0
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
     K8s_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')
     cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
     cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
-    total_node=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length')
+    total_node=2
     sed -e "s/\${total_node}/${total_node}/" \
         -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@g" \
         -e "s@\${deployment_name}@${deployment_name}@" \
         -e "s/\${clusterName}/${k8s_basename}${index}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh"
     for index_ip in $(seq 1 2)
     do
-      ip_k8s_node="${cidr_vip_three_octets}.${kube_starting_ip}"
+      kube_last_octet=$((kube_starting_ip+kube_increment_ip))
+      ip_k8s_node="${cidr_vip_three_octets}.${kube_last_octet}"
       retry=60 ; pause=10 ; attempt=1
       while true ; do
         echo "attempt $attempt to verify VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is ready"
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" -q "exit" >/dev/null 2>&1
         if [[ $? -eq 0 ]]; then
-          echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} is reachable."
+          echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is reachable."
           ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
           if [[ $? -eq 0 ]]; then
-            echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} cloud init done."
+            echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} cloud init done."
             if [[ ${index_ip} -eq 1 ]]; then
-              echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} is a master - transfer join command file to external gw /home/ubuntu/k8s/join-command-${k8s_basename}${index}"
+              echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is a master - transfer join command file to external gw /home/ubuntu/k8s/join-command-${k8s_basename}${index}"
               scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/join-command" "/home/ubuntu/k8s/join-command-${k8s_basename}${index}"
               scp -o StrictHostKeyChecking=no "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh" ubuntu@${ip_k8s_node}:/home/ubuntu/K8s_check_${k8s_basename}${index}.sh
             else
-              echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app} is a worker - transfer join command file to worker and execute it to join the cluster ${k8s_basename}${index}"
+              echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is a worker - transfer join command file to worker and execute it to join the cluster ${k8s_basename}${index}"
               scp -o StrictHostKeyChecking=no "/home/ubuntu/k8s/join-command-${k8s_basename}${index}" "ubuntu@${ip_k8s_node}:/home/ubuntu/join-command-${k8s_basename}${index}"
               ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "sudo /bin/bash /home/ubuntu/join-command-${k8s_basename}${index}"
             fi
             break
           else
-            echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app}: cloud init is not finished." >> ${log_file} 2>&1
+            echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app}: cloud init is not finished."
           fi
         else
           echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip} is not reachable."
@@ -531,34 +535,29 @@ if [[ ${k8s_clusters} != "null" ]]; then
         fi
         sleep $pause
       done
-      ((kube_starting_ip++))
+      ((kube_increment_ip++))
     done
   done
 fi
 #
-# VM k8s_clusters final check
-#
-if [[ ${k8s_clusters} != "null" ]]; then
-  for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
-  do
-    for index_ip in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ips | length'))
-    do
-      ip_k8s_node="${cidr_vip_three_octets}.$(echo ${k8s_clusters} | jq -c -r .[$(expr ${index} - 1)].ips[$(expr ${index_ip} - 1)])"
-      if [[ ${index_ip} -eq 1 ]]; then
-        scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/.kube/config" "/home/ubuntu/k8s/config-${k8s_basename}${index}"
-        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "/bin/bash /home/ubuntu/K8s_check_${k8s_basename}${index}.sh"
-      fi
-    done
-  done
-fi
-#
-# consolidate k8s config files in the external gw
+# VM k8s_clusters final check and k8s config file consolidation in the external gw
 #
 if [[ ${k8s_clusters} != "null" ]]; then
   kube_config_json="{\"apiVersion\": \"v1\"}"
   localFile=/home/ubuntu/.kube/config
+  kube_increment_ip=0
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
+    for index_ip in $(seq 1 2)
+    do
+      kube_last_octet=$((kube_starting_ip+kube_increment_ip))
+      ip_k8s_node="${cidr_vip_three_octets}.${kube_last_octet}"
+      if [[ ${index_ip} -eq 1 ]]; then
+        scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/.kube/config" "/home/ubuntu/k8s/config-${k8s_basename}${index}"
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "/bin/bash /home/ubuntu/K8s_check_${k8s_basename}${index}.sh"
+      fi
+      ((kube_increment_ip++))
+    done
     cluster_certificate_authority_data=$(yq -c -r '.clusters[0].cluster."certificate-authority-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
     cluster_server=$(yq -c -r '.clusters[0].cluster.server' /home/ubuntu/k8s/config-${k8s_basename}${index})
     name=${k8s_basename}${index}
