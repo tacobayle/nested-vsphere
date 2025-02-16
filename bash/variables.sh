@@ -519,8 +519,8 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   gw_client=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   network_ref_vip="avi-vip"
   network_ref_app="avi-app-backend"
-  net_client_list='[{"cidr_three_octets": "'${cidr_vip_three_octets}'", "cidr": "'${cidr_vip_full}'", "tier1": "dummy", "gw": "'${gw_client}'", "display_name": "'${network_ref_vip}'"}]'
-  net_app_list='[{"cidr_three_octets": "'${cidr_app_three_octets}'", "cidr": "'${cidr_app}'", "tier1": "", "gw": "'${gw_app}'", "display_name": "'${network_ref_app}'"}]'
+  net_client_list='[{"cidr_three_octets": "'${cidr_vip_three_octets}'", "cidr": "'${cidr_vip_full}'", "tier1": "dummy", "gw": "'${gw_client}'", "display_name": "'${network_ref_vip}'", "server_preserve_ip": false}]'
+  net_app_list='[{"cidr_three_octets": "'${cidr_app_three_octets}'", "cidr": "'${cidr_app}'", "tier1": "", "gw": "'${gw_app}'", "display_name": "'${network_ref_app}'", "server_preserve_ip": false}]'
   #
   lsc_ips_mgmt=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_se_mgmt_three_octets}'." + (. | tostring))')
   lsc_ips_backend=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_app_three_octets}'." + (. | tostring))')
