@@ -519,7 +519,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   gw_client=$(jq -c -r --arg arg "avi-vip" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)
   network_ref_vip="avi-vip"
   network_ref_app="avi-app-backend"
-  net_client_list='[{"cidr_three_octets": "'${cidr_vip_three_octets}'", "cidr": "'${cidr_vip_full}'", "tier1": "dummy", "gw": "'${gw_client}'", "display_name": "'${network_ref_vip}'", "server_preserve_ip": false}]'
+  net_client_list='[{"cidr_three_octets": "'${cidr_vip_three_octets}'", "cidr": "'${cidr_vip_full}'", "cidr_vip": "'${cidr_vip_full}'", "tier1": "", "gw": "'${gw_client}'", "display_name": "'${network_ref_vip}'", "server_preserve_ip": false, "se_group_ref": "private"}]'
   net_app_list='[{"cidr_three_octets": "'${cidr_app_three_octets}'", "cidr": "'${cidr_app}'", "tier1": "", "gw": "'${gw_app}'", "display_name": "'${network_ref_app}'", "server_preserve_ip": false}]'
   #
   lsc_ips_mgmt=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_se_mgmt_three_octets}'." + (. | tostring))')
@@ -663,7 +663,6 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
             virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
           fi
         fi
-        if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
         pool_ports="[80, ${app_tcp_default}, ${app_tcp_waf}]"
         vs_names='["hello-world", "avi", "waf"]'
         for pool_ports_index in $(seq 0 $(($(echo ${pool_ports} | jq -c -r '. | length')-1)))
@@ -846,7 +845,6 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
                       }')
             pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
             #
-            if [[ ${kind} == "vsphere-avi" ]] ; then tier1_name="" ; fi
             pool="{}"
             pool=$(echo ${pool} | jq '. += {
                         "name": "pg1-pool2-app-v2",
