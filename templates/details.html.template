@@ -15,6 +15,7 @@
     <li><a href="https://nsx-manager-01.${domain}" target="_blank">NSX Manager</a></li>
     <li><a href="https://avi-ctrl-01.${domain}" target="_blank">Avi Ctrl</a></li>
     <li><a href="https://demo.${domain}" target="_blank">Self Service Portal Demo</a></li>
+    <li><a href="https://demo.${domain}/clean-up.html" target="_blank">Self Service Portal Clean Up</a></li>
 </ul>
 <h1>What you need to do</h1>
 <ul>
