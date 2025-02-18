@@ -548,12 +548,32 @@ if [[ ${k8s_clusters} != "null" ]]; then
   kube_increment_ip=0
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
+    echo "Cluster ${index} check and k8s client config"
     for index_ip in $(seq 1 2)
     do
       kube_last_octet=$((kube_starting_ip+kube_increment_ip))
       ip_k8s_node="${cidr_vip_three_octets}.${kube_last_octet}"
       if [[ ${index_ip} -eq 1 ]]; then
-        scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/.kube/config" "/home/ubuntu/k8s/config-${k8s_basename}${index}"
+        retry_count=0
+        RETRY_DELAY_SECONDS=10
+        MAX_RETRIES=6
+        # Loop until file is found or max retries reached
+        while true; do
+          retry_count=$((retry_count + 1))
+          ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "test -f /home/ubuntu/.kube/config" > /dev/null 2>&1
+          if [[ $? -eq 0 ]]; then
+            echo "  File /home/ubuntu/.kube/config found on ${ip_k8s_node} after $retry_count retries."
+            scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/.kube/config" "/home/ubuntu/k8s/config-${k8s_basename}${index}"
+            break
+          else
+            echo "  File /home/ubuntu/.kube/config not found on ${ip_k8s_node} after $retry_count retries."
+            if [[ $retry_count -ge $MAX_RETRIES ]]; then
+              echo "  Maximum retries reached. Exiting."
+              break
+            fi
+            sleep $RETRY_DELAY_SECONDS
+          fi
+        done
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "/bin/bash /home/ubuntu/K8s_check_${k8s_basename}${index}.sh"
       fi
       ((kube_increment_ip++))
