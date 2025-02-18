@@ -14,6 +14,7 @@ vsphere_nested_username="administrator"
 vsphere_nested_password="${GENERIC_PASSWORD}"
 dc=$(jq -c -r '.dc' $jsonFile)
 vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
+vsca_about_json_file=$(jq -c -r '.vsca_about_json_file' $jsonFile)
 domain=$(jq -c -r '.spec.domain' $jsonFile)
 api_host="${vcsa_name}.${domain}"
 folder=$(jq -c -r .spec.folder $jsonFile)

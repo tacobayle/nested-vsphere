@@ -91,7 +91,7 @@ done
 #
 # saving vCenter uuid
 #
-govc about -json | tee /home/ubuntu/json/vcenter_about.json
+govc about -json | tee ${vsca_about_json_file}
 #
 # Network config
 #

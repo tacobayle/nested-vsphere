@@ -91,6 +91,7 @@
   "cluster_basename": "cluster0",
   "esxi_basename": "esxi0",
   "vcsa_name": "vcsa-01",
+  "vsca_about_json_file": "/home/ubuntu/json/vcenter_about.json",
   "vds_switches": [
     {
       "name": "vds1",
