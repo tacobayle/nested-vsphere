@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nested Deployment Details</title>
+</head>
+<body>
+<h1>Nested Deployment Details</h1>
+<ul>
+    <li><a href="socks.html" target="_blank">Configure a SOCKS proxy</a></li>
+    <li><a href="https://esxi01.${domain}" target="_blank">ESXi 01</a></li>
+    <li><a href="https://esxi02.${domain}" target="_blank">ESXi 02</a></li>
+    <li><a href="https://esxi03.${domain}" target="_blank">ESXi 03</a></li>
+    <li><a href="https://vcsa-01.${domain}" target="_blank">VCSA</a></li>
+    <li><a href="https://avi-ctrl-01.${domain}" target="_blank">Avi Ctrl</a></li>
+</ul>
+</body>
+</html>

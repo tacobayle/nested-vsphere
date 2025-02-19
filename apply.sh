@@ -70,10 +70,21 @@ if [[ ${operation} == "apply" ]] ; then
   #
   sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/socks.html.template | tee /nested-vsphere/html/socks.html > /dev/null
   sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/vault.html.template | tee /nested-vsphere/html/vault.html.tmp > /dev/null
-  sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details.html.template | tee /nested-vsphere/html/details.html > /dev/null
-  sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/api.js.template | tee /nested-vsphere/html/api.js > /dev/null
-  sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/clean-up.js.template | tee /nested-vsphere/html/clean-up.js > /dev/null
-  sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/script.js.template | tee /nested-vsphere/html/script.js > /dev/null
+  if [[ ${kind} == "vsphere" ]]; then
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere.html.template | tee /nested-vsphere/html/details.html > /dev/null
+  fi
+  if [[ ${kind} == "vsphere-avi" ]]; then
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
+  fi
+  if [[ ${kind} == "vsphere-nsx" ]]; then
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx.html.template | tee /nested-vsphere/html/details.html > /dev/null
+  fi
+  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/api.js.template | tee /nested-vsphere/html/api.js > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/clean-up.js.template | tee /nested-vsphere/html/clean-up.js > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/script.js.template | tee /nested-vsphere/html/script.js > /dev/null
+  fi
   if [[ ${list_gw} != "null" ]] ; then
     echo "ERROR: unable to create VM ${gw_name}: it already exists" >> ${log_file} 2>&1
     exit
@@ -296,11 +307,12 @@ if [[ ${operation} == "apply" ]] ; then
           scp -o StrictHostKeyChecking=no -r /nested-vsphere/${folder} ubuntu@${ip_gw}:/home/ubuntu
         done
         scp -o StrictHostKeyChecking=no ${jsonFile} ubuntu@${ip_gw}:/home/ubuntu/json/${deployment_name}_${operation}.json
+        # details config.
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/html/* /var/www/html/" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
+        ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
         # lbaas config.
         if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/html/* /var/www/html/" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
