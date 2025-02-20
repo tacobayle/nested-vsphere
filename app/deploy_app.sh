@@ -544,7 +544,6 @@ fi
 #
 if [[ ${k8s_clusters} != "null" ]]; then
   kube_config_json="{\"apiVersion\": \"v1\"}"
-  localFile=/home/ubuntu/.kube/config
   kube_increment_ip=0
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
@@ -593,8 +592,6 @@ if [[ ${k8s_clusters} != "null" ]]; then
     user_client_key_data=$(yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
     kube_config_json=$(echo ${kube_config_json} | jq '.users += [{"user": {"client-certificate-data": "'$(echo $user_client_certificate_data)'", "client-key-data": "'$(echo $user_client_key_data)'"}, "name": "'$(echo $name)'"}]')
   done
-  rm -f ${localFile}
-  echo ${kube_config_json} | yq -y . | tee ${localFile} > /dev/null
-  cp ${localFile} /home/ubuntu/k8s/config
-  chmod 600 ${localFile}
+  echo ${kube_config_json} | yq -y . | tee /home/ubuntu/k8s/config
+  chmod 600 /home/ubuntu/k8s/config
 fi
