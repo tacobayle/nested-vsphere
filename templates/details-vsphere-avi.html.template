@@ -13,11 +13,15 @@
     <li><a href="https://vcsa-01.${domain}" target="_blank">VCSA</a></li>
     <li><a href="https://avi-ctrl-01.${domain}" target="_blank">Avi Ctrl</a></li>
 </ul>
-<h1>What you need to do</h1>
+<h1>What you need to do to demo Tanzu/VKS</h1>
 <ul>
     <li><a href="tkgs-service.html" target="_blank">Update TKGs service</a></li>
     <li><a href="cci-service.html" target="_blank">Install CCI service</a></li>
     <li><a href="tkgs-workload.html" target="_blank">Create workload clusters</a></li>
+</ul>
+<h1>What you need to do to demo Vanilla K8s</h1>
+<ul>
+    <li><a href="vanilla-k8s.html" target="_blank">Demo Vanilla K8s</a></li>
 </ul>
 </body>
 </html>
