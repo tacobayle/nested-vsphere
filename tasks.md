@@ -7,12 +7,15 @@ to be done:
 - Avi SE folders
 - logs in html page and/or in container logs
 - progress in html page
+- create doc for vanilla k8s clusters
 
 
 
 done:
-- add self service portal demo link in details.html
+- add self service portal demo link in details.html for vsphere-nsx-avi use kind
 - create an auth script for ns
+- generate dynamically tkgs-workload.html
+- manage AKO 1.13.1
 - configure tanzu using tanzu.supernet_namespace and tanzu.supernet_vip
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"

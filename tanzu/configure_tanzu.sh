@@ -257,10 +257,114 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
   echo "waiting 1 minute before tkc/ako templating/creation"
   sleep 60
   cluster_count=1
+  #
+  # html /home/ubuntu/tkc/tkgs-workload.html
+  #
+  tee /home/ubuntu/tkc/tkgs-workload.html> /dev/null <<EOT
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Workload Clusters</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>Workload Clusters</h1>
+<ul>
+EOT
+  #
+  #
+  #
+  javascript_count=0
   for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
   do
     namespace=$(echo ${cluster} | jq -c -r .namespace_ref)
     tkc_name=$(echo ${cluster} | jq -c -r .name)
+    #
+    # html /home/ubuntu/tkc/tkgs-workload.html
+    #
+    tee -a /home/ubuntu/tkc/tkgs-workload.html> /dev/null <<EOT
+    <li>${tkc_name}</li>
+    <br>
+    <table>
+        <tr>
+            <th>vSphere Namespaces</th>
+            <td>${namespace}</td>
+        </tr>
+        <tr>
+            <th>Antrea Config Yaml manifest</th>
+            <td><a href="${tkc_name}-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Cluster Yaml manifest</th>
+            <td><a href="${tkc_name}.yml" target="_blank">Cluster Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Commands from the external gw to create cluster1</th>
+            <td class="code-box">
+    <pre><code>
+/home/ubuntu/tkc/${tkc_name}_create.sh
+    </code></pre>
+<button onclick="copyToClipboard(${javascript_count})">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Authenticate to the cluster</th>
+            <td class="code-box">
+    <pre><code>
+/home/ubuntu/tkc/auth_${tkc_name}.sh
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count+1)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create namespaces and docker account</th>
+            <td class="code-box">
+    <pre><code>
+/home/ubuntu/tkc/auth_${tkc_name}.sh
+/home/ubuntu/tkc/k8s-config.sh
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count+2)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>AKO Gateway API enabled</th>
+            <td>$(echo ${cluster} | jq -c -r .ako_api_gateway)</td>
+        </tr>
+        <tr>
+            <th>AKO values Yaml</th>
+            <td><a href="ako_${tkc_name}_values.yml" target="_blank">AKO values Yaml</a></td>
+        </tr>
+        <tr>
+            <th>Install AKO via helm</th>
+            <td class="code-box">
+    <pre><code>
+/home/ubuntu/tkc/auth_${tkc_name}.sh
+helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version $(echo ${cluster} | jq -c -r .ako_version) \\
+-f /home/ubuntu/tkc/ako_${tkc_name}_values.yml --namespace=avi-system
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count+3)))">Copy Code</button>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+EOT
+    javascript_count=$((javascript_count+4))
+    #
+    #
+    #
     # yaml antrea config map templating
     if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       sed -e "s/\${name}/${tkc_name}/" \
@@ -359,14 +463,14 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
     fi
     if $(echo ${cluster} | jq -e '.ako_api_gateway' > /dev/null) ; then
       if [[ $(echo ${cluster} | jq -c -r .ako_api_gateway) == "true" ]]; then
-        echo "defaulting to AKO version 1.12.1 with gatewayApi for cluster ${tkc_name}"
+        echo "defaulting to AKO version $(echo ${cluster} | jq -c -r .ako_version) with gatewayApi for cluster ${tkc_name}"
         ako_template_file_name="values_api_gw.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
       else
-        echo "defaulting to AKO version 1.12.1 without gatewayApi for cluster ${tkc_name}"
+        echo "defaulting to AKO version $(echo ${cluster} | jq -c -r .ako_version) without gatewayApi for cluster ${tkc_name}"
         ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
       fi
     else
-      echo "defaulting to AKO version 1.12.1 without gatewayApi  for cluster ${tkc_name}"
+      echo "defaulting to AKO version $(echo ${cluster} | jq -c -r .ako_version) without gatewayApi  for cluster ${tkc_name}"
       ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
     fi
     sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
@@ -386,4 +490,33 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
     sudo cp /home/ubuntu/tkc/ako_${tkc_name}_values.yml /var/www/html/
     ((cluster_count++))
   done
+  #
+  # html /home/ubuntu/tkc/tkgs-workload.html
+  #
+  tee -a /home/ubuntu/tkc/tkgs-workload.html> /dev/null <<EOT
+</ul>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
+</body>
+</html>
+EOT
+  #
+  #
+  #
+  sudo cp /home/ubuntu/tkc/tkgs-workload.html /var/www/html/
 fi
