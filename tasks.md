@@ -7,11 +7,14 @@ to be done:
 - Avi SE folders
 - logs in html page and/or in container logs
 - progress in html page
-- create doc for vanilla k8s clusters
 
 
 
 done:
+- update k8s config script to generate a cert and import it into a k8s secret
+- update unmanged k8s version to 1.32
+- update cni version (antrea, cilium, calico)
+- create doc for vanilla k8s clusters
 - add self service portal demo link in details.html for vsphere-nsx-avi use kind
 - create an auth script for ns
 - generate dynamically tkgs-workload.html

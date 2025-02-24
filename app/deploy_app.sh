@@ -23,6 +23,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
     K8s_version="$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')"
+    ako_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ako_version')
     cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
     if [[ ${cni} == "antrea" ]]; then
       disableStaticRouteSync="true"
@@ -57,7 +58,8 @@ if [[ ${k8s_clusters} != "null" ]]; then
         -e "s/\${cloudName}/${avi_cloud_name}/" \
         -e "s/\${controllerHost}/${ip_avi}/" \
         -e "s/\${tenant}/${k8s_basename}${index}/" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values.yml.1.12.1.template | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null
+        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values_api_gw.yml.${ako_version}.template | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null
+        sudo cp /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml /var/www/html/
   done
 fi
 #
@@ -543,10 +545,114 @@ fi
 # VM k8s_clusters final check and k8s config file consolidation in the external gw
 #
 if [[ ${k8s_clusters} != "null" ]]; then
+  #
+  # html /home/ubuntu/k8s/vanilla-k8s.html
+  #
+  tee /home/ubuntu/k8s/vanilla-k8s.html> /dev/null <<EOT
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo vanilla K8s</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>Demo vanilla K8s</h1>
+<ul>
+EOT
+  #
+  #
+  #
   kube_config_json="{\"apiVersion\": \"v1\"}"
   kube_increment_ip=0
+  javascript_count=0
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
+    K8s_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')
+    cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
+    cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
+    ako_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].ako_version')
+    clusterName="${k8s_basename}${index}"
+    #
+    # html /home/ubuntu/k8s/vanilla-k8s.html
+    #
+    tee -a /home/ubuntu/k8s/vanilla-k8s.html> /dev/null <<EOT
+    <li>${clusterName}</li>
+    <br>
+    <table>
+        <tr>
+            <th>K8s version</th>
+            <td>${K8s_version}</td>
+        </tr>
+        <tr>
+            <th>CNI</th>
+            <td>${cni}</td>
+        </tr>
+        <tr>
+            <th>CNI version</th>
+            <td>${cni_version}</td>
+        </tr>
+        <tr>
+            <th>Authenticate to the cluster</th>
+            <td class="code-box">
+    <pre><code>
+k config use-context context${index}
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create namespaces and docker account</th>
+            <td class="code-box">
+    <pre><code>
+k config use-context context${index}
+/home/ubuntu/k8s/k8s-config.sh
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count+1)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Enable cluster for gateway API</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count+2)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>AKO values Yaml</th>
+            <td><a href="ako_${k8s_basename}${index}_values.yml" target="_blank">AKO values Yaml</a></td>
+        </tr>
+        <tr>
+            <th>Install AKO via helm</th>
+            <td class="code-box">
+    <pre><code>
+helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version ${ako_version} \\
+-f /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml --namespace=avi-system
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count+3)))">Copy Code</button>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+EOT
+    javascript_count=$((javascript_count+4))
+    #
+    #
+    #
     echo "Cluster ${index} check and k8s client config"
     for index_ip in $(seq 1 2)
     do
@@ -563,6 +669,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
           if [[ $? -eq 0 ]]; then
             echo "  File /home/ubuntu/.kube/config found on ${ip_k8s_node} after $retry_count retries."
             scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/.kube/config" "/home/ubuntu/k8s/config-${k8s_basename}${index}"
+            chmod 600 /home/ubuntu/k8s/config-${k8s_basename}${index}
             break
           else
             echo "  File /home/ubuntu/.kube/config not found on ${ip_k8s_node} after $retry_count retries."
@@ -592,6 +699,43 @@ if [[ ${k8s_clusters} != "null" ]]; then
       ((kube_increment_ip++))
     done
   done
+  #
+  # html /home/ubuntu/k8s/vanilla-k8s.html
+  #
+  tee -a /home/ubuntu/k8s/vanilla-k8s.html> /dev/null <<EOT
+</ul>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
+</body>
+</html>
+EOT
+  #
+  #
+  #
+  sudo cp /home/ubuntu/k8s/vanilla-k8s.html /var/www/html/
+  echo "test1"
+  echo ${kube_config_json}
   echo ${kube_config_json} | yq -y . | tee /home/ubuntu/k8s/config
+  echo "test2"
   chmod 600 /home/ubuntu/k8s/config
+  echo "Updating /home/ubuntu/.profile"
+  contents=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
+  echo "${contents}" | tee /home/ubuntu/.profile > /dev/null
+  contents="export KUBECONFIG=/home/ubuntu/.kube/config:/home/ubuntu/k8s/config"
+  echo "${contents}" | tee -a /home/ubuntu/.profile > /dev/null
 fi
