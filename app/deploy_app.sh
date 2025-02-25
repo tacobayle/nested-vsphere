@@ -681,20 +681,38 @@ EOT
           fi
         done
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "/bin/bash /home/ubuntu/K8s_check_${k8s_basename}${index}.sh"
+        echo "check file"
+        ls /home/ubuntu/k8s/config-${k8s_basename}${index}
+        # clusters
         cluster_certificate_authority_data=$(yq -c -r '.clusters[0].cluster."certificate-authority-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
         cluster_server=$(yq -c -r '.clusters[0].cluster.server' /home/ubuntu/k8s/config-${k8s_basename}${index})
         name=${k8s_basename}${index}
-        kube_config_json=$(echo ${kube_config_json} | jq '.clusters += [{"cluster": {"certificate-authority-data": "'$(echo $cluster_certificate_authority_data)'", "server": "'$(echo $cluster_server)'"}, "name": "'$(echo $name)'"}]')
+        kube_config_json=$(echo ${kube_config_json} | jq '.clusters += [{"cluster": {"certificate-authority-data": "'${cluster_certificate_authority_data}'", "server": "'${cluster_server}'"}, "name": "'${name}'"}]')
+        echo "check clusters"
+        echo ${cluster_certificate_authority_data}
+        echo ${cluster_server}
+        echo ${name}
+        echo ${kube_config_json}
         # contexts
         context_cluster=${k8s_basename}${index}
         context_user=user${index}
         name=context${index}
-        kube_config_json=$(echo ${kube_config_json} | jq '.contexts += [{"context": {"cluster": "'$(echo $context_cluster)'", "user": "'$(echo $context_user)'"}, "name": "'$(echo $name)'"}]')
+        kube_config_json=$(echo ${kube_config_json} | jq '.contexts += [{"context": {"cluster": "'${context_cluster}'", "user": "'${context_user}'"}, "name": "'${name}'"}]')
+        echo "check contexts"
+        echo ${context_cluster}
+        echo ${context_user}
+        echo ${name}
+        echo ${kube_config_json}
         # users
         name=user${index}
         user_client_certificate_data=$(yq -c -r '.users[0].user."client-certificate-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
         user_client_key_data=$(yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
-        kube_config_json=$(echo ${kube_config_json} | jq '.users += [{"user": {"client-certificate-data": "'$(echo $user_client_certificate_data)'", "client-key-data": "'$(echo $user_client_key_data)'"}, "name": "'$(echo $name)'"}]')
+        kube_config_json=$(echo ${kube_config_json} | jq '.users += [{"user": {"client-certificate-data": "'${user_client_certificate_data}'", "client-key-data": "'${user_client_key_data}'"}, "name": "'${name}'"}]')
+        echo "check users"
+        echo ${user_client_certificate_data}
+        echo ${user_client_key_data}
+        echo ${name}
+        echo ${kube_config_json}
       fi
       ((kube_increment_ip++))
     done
