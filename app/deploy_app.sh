@@ -684,8 +684,8 @@ EOT
         echo "check file"
         ls /home/ubuntu/k8s/config-${k8s_basename}${index}
         # clusters
-        cluster_certificate_authority_data=$(yq -c -r '.clusters[0].cluster."certificate-authority-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
-        cluster_server=$(yq -c -r '.clusters[0].cluster.server' /home/ubuntu/k8s/config-${k8s_basename}${index})
+        cluster_certificate_authority_data=$(/home/ubuntu/.local/bin/yq -c -r '.clusters[0].cluster."certificate-authority-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
+        cluster_server=$(/home/ubuntu/.local/bin/yq -c -r '.clusters[0].cluster.server' /home/ubuntu/k8s/config-${k8s_basename}${index})
         name=${k8s_basename}${index}
         kube_config_json=$(echo ${kube_config_json} | jq '.clusters += [{"cluster": {"certificate-authority-data": "'${cluster_certificate_authority_data}'", "server": "'${cluster_server}'"}, "name": "'${name}'"}]')
         echo "check clusters"
@@ -705,8 +705,8 @@ EOT
         echo ${kube_config_json}
         # users
         name=user${index}
-        user_client_certificate_data=$(yq -c -r '.users[0].user."client-certificate-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
-        user_client_key_data=$(yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
+        user_client_certificate_data=$(/home/ubuntu/.local/bin/yq -c -r '.users[0].user."client-certificate-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
+        user_client_key_data=$(/home/ubuntu/.local/bin/yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
         kube_config_json=$(echo ${kube_config_json} | jq '.users += [{"user": {"client-certificate-data": "'${user_client_certificate_data}'", "client-key-data": "'${user_client_key_data}'"}, "name": "'${name}'"}]')
         echo "check users"
         echo ${user_client_certificate_data}
@@ -748,7 +748,7 @@ EOT
   sudo cp /home/ubuntu/k8s/vanilla-k8s.html /var/www/html/
   echo "test1"
   echo ${kube_config_json}
-  echo ${kube_config_json} | yq -y . | tee /home/ubuntu/k8s/config
+  echo ${kube_config_json} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/config
   echo "test2"
   chmod 600 /home/ubuntu/k8s/config
   echo "Updating /home/ubuntu/.profile"
