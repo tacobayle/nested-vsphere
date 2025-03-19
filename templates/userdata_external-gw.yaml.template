@@ -225,6 +225,13 @@ write_files:
         ((count_esxi++))
       done
       #
+      # openshift DNS entries
+      #
+      if [[ "${kind}" == "vsphere-avi" ]] ; then
+        echo "api.${openshift_cluster_name}   IN            A       ${openshift_api_ip}" | tee -a /var/lib/bind/db.${domain}
+        echo "*.apps.${openshift_cluster_name}   IN            A       ${openshift_ingress_ip}" | tee -a /var/lib/bind/db.${domain}
+      fi
+      #
       if [[ ${ip_avi_dns} != ${ip_gw} ]]; then
         echo "app-dns   IN            A       ${ip_avi_dns}" | tee -a /var/lib/bind/db.${domain}
         echo "\$ORIGIN ${avi_subdomain}.${domain}." | tee -a /var/lib/bind/db.${domain}

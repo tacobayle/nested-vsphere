@@ -31,6 +31,31 @@ variables_json=$(echo ${variables_json} | jq '. += {"AVI_OLD_PASSWORD": "'${AVI_
 variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_USERNAME": "'${DOCKER_REGISTRY_USERNAME}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_PASSWORD": "'${DOCKER_REGISTRY_PASSWORD}'"}')
 variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_EMAIL": "'${DOCKER_REGISTRY_EMAIL}'"}')
+# openshift auth
+if [[ -n "${CLOUD_OPENSHIFT_COM_AUTH}" ]]; then
+  variables_json=$(echo ${variables_json} | jq '. += {"CLOUD_OPENSHIFT_COM_AUTH": "'${CLOUD_OPENSHIFT_COM_AUTH}'"}')
+fi
+if [[ -n "${CLOUD_OPENSHIFT_COM_EMAIL}" ]]; then
+  variables_json=$(echo ${variables_json} | jq '. += {"CLOUD_OPENSHIFT_COM_EMAIL": "'${CLOUD_OPENSHIFT_COM_EMAIL}'"}')
+fi
+if [[ -n "${QUAY_IO_AUTH}" ]]; then
+  variables_json=$(echo ${variables_json} | jq '. += {"QUAY_IO_AUTH": "'${QUAY_IO_AUTH}'"}')
+fi
+if [[ -n "${QUAY_IO_EMAIL}" ]]; then
+  variables_json=$(echo ${variables_json} | jq '. += {"QUAY_IO_EMAIL": "'${QUAY_IO_EMAIL}'"}')
+fi
+if [[ -n "${REGISTRY_CONNECT_REDHAT_COM_AUTH}" ]]; then
+  variables_json=$(echo ${variables_json} | jq '. += {"REGISTRY_CONNECT_REDHAT_COM_AUTH": "'${REGISTRY_CONNECT_REDHAT_COM_AUTH}'"}')
+fi
+if [[ -n "${REGISTRY_CONNECT_REDHAT_COM_EMAIL}" ]]; then
+  variables_json=$(echo ${variables_json} | jq '. += {"REGISTRY_CONNECT_REDHAT_COM_EMAIL": "'${REGISTRY_CONNECT_REDHAT_COM_EMAIL}'"}')
+fi
+if [[ -n "${REGISTRY_REDHAT_IO_AUTH}" ]]; then
+  variables_json=$(echo ${variables_json} | jq '. += {"REGISTRY_REDHAT_IO_AUTH": "'${REGISTRY_REDHAT_IO_AUTH}'"}')
+fi
+if [[ -n "${REGISTRY_REDHAT_IO_EMAIL}" ]]; then
+  variables_json=$(echo ${variables_json} | jq '. += {"REGISTRY_REDHAT_IO_EMAIL": "'${REGISTRY_REDHAT_IO_EMAIL}'"}')
+fi
 echo ${variables_json} | jq . | tee $jsonFile > /dev/null
 #
 # source the variables
@@ -116,6 +141,9 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
         -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
         -e "s/\${ip_avi_dns}/${ip_avi_dns}/" \
+        -e "s/\${openshift_cluster_name}/${openshift_cluster_name}/" \
+        -e "s/\${openshift_api_ip}/${openshift_api_ip}/" \
+        -e "s/\${openshift_ingress_ip}/${openshift_ingress_ip}/" \
         -e "s/\${avi_subdomain}/${avi_subdomain}/" \
         -e "s/\${gw_readonly_user}/${gw_readonly_user}/" \
         -e "s/\${gw_readonly_password}/${gw_readonly_password}/" \
@@ -385,6 +413,9 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
     # Start downloading Ubuntu OVA remotely
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Ubuntu OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+    if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${openshift_installer_url}\" \"/home/ubuntu/bin/$(basename ${openshift_installer_url})\" \"${deployment_name}, OpenShift Installer\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+    fi
   fi
   #
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
@@ -393,7 +424,7 @@ if [[ ${operation} == "apply" ]] ; then
   echo "running the following command from the gw: /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
-  #
+  # NSX creation
   wait
   if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
@@ -403,7 +434,7 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
-  #
+  # NSX config.
   if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
@@ -412,7 +443,7 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
-  #
+  # Avi ctrl creation
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
@@ -421,7 +452,7 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
-  #
+  # App creation
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
@@ -430,7 +461,7 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
-  #
+  # Avi ctrl config.
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
@@ -439,7 +470,17 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
-  #
+  # Openshift creation
+  if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then
+    openshift_log_file"/nested-vsphere/log/${deployment_name}_openshift.stdout"
+    echo '------------------------------------------------------------' >> ${openshift_log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${openshift_log_file} 2>&1
+    echo "OpenShift Deployment - This should take about 1 hour" >> ${openshift_log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/openshift/deploy_openshift.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${openshift_log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/openshift/deploy_openshift.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${openshift_log_file}
+    echo "Ending timestamp: $(date)" >> ${openshift_log_file} 2>&1
+  fi
+  # VKS config.
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     if [[ ${configure_supervisor} == "true" ]]; then
       echo '------------------------------------------------------------' >> ${log_file} 2>&1

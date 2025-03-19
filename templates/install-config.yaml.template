@@ -1,0 +1,98 @@
+additionalTrustBundlePolicy: Proxyonly
+apiVersion: v1
+baseDomain: ${domain}
+compute:
+- architecture: amd64
+  hyperthreading: Enabled
+  name: worker
+  platform: {}
+  replicas: 1
+controlPlane:
+  architecture: amd64
+  hyperthreading: Enabled
+  name: master
+  platform: {}
+  replicas: 3
+metadata:
+  creationTimestamp: null
+  name: oc01
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: 10.0.0.0/16
+  - cidr: ${cidr_vip_full}
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  vsphere:
+    apiVIPs:
+    - ${openshift_api_ip}
+    failureDomains:
+    - name: generated-failure-domain
+      region: generated-region
+      server: ${api_host}
+      topology:
+        computeCluster: /${dc}/host/${cluster_basename}1
+        datacenter: ${dc}
+        datastore: /${dc}/datastore/vsanDatastore
+        networks:
+        - ${network_ref_vip}
+        resourcePool: /${dc}/host/${cluster_basename}1/Resources
+      zone: generated-zone
+    hosts:
+    - failureDomain: ""
+      networkDevice:
+        gateway: ${gw_client}
+        ipAddrs:
+        - ${ip_node1}/${prefix_client}
+        nameservers:
+        - ${gw_client}
+      role: bootstrap
+    - failureDomain: ""
+      networkDevice:
+        gateway: ${gw_client}
+        ipAddrs:
+        - ${ip_node2}/${prefix_client}
+        nameservers:
+        - ${gw_client}
+      role: control-plane
+    - failureDomain: ""
+      networkDevice:
+        gateway: ${gw_client}
+        ipAddrs:
+        - ${ip_node3}/${prefix_client}
+        nameservers:
+        - ${gw_client}
+      role: control-plane
+    - failureDomain: ""
+      networkDevice:
+        gateway: ${gw_client}
+        ipAddrs:
+        - ${ip_node4}/${prefix_client}
+        nameservers:
+        - ${gw_client}
+      role: control-plane
+    - failureDomain: ""
+      networkDevice:
+        gateway: ${gw_client}
+        ipAddrs:
+        - ${ip_node5}/${prefix_client}
+        nameservers:
+        - ${gw_client}
+      role: compute
+    ingressVIPs:
+    - ${openshift_ingress_ip}
+    vcenters:
+    - datacenters:
+      - ${dc}
+      password: ${GENERIC_PASSWORD}
+      port: 443
+      server: ${api_host}
+      user: ${vsphere_nested_username}@${ssoDomain}
+publish: External
+pullSecret: '{"auths":{"cloud.openshift.com":{"auth":"${CLOUD_OPENSHIFT_COM_AUTH}","email":"{CLOUD_OPENSHIFT_COM_EMAIL}}"},"quay.io":{"auth":"${QUAY_IO_AUTH}","email":"${QUAY_IO_EMAIL}"},"registry.connect.redhat.com":{"auth":"${REGISTRY_CONNECT_REDHAT_COM_AUTH}","email":"${REGISTRY_CONNECT_REDHAT_COM_EMAIL}"},"registry.redhat.io":{"auth":"${REGISTRY_REDHAT_IO_AUTH}","email":"${REGISTRY_REDHAT_IO_EMAIL}"}}}'
+sshKey: |
+  ${public_key}

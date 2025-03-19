@@ -68,6 +68,34 @@ rm /home/ubuntu/yaml-files/demo-http-crd-1.yml > /dev/null
 rm /home/ubuntu/yaml-files/demo-http-crd-2.yml > /dev/null
 rm /home/ubuntu/yaml-files/demo-http-crd-3.yml > /dev/null
 #
+# openshift routes
+#
+route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-http-route1.yml)
+route=$(echo $crd | jq '. | del (.metadata.name)')
+route=$(echo $crd | jq '. | del (.spec.host)')
+route=$(echo $crd | jq '.metadata += {"name": "route1.'${domain}'"}')
+route=$(echo $crd | jq '.spec += {"host": "route1.'${domain}'"}')
+echo $route | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-http-route1.yml > /dev/null
+#
+route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-http-route2.yml)
+route=$(echo $crd | jq '. | del (.metadata.name)')
+route=$(echo $crd | jq '. | del (.spec.host)')
+route=$(echo $crd | jq '.metadata += {"name": "route2.'${domain}'"}')
+route=$(echo $crd | jq '.spec += {"host": "route2.'${domain}'"}')
+echo $route | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-http-route2.yml > /dev/null
+#
+# openshift crds
+#
+crd=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-http-route1-crd.yml)
+crd=$(echo $crd | jq '. | del (.spec.virtualhost.fqdn)')
+crd=$(echo $crd | jq '.spec.virtualhost += {"fqdn": "route1.'${domain}'"}')
+echo $crd | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-http-route1-crd.yml > /dev/null
+#
+crd=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-http-route2-crd.yml)
+crd=$(echo $crd | jq '. | del (.spec.virtualhost.fqdn)')
+crd=$(echo $crd | jq '.spec.virtualhost += {"fqdn": "route2.'${domain}'"}')
+echo $crd | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-http-route2-crd.yml > /dev/null
+#
 # gw - domain update and cert update
 #
 gw=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-multiple-listeners.yml)

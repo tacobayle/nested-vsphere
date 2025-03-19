@@ -746,10 +746,8 @@ EOT
   #
   #
   sudo cp /home/ubuntu/k8s/vanilla-k8s.html /var/www/html/
-  echo "test1"
   echo ${kube_config_json}
   echo ${kube_config_json} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/config
-  echo "test2"
   chmod 600 /home/ubuntu/k8s/config
   echo "Updating /home/ubuntu/.profile"
   contents=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)

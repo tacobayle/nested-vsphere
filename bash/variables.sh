@@ -9,12 +9,25 @@ DOCKER_REGISTRY_USERNAME=$(jq -c -r .DOCKER_REGISTRY_USERNAME $jsonFile)
 DOCKER_REGISTRY_PASSWORD=$(jq -c -r .DOCKER_REGISTRY_PASSWORD $jsonFile)
 NSX_LICENSE=$(jq -c -r .NSX_LICENSE $jsonFile)
 DOCKER_REGISTRY_EMAIL=$(jq -c -r .DOCKER_REGISTRY_EMAIL $jsonFile)
+# openshift auth
+CLOUD_OPENSHIFT_COM_AUTH=$(jq -c -r .CLOUD_OPENSHIFT_COM_AUTH $jsonFile)
+CLOUD_OPENSHIFT_COM_EMAIL=$(jq -c -r .CLOUD_OPENSHIFT_COM_EMAIL $jsonFile)
+QUAY_IO_AUTH=$(jq -c -r .QUAY_IO_AUTH $jsonFile)
+QUAY_IO_EMAIL=$(jq -c -r .QUAY_IO_EMAIL $jsonFile)
+REGISTRY_CONNECT_REDHAT_COM_AUTH=$(jq -c -r .REGISTRY_CONNECT_REDHAT_COM_AUTH $jsonFile)
+REGISTRY_CONNECT_REDHAT_COM_EMAIL=$(jq -c -r .REGISTRY_CONNECT_REDHAT_COM_EMAIL $jsonFile)
+REGISTRY_REDHAT_IO_AUTH=$(jq -c -r .REGISTRY_REDHAT_IO_AUTH $jsonFile)
+REGISTRY_REDHAT_IO_EMAIL=$(jq -c -r .REGISTRY_REDHAT_IO_EMAIL $jsonFile)
+#
+#
+#
 ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
 vsphere_nested_username="administrator"
 vsphere_nested_password="${GENERIC_PASSWORD}"
 dc=$(jq -c -r '.dc' $jsonFile)
 vcsa_name=$(jq -c -r '.vcsa_name' $jsonFile)
-vsca_about_json_file=$(jq -c -r '.vsca_about_json_file' $jsonFile)
+vcsa_about_json_file=$(jq -c -r '.vcsa_about_json_file' $jsonFile)
+vcsa_cert_file=$(jq -c -r '.vcsa_cert_file' $jsonFile)
 domain=$(jq -c -r '.spec.domain' $jsonFile)
 api_host="${vcsa_name}.${domain}"
 folder=$(jq -c -r .spec.folder $jsonFile)
@@ -111,6 +124,18 @@ client_cpu=$(jq -c -r '.client_cpu' $jsonFile)
 client_memory=$(jq -c -r '.client_memory' $jsonFile)
 k8s_basename=$(jq -c -r '.k8s_basename' $jsonFile)
 k8s_clusters=$(jq -c -r '.spec.k8s_clusters' $jsonFile)
+openshift=$(jq -c -r '.spec.openshift' $jsonFile)
+if [[ ${openshift} != "null" ]]; then
+  openshift_installer_url=$(jq -c -r '.spec.openshift.installer_url' $jsonFile)
+  openshift_version=$(jq -c -r '.spec.openshift.version' $jsonFile)
+  openshift_ako_version=$(jq -c -r '.spec.openshift.ako_version' $jsonFile)
+  openshift_cni=$(jq -c -r '.spec.openshift.cni' $jsonFile)
+  openshift_seg_name=$(jq -c -r '.avi.openshift_seg_name' $jsonFile)
+  openshift_tenant_name=$(jq -c -r '.avi.openshift_tenant_name' $jsonFile)
+  if [[ ${openshift_installer_url} == "null" ]]; then
+    openshift_installer_url="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${openshift_version}/openshift-install-linux.tar.gz"
+  fi
+fi
 k8s_basename_vm=$(jq -c -r '.k8s_basename_vm' $jsonFile)
 k8s_node_cpu=$(jq -c -r '.k8s_node_cpu' $jsonFile)
 k8s_node_memory=$(jq -c -r '.k8s_node_memory' $jsonFile)
@@ -353,6 +378,10 @@ lbaas_username=$(jq -c -r '.avi.lbaas_username' $jsonFile)
 lbaas_tenant=$(jq -c -r '.avi.lbaas_tenant' $jsonFile)
 ip_avi_last_octet=$(jq -c -r .avi.ip_controller $jsonFile)
 kube_starting_ip=$(jq -c -r '.avi.kube_starting_ip' $jsonFile)
+openshift_cluster_name=$(jq -c -r '.avi.openshift_cluster_name' $jsonFile)
+openshift_api_ip_last_octet=$(jq -c -r '.avi.openshift_api_ip_last_octet' $jsonFile)
+openshift_ingress_ip_last_octet=$(jq -c -r '.avi.openshift_ingress_ip_last_octet' $jsonFile)
+openshift_node_starting_ip_last_octet=$(jq -c -r '.avi.openshift_node_starting_ip_last_octet' $jsonFile)
 content_library_name=$(jq -c -r '.avi.app.content_library_name' $jsonFile)
 avi_ctrl_name=$(jq -c -r '.avi.ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
@@ -363,6 +392,8 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
                                     "cert": {"path": "'${vault_pki_intermediate_cert_path_signed}'"}},
                                    {"name": "'${vault_pki_name}'",
                                     "cert": {"path": "'${vault_pki_cert_path}'"}}]'
+  vault_certificate_management_profile=$(jq -c -r .vault.certificate_mgmt_profile.name $jsonFile)
+  vault_control_script_name=$(jq -c -r .vault.control_script.name $jsonFile)
   certificatemanagementprofile='[
                                   {
                                     "name": "'${vault_certificate_management_profile}'",
@@ -393,8 +424,6 @@ else
   import_sslkeyandcertificate_ca='[]'
   certificatemanagementprofile='[]'
 fi
-vault_certificate_management_profile=$(jq -c -r .vault.certificate_mgmt_profile.name $jsonFile)
-vault_control_script_name=$(jq -c -r .vault.control_script.name $jsonFile)
 alertscriptconfig='[{"action_script": {"path": "'$(jq -c -r .vault.control_script.path $jsonFile)'"},
                                       "name": "'$(jq -c -r .vault.control_script.name $jsonFile)'"},
                     {"action_script": {"path": "'$(jq -c -r .avi_slack.path $jsonFile)'"},
@@ -456,6 +485,15 @@ do
                                                  "tenant_access_to_provider_se": true
                                                }}]')
 done
+if [[ ${openshift} != "null" ]]; then
+  tenants=$(echo $tenants | jq -c -r '. += [{"name": "'${openshift_tenant_name}'",
+                                               "local": true,
+                                               "config_settings" : {
+                                                 "tenant_vrf": false,
+                                                 "se_in_provider_context": false,
+                                                 "tenant_access_to_provider_se": true
+                                               }}]')
+fi
 users=$(jq -c -r '.users' $jsonFile)
 avi_subdomain=$(jq -c -r '.avi.subdomain' $jsonFile)
 avi_config_repo=$(jq -c -r '.avi.config_repo' $jsonFile)
@@ -527,6 +565,10 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   lsc_ips_backend=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_app_three_octets}'." + (. | tostring))')
   lsc_ips_vip=$(echo ${lsc_ips_last_octet} | jq '. | map("'${cidr_vip_three_octets}'." + (. | tostring))')
   #
+  if [[ ${openshift} != "null" ]]; then
+    openshift_api_ip="${cidr_vip_three_octets}.${openshift_api_ip_last_octet}"
+    openshift_ingress_ip="${cidr_vip_three_octets}.${openshift_ingress_ip_last_octet}"
+  fi
   ip_avi_dns="${cidr_vip_three_octets}.${avi_ipam_first}"
   ipam='{"networks": ["'${network_ref_vip}'"]}'
   networks_avi='[

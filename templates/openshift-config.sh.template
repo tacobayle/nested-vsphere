@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# cert / key creation
+openssl req -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes -out ssl.crt -keyout ssl.key -subj "/C=US/ST=CA/L=Palo Alto/O=VMWARE/OU=IT/CN=${openshift_cluster_name}.${avi_subdomain}.${domain}"
+#
+/usr/bin/kubectl create secret docker-registry docker --docker-server=docker.io --docker-username=${docker_registry_username} --docker-password=${docker_registry_password} --docker-email=${docker_registry_email}
+/usr/bin/kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"docker\"}]}"
+/usr/bin/kubectl create secret tls cert01 --key=ssl.key --cert=ssl.crt
+/usr/bin/kubectl create ns avi-system

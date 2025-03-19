@@ -91,7 +91,13 @@ done
 #
 # saving vCenter uuid
 #
-govc about -json | tee ${vsca_about_json_file}
+govc about -json | tee ${vcsa_about_json_file}
+#
+# saving vCenter cert and adding it to the local pki
+#
+openssl s_client -showcerts -connect "${api_host}:443" </dev/null 2>/dev/null | openssl x509 -outform PEM > ${vcsa_cert_file}
+sudo cp ${vcsa_cert_file} /usr/local/share/ca-certificates/
+sudo update-ca-certificates
 #
 # Network config
 #

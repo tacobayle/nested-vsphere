@@ -23,5 +23,9 @@
 <ul>
     <li><a href="vanilla-k8s.html" target="_blank">Demo Vanilla K8s</a></li>
 </ul>
+<h1>What you need to do to demo OpenShift</h1>
+<ul>
+    <li><a href="openshift.html" target="_blank">Demo OpenShift</a></li>
+</ul>
 </body>
 </html>

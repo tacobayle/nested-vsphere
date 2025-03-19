@@ -73,8 +73,8 @@ if [[ ${configure_supervisor} == "true" ]] ; then
   #
   # place holder to detect the version of vsphere
   #
-  if [[ $(jq -c -r '.about.version' ${vsca_about_json_file} | cut -d"." -f1) == "8" ]] ; then echo "this is vSphere8" ; fi
-  if [[ $(jq -c -r '.about.version' ${vsca_about_json_file} | cut -d"." -f1) == "9" ]] ; then echo "this is vSphere9" ; fi
+  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "8" ]] ; then echo "this is vSphere8" ; fi
+  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]] ; then echo "this is vSphere9" ; fi
   #
   # vsphere-avi use case
   #
@@ -427,9 +427,9 @@ EOT
     if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       avi_cloud_name=${nsx_cloud_name}
       if [[ $(echo ${cluster} | jq -c -r '.se_in_provider_context') == "true" ]]; then
-        serviceEngineGroupName="${cluster_id}:$(jq -c -r '.about.instanceUuid' ${vsca_about_json_file})"
+        serviceEngineGroupName="${cluster_id}:$(jq -c -r '.about.instanceUuid' ${vcsa_about_json_file})"
       fi
-      nsxtT1LR_name="t1-${cluster_id}:$(jq -c -r '.about.instanceUuid' ${vsca_about_json_file})-${namespace}-rtr"
+      nsxtT1LR_name="t1-${cluster_id}:$(jq -c -r '.about.instanceUuid' ${vcsa_about_json_file})-${namespace}-rtr"
       file_json_output="/home/ubuntu/nsx/t1_path.json"
       /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                   "policy/api/v1/infra/tier-1s" \
