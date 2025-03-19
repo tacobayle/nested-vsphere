@@ -472,7 +472,7 @@ if [[ ${operation} == "apply" ]] ; then
   fi
   # Openshift creation
   if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then
-    openshift_log_file"/nested-vsphere/log/${deployment_name}_openshift.stdout"
+    openshift_log_file="/nested-vsphere/log/${deployment_name}_openshift.stdout"
     echo '------------------------------------------------------------' >> ${openshift_log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${openshift_log_file} 2>&1
     echo "OpenShift Deployment - This should take about 1 hour" >> ${openshift_log_file} 2>&1

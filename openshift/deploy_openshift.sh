@@ -9,8 +9,6 @@ source /home/ubuntu/bash/variables.sh
 if [[ ${openshift} != "null" ]]; then
   javascript_count=0
   tar -xvf /home/ubuntu/bin/$(basename ${openshift_installer_url}) -C /home/ubuntu/openshift
-  openshift_api_ip="${cidr_vip_three_octets}.${openshift_api_ip_last_octet}"
-  openshift_ingress_ip="${cidr_vip_three_octets}.${openshift_ingress_ip_last_octet}"
   sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
       -e "s/\${domain}/${domain}/" \
       -e "s/\${openshift_api_ip}/${openshift_api_ip}/" \
