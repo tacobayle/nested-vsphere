@@ -502,6 +502,8 @@ avi_content_library_name=$(jq -c -r '.avi_content_library_name' $jsonFile)
 avi_ipam_first=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
 service_engine_groups=$(jq -c -r '.service_engine_groups' $jsonFile)
+openshift_api_ip="1.1.1.1"
+openshift_ingress_ip="1.1.1.1"
 if [[ ${kind} == "vsphere-avi" ]]; then
   avi_lsc_se_folder=$(jq -c -r '.avi_lsc_se_folder' $jsonFile)
   avi_lsc_kernel_version=$(jq -c -r '.avi_lsc_kernel_version' $jsonFile)
@@ -568,9 +570,6 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   if [[ ${openshift} != "null" ]]; then
     openshift_api_ip="${cidr_vip_three_octets}.${openshift_api_ip_last_octet}"
     openshift_ingress_ip="${cidr_vip_three_octets}.${openshift_ingress_ip_last_octet}"
-  else
-    openshift_api_ip="1.1.1.1"
-    openshift_ingress_ip="1.1.1.1"
   fi
   ip_avi_dns="${cidr_vip_three_octets}.${avi_ipam_first}"
   ipam='{"networks": ["'${network_ref_vip}'"]}'
