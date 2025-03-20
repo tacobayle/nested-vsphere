@@ -156,7 +156,7 @@ table, th, td {
         </tr>
         <tr>
             <th>OpenShift Console url</th>
-            <td>https://${openshift_console_url}</td>
+            <td><a href="https://${openshift_console_url}" target="_blank">Demo Vanilla K8s</a></td>
         </tr>
         <tr>
             <th>Configure OpenShift Cluster with SSL and docker account</th>
