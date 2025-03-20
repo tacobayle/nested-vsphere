@@ -350,8 +350,8 @@ if [[ ${operation} == "apply" ]] ; then
         fi
         # yaml domain update
         if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
-          sed -e "s@\${yaml_folder}@$(jq -c -r '.yaml_folder' $jsonFile)@" \
-              -e "s@\${yaml_links}@$(jq -c -r '.yaml_links' $jsonFile)@" /nested-vsphere/templates/yaml_download_update.sh.template | tee /root/yaml_download_update.sh > /dev/null
+          sed -e "s@\${yaml_folder}@${yaml_folder}@" \
+              -e "s@\${yaml_links}@${yaml_links}@" /nested-vsphere/templates/yaml_download_update.sh.template | tee /root/yaml_download_update.sh > /dev/null
           scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}

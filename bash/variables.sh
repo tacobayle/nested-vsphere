@@ -21,6 +21,8 @@ REGISTRY_REDHAT_IO_EMAIL=$(jq -c -r .REGISTRY_REDHAT_IO_EMAIL $jsonFile)
 #
 #
 #
+yaml_folder=$(jq -c -r '.yaml_folder' $jsonFile)
+yaml_links=$(jq -c -r '.yaml_links' $jsonFile)
 ssoDomain=$(jq -r '.spec.vsphere.ssoDomain' $jsonFile)
 vsphere_nested_username="administrator"
 vsphere_nested_password="${GENERIC_PASSWORD}"

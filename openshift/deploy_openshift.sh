@@ -101,8 +101,8 @@ if [[ ${openshift} != "null" ]]; then
       -e "s/\${cloudName}/${avi_cloud_name}/" \
       -e "s/\${controllerHost}/${ip_avi}/" \
       -e "s/\${tenant}/${openshift_tenant_name}/" \
-      -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values_api_gw.yml.${openshift_ako_version}.template | tee /home/ubuntu/openshift/ako_${openshift_cluster_name}_values.yml > /dev/null
-  sudo cp /home/ubuntu/openshift/ako_${openshift_cluster_name}_values.yml /var/www/html/
+      -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values_api_gw.yml.${openshift_ako_version}.template | tee /home/ubuntu/openshift/ako_${openshift_cluster_name}_${openshift_ako_version}_values.yml > /dev/null
+  sudo cp /home/ubuntu/openshift/ako_${openshift_cluster_name}_${openshift_ako_version}_values.yml /var/www/html/
   #
   # openshift config file
   #
@@ -117,7 +117,11 @@ if [[ ${openshift} != "null" ]]; then
   #
   # html /home/ubuntu/openshift/openshift.html
   #
-  tee /home/ubuntu/openshift/openshift.html> /dev/null <<EOT
+  if [[ ! ( -v openshift_admin_password && -n "${openshift_admin_password}" && -v openshift_console_url && -n "${openshift_console_url}" ) ]]; then
+    echo "openshift vars undefined: openshift_admin_password, openshift_console_url"
+  else
+    curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': openshift is up - console url is '${openshift_console_url}'"}' ${SLACK_WEBHOOK_URL}
+    tee /home/ubuntu/openshift/openshift.html> /dev/null <<EOT
 <!DOCTYPE html>
 <html>
 <head>
@@ -211,5 +215,6 @@ function copyToClipboard(boxIndex) {
 </body>
 </html>
 EOT
+  fi
   sudo cp /home/ubuntu/openshift/openshift.html /var/www/html/
 fi
