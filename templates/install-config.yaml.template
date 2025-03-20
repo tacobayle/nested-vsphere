@@ -93,6 +93,6 @@ platform:
       server: ${api_host}
       user: ${vsphere_nested_username}@${ssoDomain}
 publish: External
-pullSecret: '{"auths":{"cloud.openshift.com":{"auth":"${CLOUD_OPENSHIFT_COM_AUTH}","email":"{CLOUD_OPENSHIFT_COM_EMAIL}}"},"quay.io":{"auth":"${QUAY_IO_AUTH}","email":"${QUAY_IO_EMAIL}"},"registry.connect.redhat.com":{"auth":"${REGISTRY_CONNECT_REDHAT_COM_AUTH}","email":"${REGISTRY_CONNECT_REDHAT_COM_EMAIL}"},"registry.redhat.io":{"auth":"${REGISTRY_REDHAT_IO_AUTH}","email":"${REGISTRY_REDHAT_IO_EMAIL}"}}}'
+pullSecret: '{"auths":{"cloud.openshift.com":{"auth":"${CLOUD_OPENSHIFT_COM_AUTH}","email":"${CLOUD_OPENSHIFT_COM_EMAIL}}"},"quay.io":{"auth":"${QUAY_IO_AUTH}","email":"${QUAY_IO_EMAIL}"},"registry.connect.redhat.com":{"auth":"${REGISTRY_CONNECT_REDHAT_COM_AUTH}","email":"${REGISTRY_CONNECT_REDHAT_COM_EMAIL}"},"registry.redhat.io":{"auth":"${REGISTRY_REDHAT_IO_AUTH}","email":"${REGISTRY_REDHAT_IO_EMAIL}"}}}'
 sshKey: |
   ${public_key}
