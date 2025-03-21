@@ -120,7 +120,7 @@ if [[ ${openshift} != "null" ]]; then
   if [[ ! ( -v openshift_admin_password && -n "${openshift_admin_password}" && -v openshift_console_url && -n "${openshift_console_url}" ) ]]; then
     echo "openshift vars undefined: openshift_admin_password, openshift_console_url"
   else
-    curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': openshift is up - console url is '${openshift_console_url}'"}' ${SLACK_WEBHOOK_URL}
+    curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': openshift is up - console url is https://'${openshift_console_url}'"}' ${SLACK_WEBHOOK_URL}
     tee /home/ubuntu/openshift/openshift.html> /dev/null <<EOT
 <!DOCTYPE html>
 <html>
@@ -156,7 +156,7 @@ table, th, td {
         </tr>
         <tr>
             <th>OpenShift Console url</th>
-            <td><a href="https://${openshift_console_url}" target="_blank">Demo Vanilla K8s</a></td>
+            <td><a href="https://${openshift_console_url}" target="_blank">OpenShift Console</a></td>
         </tr>
         <tr>
             <th>Configure OpenShift Cluster with SSL and docker account</th>
