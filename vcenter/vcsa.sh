@@ -226,7 +226,7 @@ do
     count=$((count+1))
       if [[ "${count}" -eq 60 ]]; then
         echo "  +++ ERROR: Unable to connect to ESXi host at https://${cidr_mgmt_three_octets}.${ip_last_octet}"
-        exit
+        exit 1
       fi
   done
   echo "  +++ ESXi host reachable at https://${cidr_mgmt_three_octets}.${ip_last_octet}"
