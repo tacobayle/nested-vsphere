@@ -423,6 +423,11 @@ if [[ ${operation} == "apply" ]] ; then
   echo "Creation of VCSA  - This should take about 45 minutes" >> ${log_file} 2>&1
   echo "running the following command from the gw: /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+  if [ $? -ne 0 ] ; then
+    echo "ERROR: vCenter Deployment or Configuration failed" >> ${log_file} 2>&1
+    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ERROR: vCenter Deployment or Configuration failed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    exit
+  fi
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   # NSX creation
   wait
