@@ -417,14 +417,15 @@ if [[ ${operation} == "apply" ]] ; then
       ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${openshift_installer_url}\" \"/home/ubuntu/bin/$(basename ${openshift_installer_url})\" \"${deployment_name}, OpenShift Installer\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
     fi
   fi
-  #
+  # vCenter Deployment and Config.
+  vcsa_deploy_log_file="/nested-vsphere/log/${deployment_name}_vcsa_deploy.stdout"
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-  echo "Creation of VCSA  - This should take about 45 minutes" >> ${log_file} 2>&1
-  echo "running the following command from the gw: /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+  echo "Starting timestamp: $(date)" >> ${vcsa_deploy_log_file} 2>&1
+  echo "vCenter Deployment and Config.  - This should take about 45 minutes" >> ${vcsa_deploy_log_file} 2>&1
+  echo "running the following command from the gw: /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${vcsa_deploy_log_file} 2>&1
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${vcsa_deploy_log_file}
   if [ $? -ne 0 ] ; then
-    echo "ERROR: vCenter Deployment or Configuration failed" >> ${log_file} 2>&1
+    echo "ERROR: vCenter Deployment or Configuration failed" >> ${vcsa_deploy_log_file} 2>&1
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ERROR: vCenter Deployment or Configuration failed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     exit
   fi
