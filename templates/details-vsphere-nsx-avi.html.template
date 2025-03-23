@@ -17,7 +17,7 @@
     <li><a href="https://demo.${domain}" target="_blank">Self Service Portal Demo</a></li>
     <li><a href="https://demo.${domain}/clean-up.html" target="_blank">Self Service Portal Clean Up</a></li>
 </ul>
-<h1>What you need to do to demo Tanzu/VKS</h1>
+<h1>Demo Tanzu/VKS</h1>
 <ul>
     <li><a href="tkgs-service.html" target="_blank">Update TKGs service</a></li>
     <li><a href="cci-service.html" target="_blank">Install CCI service</a></li>
