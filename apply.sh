@@ -481,16 +481,6 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${avi_config_log_file}
     echo "Ending timestamp: $(date)" >> ${avi_config_log_file} 2>&1
   fi
-  # Openshift creation
-  if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then
-    openshift_log_file="/nested-vsphere/log/${deployment_name}_openshift.stdout"
-    echo '------------------------------------------------------------' >> ${openshift_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${openshift_log_file} 2>&1
-    echo "OpenShift Deployment - This should take about 1 hour" >> ${openshift_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/openshift/deploy_openshift.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${openshift_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/openshift/deploy_openshift.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${openshift_log_file}
-    echo "Ending timestamp: $(date)" >> ${openshift_log_file} 2>&1
-  fi
   # VKS config.
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     if [[ ${configure_supervisor} == "true" ]]; then
@@ -502,6 +492,16 @@ if [[ ${operation} == "apply" ]] ; then
       ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${vks_log_file}
       echo "Ending timestamp: $(date)" >> ${vks_log_file} 2>&1
     fi
+  fi
+  # Openshift creation
+  if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then
+    openshift_log_file="/nested-vsphere/log/${deployment_name}_openshift.stdout"
+    echo '------------------------------------------------------------' >> ${openshift_log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${openshift_log_file} 2>&1
+    echo "OpenShift Deployment - This should take about 1 hour" >> ${openshift_log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/openshift/deploy_openshift.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${openshift_log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/openshift/deploy_openshift.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${openshift_log_file}
+    echo "Ending timestamp: $(date)" >> ${openshift_log_file} 2>&1
   fi
 fi
 #
