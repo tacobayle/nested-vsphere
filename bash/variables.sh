@@ -212,7 +212,7 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
     supernet_vip_first_two_octets=$(echo "${supernet_vip}" | cut -d'.' -f1-2)
   fi
   if [[ ${kind} == "vsphere-nsx" ]]; then
-    supernet_vip_first_two_octets="1.1"
+    supernet_vip_first_two_octets="1.1" #place holder for vsphere-nsx use case
   fi
   supernet_vip_third_octet=$(echo "${supernet_vip}" | cut -d'.' -f3)
   supernet_nsx_vip=$(jq -c -r '.spec.nsx.supernet_vip' $jsonFile)

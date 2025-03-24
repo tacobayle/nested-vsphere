@@ -413,8 +413,8 @@ done
 #
 # Check the status of Nodes (including transport node and edge nodes but filtered with edge_ids
 #
-echo "pausing for 240 seconds"
-sleep 240
+echo "pausing for 600 seconds"
+sleep 600
 retry=240 ; pause=20 ; attempt=0
 for item in $(echo ${edge_ids} | jq -c -r '.[]')
 do
