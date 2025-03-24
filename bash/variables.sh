@@ -367,7 +367,9 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   segment_overlay_file=$(jq -c -r '.nsx.config.segment_overlay_file' $jsonFile)
   echo ${segments_overlay} | tee ${segment_overlay_file} > /dev/null 2>&1
   segments_overlay=$(jq -c -r . ${segment_overlay_file})
-  ip_avi_dns=$(echo ${net_client_list} | jq -c -r .[0].avi_ipam_vip.pool | cut -d"-" -f1)
+  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+    ip_avi_dns=$(echo ${net_client_list} | jq -c -r .[0].avi_ipam_vip.pool | cut -d"-" -f1)
+  fi
 fi
 #
 # Avi variables
