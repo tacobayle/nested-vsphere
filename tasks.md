@@ -11,6 +11,7 @@ to be done:
 
 
 done:
+- create a single node tanzu cluster by default to save resources
 - add openshift capabilities for vsphere-avi deployment
 - update k8s config script to generate a cert and import it into a k8s secret
 - update unmanged k8s version to 1.32

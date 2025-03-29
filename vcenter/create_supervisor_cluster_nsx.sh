@@ -28,6 +28,7 @@ namespace_subnet_prefix="${20}"
 ingress_cidr_address="${21}"
 ingress_cidr_prefix="${22}"
 cluster_id="${23}"
+supervisor_cluster_count_vm="${24}"
 #
 # vCenter API session creation
 #
@@ -52,6 +53,7 @@ json_data='
   "master_DNS":["'${external_gw_ip}'"],
   "workload_ntp_servers":["'${external_gw_ip}'"],
   "master_NTP_servers":["'${external_gw_ip}'"],
+  "count": '${supervisor_cluster_count_vm}',
   "network_provider":"'${network_provider}'",
   "size_hint":"'${size_hint}'",
   "service_cidr":

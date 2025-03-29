@@ -1237,6 +1237,7 @@
       "namespace_cidr_prefix": "23",
       "namespace_third_octet_increment": "2",
       "ingress_cidr_prefix": "24",
+      "count_vm": 1,
       "ingress_third_octet_increment": "1",
       "namespace_tier0": "t0-01",
       "prefix_per_namespace": "27"

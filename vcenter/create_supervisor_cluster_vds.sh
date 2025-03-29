@@ -28,6 +28,7 @@ supervisor_primary_workload_network_gateway="${21}"
 tanzu_worker_dvportgroup="${22}"
 supervisor_primary_workload_network_subnet_mask="${23}"
 cluster_id="${24}"
+supervisor_cluster_count_vm="${25}"
 #
 # vCenter API session creation
 #
@@ -41,6 +42,7 @@ json_data='
     "proxy_settings_source": "VC_INHERITED"
   },
   "workload_ntp_servers":["'${external_gw_ip}'"],
+  "count": '${supervisor_cluster_count_vm}',
   "image_storage":
   {
     "storage_policy":"'${storage_policy_id}'"

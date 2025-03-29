@@ -121,7 +121,8 @@ if [[ ${configure_supervisor} == "true" ]] ; then
       "${ip_gw_backend}" \
       "${tanzu_worker_dvportgroup}" \
       "255.255.255.0" \
-      "${cluster_id}"
+      "${cluster_id}" \
+      "${supervisor_cluster_count_vm}"
   fi
   #
   # vsphere-nsx-avi use case
@@ -159,7 +160,8 @@ if [[ ${configure_supervisor} == "true" ]] ; then
               "${supervisor_cluster_prefix_per_namespace}" \
               "$(echo ${supervisor_cluster_ingress_cidr} | cut -d"/" -f1)" \
               "$(echo ${supervisor_cluster_ingress_cidr} | cut -d"/" -f2)" \
-              "${cluster_id}"
+              "${cluster_id}" \
+              "${supervisor_cluster_count_vm}"
   fi
   #
   # Wait for supervisor cluster to be running

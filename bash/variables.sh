@@ -1029,6 +1029,7 @@ supervisor_count_ip=$(jq -r '.tanzu.supervisor_count_ip' $jsonFile)
 workload_starting_ip_last_octet=$(jq -r '.tanzu.workload_starting_ip' $jsonFile)
 workload_count_ip=$(jq -r '.tanzu.workload_count_ip' $jsonFile)
 supervisor_cluster_size=$(jq -c -r '.tanzu.supervisor_cluster.size' $jsonFile)
+supervisor_cluster_count_vm=$(jq -c -r '.tanzu.supervisor_cluster.count_vm' $jsonFile)
 supervisor_cluster_service_cidr=$(jq -c -r '.tanzu.supervisor_cluster.service_cidr' $jsonFile)
 if [[ ${kind} == "vsphere-avi" ]]; then
   management_tanzu_segment="tanzu"
