@@ -145,6 +145,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${openshift_api_ip}/${openshift_api_ip}/" \
         -e "s/\${openshift_ingress_ip}/${openshift_ingress_ip}/" \
         -e "s/\${avi_subdomain}/${avi_subdomain}/" \
+        -e "s/\${avi_gslb_subdomain}/${avi_gslb_subdomain}/" \
         -e "s/\${gw_readonly_user}/${gw_readonly_user}/" \
         -e "s/\${gw_readonly_password}/${gw_readonly_password}/" \
         -e "s/\${ips_esxi}/${ips_esxi}/" \
@@ -470,6 +471,16 @@ if [[ ${operation} == "apply" ]] ; then
     echo "running the following command from the gw: /home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${app_log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${app_log_file}
     echo "Ending timestamp: $(date)" >> ${app_log_file} 2>&1
+  fi
+  # K8s clusters config creation
+  if [[ ${kind} == "vsphere-avi" ]]; then
+    k8s_log_file="/nested-vsphere/log/${deployment_name}_k8s.stdout"
+    echo '------------------------------------------------------------' >> ${k8s_log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${k8s_log_file} 2>&1
+    echo "Creation of K8s clusters config including AKO/AMKO yaml file  - This should take about 20 minutes" >> ${k8s_log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/k8s/deploy_k8s.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${k8s_log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/k8s/deploy_k8s.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${k8s_log_file}
+    echo "Ending timestamp: $(date)" >> ${k8s_log_file} 2>&1
   fi
   # Avi ctrl config.
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then

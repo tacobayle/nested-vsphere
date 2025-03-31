@@ -237,6 +237,8 @@ write_files:
         echo "\$ORIGIN ${avi_subdomain}.${domain}." | tee -a /var/lib/bind/db.${domain}
         echo "\$TTL 1D" | tee -a /var/lib/bind/db.${domain}
         echo "@         IN            NS      app-dns.${domain}." | tee -a /var/lib/bind/db.${domain}
+        echo "\$ORIGIN ${avi_gslb_subdomain}.${domain}." | tee -a /var/lib/bind/db.${domain}
+        echo "@         IN            NS      app-dns.${domain}." | tee -a /var/lib/bind/db.${domain}
       fi
       #
       sudo tee /var/lib/bind/db.${reverse_mgmt} > /dev/null <<EOT

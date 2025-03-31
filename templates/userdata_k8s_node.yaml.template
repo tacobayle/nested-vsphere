@@ -144,7 +144,7 @@ write_files:
         if [ "$cni" == "antrea" ] ; then
           run_cmd 'wget -O /tmp/antrea.yml.without_nodeportlocal https://github.com/vmware-tanzu/antrea/releases/download/${cni_version}/antrea.yml; test $(ls -l /tmp/antrea.yml.without_nodeportlocal | awk '"'"'{print $5}'"'"') -gt 0'
           cp /tmp/antrea.yml.without_nodeportlocal /tmp/antrea.yml
-          sed -i -e "s/    #  NodePortLocal: false/      NodePortLocal: true/g" /tmp/antrea.yml
+          sed -i -e "s/    #  NodePortLocal: true/      NodePortLocal: true/g" /tmp/antrea.yml
           run_cmd 'kubectl apply -f /tmp/antrea.yml'
         fi
         if [ "$cni" == "calico" ] ; then
