@@ -228,7 +228,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     # ingress
     #
     per_cluster_ingress='{"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"name":"ingress-'${k8s_basename}${index}'","labels":{"app":"'${amko_app_selector}'"}},"spec":{"rules":[{"host":"ingress-'${k8s_basename}${index}'.'${avi_subdomain}'.'${domain}'","http":{"paths":[{"pathType":"Prefix","path":"/","backend":{"service":{"name":"svc-v1","port":{"number":80}}}}]}}]}}'
-    echo ${per_cluster_ingress} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/ingress-'${k8s_basename}${index}'.yml > /dev/null
+    echo ${per_cluster_ingress} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/ingress-${k8s_basename}${index}.yml > /dev/null
     #
     # GSLB CRD
     #
