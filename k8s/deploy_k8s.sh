@@ -223,6 +223,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     values_amko=$(echo ${values_amko} | jq '. += {"federatorLogFile": "amko-federator.log"}')
     #
     echo ${values_amko} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/values_amko_${k8s_basename}${index}.yml > /dev/null
+    sudo cp /home/ubuntu/k8s/values_amko_${k8s_basename}${index}.yml /var/www/html/
     #
     # ingress
     #
@@ -396,6 +397,10 @@ helm install --generate-name ${helm_url}  --version ${ako_version} \\
     </code></pre>
 <button onclick="copyToClipboard($((javascript_count+3)))">Copy Code</button>
             </td>
+        </tr>
+        <tr>
+            <th>AMKO values Yaml</th>
+            <td><a href="values_amko_${k8s_basename}${index}.yml" target="_blank">AMKO values Yaml</a></td>
         </tr>
         <tr>
             <th>Install AMKO via helm</th>
