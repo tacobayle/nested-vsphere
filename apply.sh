@@ -73,6 +73,12 @@ list_folder=$(govc find -json . -type f)
 list_gw=$(govc find -json vm -name "${gw_name}")
 #
 if [[ ${operation} == "apply" ]] ; then
+  #
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    echo ${nsx_ip_blocks}
+    echo ${nsx_ip_blocks} | jq '.'
+    exit
+  fi
   # ova download
   /nested-vsphere/bash/download_file_from_url_to_location.sh "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "${deployment_name}, Ubuntu OVA" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
   # esxi iso download

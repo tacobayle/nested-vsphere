@@ -375,6 +375,45 @@ if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
   if [[ ${kind} == "vsphere-nsx-avi" ]]; then
     ip_avi_dns=$(echo ${net_client_list} | jq -c -r .[0].avi_ipam_vip.pool | cut -d"-" -f1)
   fi
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    ip_blocks_json="[]"
+    ip_blocks_json_file=$(jq -c -r '.nsx.config.ip_blocks_json_file' $jsonFile)
+    # private pool
+    supernet_vpc_private=$(jq -c -r '.spec.nsx.supernet_vpc_private' $jsonFile)
+    supernet_vpc_private_third_octet=$(echo "${supernet_vpc_private}" | cut -d'.' -f3)
+    supernet_vpc_private_two_octets=$(echo "${supernet_vpc_private}" | cut -d'.' -f1-2)
+    private_count=0
+    global_count=0
+    last_private_third_octet=$((${supernet_vpc_private_third_octet} + $(jq '[.nsx.ip_blocks[] | select(.visibility == "PRIVATE") ] | length' $jsonFile) - 1))
+    for third_octet in $(seq ${supernet_vpc_private_third_octet} ${last_private_third_octet})
+    do
+      cidr="${supernet_vpc_private_two_octets}.${third_octet}.0/24"
+      # cidr_private_three_octets="${supernet_vpc_private_two_octets}.${third_octet}"
+      ip_blocks_json=$(echo ${ip_blocks_json} | jq '.['${global_count}'] += {"name": "'$(jq -c -r '[.[] | select(.visibility == "PRIVATE") ]' $jsonFile | jq .[${private_count}].name)'",
+                                                       "cidr": "'${cidr}'",
+                                                       "visibility": "'$(jq -c -r '[.[] | select(.visibility == "PRIVATE") ] | length' $jsonFile | jq .[${private_count}].visibility)'",
+                                                       "project_ref": "'$(jq -c -r '[.[] | select(.visibility == "PRIVATE") ]' $jsonFile | jq .[${private_count}].project_ref)'"}')
+      ((private_count++))
+      ((global_count++))
+    done
+    # public pool
+    supernet_vpc_public=$(jq -c -r '.spec.nsx.supernet_vpc_public' $jsonFile)
+    supernet_vpc_public_third_octet=$(echo "${supernet_vpc_public}" | cut -d'.' -f3)
+    supernet_vpc_public_two_octets=$(echo "${supernet_vpc_public}" | cut -d'.' -f1-2)
+    public_count=0
+    last_public_third_octet=$((${supernet_vpc_public_third_octet} + $(jq '[.nsx.ip_blocks[] | select(.visibility == "EXTERNAL") ] | length' $jsonFile) - 1))
+    for third_octet in $(seq ${supernet_overlay_third_octet} ${last_public_third_octet})
+    do
+      cidr="${supernet_vpc_public_two_octets}.${third_octet}.0/24"
+      # cidr_public_three_octets="${supernet_vpc_public_two_octets}.${third_octet}"
+      ip_blocks_json=$(echo ${ip_blocks_json} | jq '.['${global_count}'] += {"name": "'$(jq -c -r '[.[] | select(.visibility == "EXTERNAL") ]' $jsonFile | jq .[${public_count}].name)'",
+                                                       "cidr": "'${cidr}'",
+                                                       "visibility": "'$(jq -c -r '[.[] | select(.visibility == "EXTERNAL") ] | length' $jsonFile | jq .[${public_count}].visibility)'"}')
+      ((public_count++))
+      ((global_count++))
+    done
+    nsx_ip_blocks=$(echo ${ip_blocks_json} | jq -c -r '.')
+  fi
 fi
 #
 # Avi variables

@@ -540,7 +540,77 @@
       "lb_persistence_profile_path": "/infra/lb-persistence-profiles/default-source-ip-lb-persistence-profile",
       "lb_application_profile_path": "/infra/lb-app-profiles/default-http-lb-app-profile",
       "lb_app_cert": "app_cert",
-      "lb_ssl_profile_path": "/infra/lb-client-ssl-profiles/default-high-compatibility-client-ssl-profile"
+      "lb_ssl_profile_path": "/infra/lb-client-ssl-profiles/default-high-compatibility-client-ssl-profile",
+      "ip_blocks_json_file": "/tmp/ip_blocks.json",
+      "ip_blocks": [
+        {
+          "name": "ip_block_pub_project1",
+          "visibility": "EXTERNAL"
+        },
+        {
+          "name": "ip_block_pub_project2",
+          "visibility": "EXTERNAL"
+        },
+        {
+          "name": "ip_block_pub_project3",
+          "visibility": "EXTERNAL"
+        },
+        {
+          "name": "ip_block_private_project1",
+          "project_ref": "project1",
+          "visibility": "PRIVATE"
+        },
+        {
+          "name": "ip_block_private_project2",
+          "project_ref": "project2",
+          "visibility": "PRIVATE"
+        },
+        {
+          "name": "ip_block_private_project3",
+          "project_ref": "project3",
+          "visibility": "PRIVATE"
+        }
+      ],
+      "projects": [
+        {
+          "name": "project1",
+          "ip_block_ref": "ip_block_pub_project1",
+          "tier0_ref": "my-tier0",
+          "edge_cluster_ref": "my-edge-cluster-01"
+        },
+        {
+          "name": "project2",
+          "ip_block_ref": "ip_block_pub_project2",
+          "tier0_ref": "my-tier0",
+          "edge_cluster_ref": "my-edge-cluster-01"
+        },
+        {
+          "name": "project3",
+          "ip_block_ref": "ip_block_pub_project3",
+          "tier0_ref": "my-tier0",
+          "edge_cluster_ref": "my-edge-cluster-01"
+        }
+      ],
+      "vpcs": [
+        {
+          "name": "vpc1",
+          "project_ref": "project1",
+          "ip_block_private_ref": "ip_block_private_project1",
+          "ip_block_public_ref": "ip_block_pub_project1"
+        },
+        {
+          "name": "vpc2",
+          "project_ref": "project2",
+          "ip_block_private_ref": "ip_block_private_project2",
+          "ip_block_public_ref": "ip_block_pub_project2"
+        },
+        {
+          "name": "vpc3",
+          "project_ref": "project3",
+          "ip_block_private_ref": "ip_block_private_project3",
+          "ip_block_public_ref": "ip_block_pub_project3"
+        }
+      ]
     }
   },
   "avi": {
