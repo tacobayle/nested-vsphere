@@ -574,20 +574,20 @@
         {
           "name": "project1",
           "ip_block_ref": "ip_block_pub_project1",
-          "tier0_ref": "my-tier0",
-          "edge_cluster_ref": "my-edge-cluster-01"
+          "tier0_ref": "t0-01",
+          "edge_cluster_ref": "edge-cluster-01"
         },
         {
           "name": "project2",
           "ip_block_ref": "ip_block_pub_project2",
-          "tier0_ref": "my-tier0",
-          "edge_cluster_ref": "my-edge-cluster-01"
+          "tier0_ref": "t0-01",
+          "edge_cluster_ref": "edge-cluster-01"
         },
         {
           "name": "project3",
           "ip_block_ref": "ip_block_pub_project3",
-          "tier0_ref": "my-tier0",
-          "edge_cluster_ref": "my-edge-cluster-01"
+          "tier0_ref": "t0-01",
+          "edge_cluster_ref": "edge-cluster-01"
         }
       ],
       "vpcs": [
