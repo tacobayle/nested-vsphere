@@ -75,6 +75,7 @@ list_gw=$(govc find -json vm -name "${gw_name}")
 if [[ ${operation} == "apply" ]] ; then
   #
   if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': this is vpc use case"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     echo ${nsx_ip_blocks} >> ${log_file}
     echo ${nsx_ip_blocks} | jq '.' >> ${log_file}
     exit
