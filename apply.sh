@@ -73,14 +73,7 @@ list_folder=$(govc find -json . -type f)
 list_gw=$(govc find -json vm -name "${gw_name}")
 #
 if [[ ${operation} == "apply" ]] ; then
-  #
-  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': this is vpc use case"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-    echo ${nsx_ip_blocks} >> ${log_file}
-    echo ${nsx_ip_blocks} | jq '.' >> ${log_file}
-    exit
-  fi
-  # ova download
+  # ubuntu ova download
   /nested-vsphere/bash/download_file_from_url_to_location.sh "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "${deployment_name}, Ubuntu OVA" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
   # esxi iso download
   /nested-vsphere/bash/download_file_from_url_to_location.sh "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "${deployment_name}, ESXi ISO" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
@@ -411,12 +404,12 @@ if [[ ${operation} == "apply" ]] ; then
   #
   #
   wait
-  if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == "vsphere-nsx"* ]]; then
     # Start downloading NSX OVA remotely
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${nsx_ova_url}\" \"/home/ubuntu/bin/$(basename ${nsx_ova_url})\" \"${deployment_name}, NSX OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   fi
   #
-  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == *"-avi" ]]; then
     # Start downloading Avi OVA remotely
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
     # Start downloading Ubuntu OVA remotely
@@ -440,7 +433,7 @@ if [[ ${operation} == "apply" ]] ; then
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   # NSX creation
   wait
-  if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == "vsphere-nsx"* ]]; then
     nsx_deploy_log_file="/nested-vsphere/log/${deployment_name}_nsx_deploy.stdout"
     echo '------------------------------------------------------------' >> ${nsx_deploy_log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${nsx_deploy_log_file} 2>&1
@@ -450,7 +443,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${nsx_deploy_log_file} 2>&1
   fi
   # NSX config.
-  if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == "vsphere-nsx"* ]]; then
     nsx_config_log_file="/nested-vsphere/log/${deployment_name}_nsx_config.stdout"
     echo '------------------------------------------------------------' >> ${nsx_config_log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${nsx_config_log_file} 2>&1
@@ -459,6 +452,12 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_config_log_file}
     echo "Ending timestamp: $(date)" >> ${nsx_config_log_file} 2>&1
   fi
+  #
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    # test after NSX config
+    exit
+  fi
+  #
   # Avi ctrl creation
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
     avi_deploy_log_file="/nested-vsphere/log/${deployment_name}_avi_deploy.stdout"

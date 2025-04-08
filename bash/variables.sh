@@ -377,7 +377,6 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
   fi
   if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
     ip_blocks_json="[]"
-    ip_blocks_json_file=$(jq -c -r '.nsx.config.ip_blocks_json_file' $jsonFile)
     # private pool
     supernet_vpc_private=$(jq -c -r '.spec.nsx.supernet_vpc_private' $jsonFile)
     supernet_vpc_private_third_octet=$(echo "${supernet_vpc_private}" | cut -d'.' -f3)
@@ -413,6 +412,8 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
       ((global_count++))
     done
     nsx_ip_blocks=$(echo ${ip_blocks_json} | jq -c -r '.')
+    nsx_projects=$(jq -c -r '.nsx.config.projects' $jsonFile)
+    nsx_vpcs=$(jq -c -r '.nsx.config.vpcs' $jsonFile)
   fi
 fi
 #

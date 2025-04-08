@@ -698,6 +698,182 @@ do
               "${json_data}"
 done
 #
+# vpc use case
+#
+if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+  #
+  # ip block creation only for project default
+  #
+  echo ${nsx_ip_blocks} | jq -c -r .[] | while read item
+  do
+    if [[ $(echo ${item} | jq -r -c .project_ref) == "default" || $(echo ${item} | jq -r -c .project_ref) == "null" ]]; then
+      json_data='
+        {
+          "display_name": "'$(echo ${item} | jq -c -r .name)'",
+          "cidr": "'$(echo ${item} | jq -c -r .cidr)'",
+          "visibility": "'$(echo ${item} | jq -c -r .visibility)'"
+        }'
+        /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/infra/ip-blocks/$(echo ${item} | jq -c -r .name)" \
+              "PATCH" \
+              "${json_data}"
+    fi
+  done
+  #
+  # Project creation
+  #
+  echo ${nsx_projects} | jq -c -r .[] | while read item
+  do
+    # retrieve external ip_block_external_path
+    file_json_output="/tmp/vpc_ip_block.json"
+    json_key="ip_block_path"
+    /bin/bash /home/ubuntu/nsx/retrieve_object_path.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "policy/api/v1/infra/ip-blocks" \
+                "$(echo ${item} | jq -c -r '.ip_block_ref')" \
+                "${file_json_output}" \
+                "${json_key}"
+    ip_block_external_path=$(jq -c -r '.'${json_key}'' ${file_json_output})
+    # retrieve tier0_path
+    file_json_output="/tmp/vpc_t0_path.json"
+    json_key="t0_path"
+    /bin/bash /home/ubuntu/nsx/retrieve_object_path.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "policy/api/v1/infra/tier-0s" \
+                "$(echo ${item} | jq -c -r '.tier0_ref')" \
+                "${file_json_output}" \
+                "${json_key}"
+    tier0_path=$(jq -c -r '.'${json_key}'' ${file_json_output})
+    # retrieve edge_cluster_path
+    file_json_output="/home/ubuntu/nsx/vpc_edge_cluster_path.json"
+    json_key="edge_cluster_path"
+    /bin/bash /home/ubuntu/nsx/retrieve_object_id.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "api/v1/edge-clusters" \
+                "$(echo ${item} | jq -c -r '.edge_cluster_ref')" \
+                "${file_json_output}" \
+                "${json_key}"
+    edge_cluster_path="/infra/sites/default/enforcement-points/default/edge-clusters/$(jq -c -r .${json_key} ${file_json_output})"
+    # create project
+    json_data='
+        {
+          "site_infos": [
+            {
+              "edge_cluster_paths": [
+                "'${edge_cluster_path}'"
+              ],
+              "site_path": "/infra/sites/default"
+            }
+          ],
+          "tier_0s": [
+            "'${tier0_path}'"
+          ],
+          "external_ipv4_blocks" : [
+            "'${ip_block_external_path}'"
+          ],
+          "display_name": "'$(echo ${item} | jq -c -r .name)'"
+        }'
+    /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+          "policy/api/v1/orgs/default/projects/$(echo ${item} | jq -c -r .name)" \
+          "PATCH" \
+          "${json_data}"
+  done
+  #
+  # vpc creation
+  #
+  echo ${nsx_vpcs} | jq -c -r .[] | while read item
+  do
+    # retrieve edge_cluster_path
+    edge_cluster_ref=$(jq -c -r --arg arg "'$(echo ${item} | jq -c -r .project_ref)'" '.nsx.config.projects[] | select( .name == $arg ) | .edge_cluster_ref' $jsonFile)
+    file_json_output="/home/ubuntu/nsx/vpc_edge_cluster_path.json"
+    json_key="edge_cluster_path"
+    /bin/bash /home/ubuntu/nsx/retrieve_object_id.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "api/v1/edge-clusters" \
+                "${edge_cluster_ref}" \
+                "${file_json_output}" \
+                "${json_key}"
+    edge_cluster_path="/infra/sites/default/enforcement-points/default/edge-clusters/$(jq -c -r .${json_key} ${file_json_output})"
+    # retrieve tier0_path
+    tier0_ref=$(jq -c -r --arg arg "'$(echo ${item} | jq -c -r .project_ref)'" '.nsx.config.projects[] | select( .name == $arg ) | .tier0_ref' $jsonFile)
+    file_json_output="/tmp/vpc_t0_path.json"
+    json_key="t0_path"
+    /bin/bash /home/ubuntu/nsx/retrieve_object_path.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "policy/api/v1/infra/tier-0s" \
+                "${tier0_ref}" \
+                "${file_json_output}" \
+                "${json_key}"
+    tier0_path=$(jq -c -r '.'${json_key}'' ${file_json_output})
+    # retrieve ip_block_external_path
+    file_json_output="/tmp/vpc_ip_block.json"
+    json_key="ip_block_path"
+    /bin/bash /home/ubuntu/nsx/retrieve_object_path.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "policy/api/v1/infra/ip-blocks" \
+                "$(echo ${item} | jq -c -r '.ip_block_public_ref')" \
+                "${file_json_output}" \
+                "${json_key}"
+    ip_block_external_path=$(jq -c -r '.'${json_key}'' ${file_json_output})
+    # retrieve ip_block_private_path
+    file_json_output="/tmp/vpc_ip_block_private.json"
+    json_key="ip_block_private_path"
+    /bin/bash /home/ubuntu/nsx/retrieve_object_path.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                "policy/api/v1/orgs/default/projects/$(echo ${item} | jq -c -r .project_ref)/infra/ip-blocks" \
+                "$(echo ${item} | jq -c -r '.ip_block_private_ref')" \
+                "${file_json_output}" \
+                "${json_key}"
+    ip_block_private_path=$(jq -c -r '.'${json_key}'' ${file_json_output})
+    # create vpc
+    json_data='
+      {
+        "service_gateway": {
+          "disable": false,
+          "auto_snat": true
+        },
+        "default_gateway_path": "'${tier0_path}'",
+        "site_infos": [
+          {
+            "edge_cluster_paths": [
+              "'${edge_cluster_path}'"
+            ],
+            "site_path": "/infra/sites/default"
+          }
+        ],
+        "load_balancer_vpc_endpoint": {
+          "enabled": true
+        },
+        "external_ipv4_blocks": [
+          "'${ip_block_external_path}'"
+        ],
+        "private_ipv4_blocks": [
+          "'${ip_block_private_path}'"
+        ],
+        "ip_address_type": "IPV4",
+        "ipv6_profile_paths": [],
+        "subnet_profiles": {},
+        "dhcp_config": {
+          "enable_dhcp": true,
+          "dns_client_config": {
+            "dns_server_ips": [
+              "'${ip_gw}'"
+            ]
+          }
+        },
+        "display_name": "'$(echo ${item} | jq -c -r .name)'"
+      }'
+    /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+          "policy/api/v1/orgs/default/projects/$(echo ${item} | jq -c -r .project_ref)/vpcs/$(echo ${item} | jq -c -r .name)" \
+          "PATCH" \
+          "${json_data}"
+
+    json_data='
+      {
+        "ipv4_subnet_size": 32,
+        "access_mode": "Private",
+        "display_name": "'$(echo ${item} | jq -c -r .name)'-subnet"
+      }'
+    /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+          "policy/api/v1/orgs/default/projects/$(echo ${item} | jq -c -r .project_ref)/vpcs/$(echo ${item} | jq -c -r .name)/subnets/subnet-1" \
+          "PATCH" \
+          "${json_data}"
+  done
+fi
+#
 #
 #
 if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX manager configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi

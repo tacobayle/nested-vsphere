@@ -541,7 +541,6 @@
       "lb_application_profile_path": "/infra/lb-app-profiles/default-http-lb-app-profile",
       "lb_app_cert": "app_cert",
       "lb_ssl_profile_path": "/infra/lb-client-ssl-profiles/default-high-compatibility-client-ssl-profile",
-      "ip_blocks_json_file": "/tmp/ip_blocks.json",
       "ip_blocks": [
         {
           "name": "ip_block_pub_project1",
