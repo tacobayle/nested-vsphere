@@ -75,8 +75,8 @@ list_gw=$(govc find -json vm -name "${gw_name}")
 if [[ ${operation} == "apply" ]] ; then
   #
   if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-    echo ${nsx_ip_blocks}
-    echo ${nsx_ip_blocks} | jq '.'
+    echo ${nsx_ip_blocks} >> ${log_file}
+    echo ${nsx_ip_blocks} | jq '.' >> ${log_file}
     exit
   fi
   # ova download
