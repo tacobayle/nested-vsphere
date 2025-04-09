@@ -158,12 +158,20 @@ else
   exit
 fi
 #
+#
+#
+if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+  # test after vCenter config
+  exit
+fi
+#
 # creating new vmk interfaces
 #
 echo "Creating new vmk interfaces"
 /home/ubuntu/.local/bin/ansible-playbook /home/ubuntu/vcenter/vmk.yaml -e @${jsonFile}
 echo "pausing for 30 seconds"
 sleep 30
+
 #
 # migrating from standard vswitch to VDS
 #

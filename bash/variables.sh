@@ -208,7 +208,7 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
   tier0_vip_starting_ip=211
   supernet_overlay=$(jq -c -r '.spec.nsx.supernet_overlay' $jsonFile)
   supernet_vip=$(jq -c -r '.spec.avi.supernet_vip' $jsonFile)
-  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == *"-avi" ]]; then
     supernet_vip_first_two_octets=$(echo "${supernet_vip}" | cut -d'.' -f1-2)
   fi
   if [[ ${kind} == "vsphere-nsx" ]]; then
@@ -372,7 +372,7 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
   segment_overlay_file=$(jq -c -r '.nsx.config.segment_overlay_file' $jsonFile)
   echo ${segments_overlay} | tee ${segment_overlay_file} > /dev/null 2>&1
   segments_overlay=$(jq -c -r . ${segment_overlay_file})
-  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == *"-avi" ]]; then
     ip_avi_dns=$(echo ${net_client_list} | jq -c -r .[0].avi_ipam_vip.pool | cut -d"-" -f1)
   fi
   if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then

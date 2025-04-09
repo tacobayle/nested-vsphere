@@ -431,6 +431,12 @@ if [[ ${operation} == "apply" ]] ; then
     exit
   fi
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+  #
+  #
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    # test after vCenter config
+    exit
+  fi
   # NSX creation
   wait
   if [[ ${kind} == "vsphere-nsx"* ]]; then
@@ -453,10 +459,6 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${nsx_config_log_file} 2>&1
   fi
   #
-  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-    # test after NSX config
-    exit
-  fi
   #
   # Avi ctrl creation
   if [[ ${kind} == *"-avi" ]]; then
