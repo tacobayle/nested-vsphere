@@ -459,7 +459,7 @@ if [[ ${operation} == "apply" ]] ; then
   fi
   #
   # Avi ctrl creation
-  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == *"-avi" ]]; then
     avi_deploy_log_file="/nested-vsphere/log/${deployment_name}_avi_deploy.stdout"
     echo '------------------------------------------------------------' >> ${avi_deploy_log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${avi_deploy_log_file} 2>&1
@@ -469,7 +469,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${avi_deploy_log_file} 2>&1
   fi
   # App creation
-  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == *"-avi" ]]; then
     app_log_file="/nested-vsphere/log/${deployment_name}_app.stdout"
     echo '------------------------------------------------------------' >> ${app_log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${app_log_file} 2>&1
@@ -489,7 +489,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${k8s_log_file} 2>&1
   fi
   # Avi ctrl config.
-  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == *"-avi" ]]; then
     avi_config_log_file="/nested-vsphere/log/${deployment_name}_avi_config.stdout"
     echo '------------------------------------------------------------' >> ${avi_config_log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${avi_config_log_file} 2>&1

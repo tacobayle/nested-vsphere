@@ -123,7 +123,7 @@ if [[ ${kind} == "vsphere-avi" ]] ; then
   done
 fi
 #
-if [[ ${kind} == "vsphere-nsx" || ${kind} == "vsphere-nsx-avi" ]] ; then
+if [[ ${kind} == "vsphere-nsx"* ]]; then
   jq -c -r .port_groups_nsx[] ${jsonFile} | while read port_group
   do
     echo "create portgroup $(echo ${port_group} | jq -c -r '.name') in vds $(echo ${port_group} | jq -c -r '.vds_ref') with vlan $(jq -c -r --arg arg $(echo ${port_group} | jq -c -r '.name') '.spec.networks[] | select( .type == $arg).vlan_id' $jsonFile)"

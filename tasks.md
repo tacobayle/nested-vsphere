@@ -11,17 +11,7 @@ to be done:
 
 
 done:
-- create a single node tanzu cluster by default to save resources
-- add openshift capabilities for vsphere-avi deployment
-- update k8s config script to generate a cert and import it into a k8s secret
-- update unmanged k8s version to 1.32
-- update cni version (antrea, cilium, calico)
-- create doc for vanilla k8s clusters
-- add self service portal demo link in details.html for vsphere-nsx-avi use kind
-- create an auth script for ns
-- generate dynamically tkgs-workload.html
-- manage AKO 1.13.1
-- configure tanzu using tanzu.supernet_namespace and tanzu.supernet_vip
+- new use case - vsphere-nsx-vpc-avi
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"
   - rewrite tier1s if "lb: true" by adding "nsx_vip_cidr" coming from ".spec.nsx.supernet_vip"
@@ -31,16 +21,24 @@ done:
   - create NSX cert ca
   - create NSX app ca
   - create NSX VS
+- add the pod for egress demo
+
+validated:
 - create a Tanzu ns for VM service:
   - create the ns4
   - associate the policies and content library specific for vms
 - allow the capability to change AKO config for each k8s/tkg cluster from variables.json
-- add the pod for egress demo
-
-
-
-
-validated:
+- manage AKO 1.13.1
+- generate dynamically tkgs-workload.html
+- configure tanzu using tanzu.supernet_namespace and tanzu.supernet_vip
+- update k8s config script to generate a cert and import it into a k8s secret
+- update unmanged k8s version to 1.32
+- create doc for vanilla k8s clusters
+- create an auth script for ns
+- add self service portal demo link in details.html for vsphere-nsx-avi use kind
+- add openshift capabilities for vsphere-avi deployment
+- create a single node tanzu cluster by default to save resources
+- update cni version (antrea, cilium, calico)
 - ESXi boots on cdrom based on SATA controller
 - LBaaS: use vrf_ref (for pool) and vrf_context_ref (for vs_vip) instead of tier1_lr
 - create a scenario for preserve client ip:
