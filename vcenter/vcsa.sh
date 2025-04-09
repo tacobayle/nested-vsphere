@@ -158,13 +158,6 @@ else
   exit
 fi
 #
-#
-#
-if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-  # test after vCenter config
-  exit
-fi
-#
 # creating new vmk interfaces
 #
 echo "Creating new vmk interfaces"

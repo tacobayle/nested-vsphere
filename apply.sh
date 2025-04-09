@@ -433,10 +433,6 @@ if [[ ${operation} == "apply" ]] ; then
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
   #
-  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-    # test after vCenter config
-    exit
-  fi
   # NSX creation
   wait
   if [[ ${kind} == "vsphere-nsx"* ]]; then
@@ -457,6 +453,13 @@ if [[ ${operation} == "apply" ]] ; then
     echo "running the following command from the gw: /home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_config_log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_config_log_file}
     echo "Ending timestamp: $(date)" >> ${nsx_config_log_file} 2>&1
+  fi
+  #
+  # test for vpc use case
+  #
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    # test after vCenter config
+    exit
   fi
   #
   #
