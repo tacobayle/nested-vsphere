@@ -711,6 +711,9 @@ done
 # vpc use case for vsphere 9 only
 #
 if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]]; then
+  echo "#"
+  echo "# VPC use case for vsphere 9 only"
+  echo "#"
   #
   # ip block creation only for project default
   #
@@ -778,12 +781,41 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
           "external_ipv4_blocks" : [
             "'${ip_block_external_path}'"
           ],
+          "activate_default_dfw_rules": false,
           "display_name": "'$(echo ${item} | jq -c -r .name)'"
         }'
     /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
           "policy/api/v1/orgs/default/projects/$(echo ${item} | jq -c -r .name)" \
           "PATCH" \
           "${json_data}"
+  done
+  #
+  # ip block creation only for project != default
+  #
+  echo ${nsx_ip_blocks} | jq -c -r .[] | while read item
+  do
+    if [[ $(echo ${item} | jq -r -c .project_ref) != "default" && $(echo ${item} | jq -r -c .project_ref) != "null" ]]; then
+      # retrieve project id
+      file_json_output="/tmp/vpc_project.json"
+      json_key="project_id"
+      /bin/bash /home/ubuntu/nsx/retrieve_object_id.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+                  "policy/api/v1/orgs/default/projects" \
+                  "$(echo ${item} | jq -c -r '.project_ref')" \
+                  "${file_json_output}" \
+                  "${json_key}"
+      project_id=$(jq -c -r '.'${json_key}'' ${file_json_output})
+      # ip block creation
+      json_data='
+        {
+          "display_name": "'$(echo ${item} | jq -c -r .name)'",
+          "cidr": "'$(echo ${item} | jq -c -r .cidr)'",
+          "visibility": "'$(echo ${item} | jq -c -r .visibility)'"
+        }'
+        /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+              "policy/api/v1/orgs/default/projects/${project_id}/infra/ip-blocks/$(echo ${item} | jq -c -r .name)" \
+              "PATCH" \
+              "${json_data}"
+    fi
   done
   #
   # vpc creation
