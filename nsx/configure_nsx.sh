@@ -68,8 +68,18 @@ done
 #
 echo ${transport_zones} | jq -c -r .[] | while read zone
 do
-  /bin/bash /home/ubuntu/nsx/set_transport_zones.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-              "${zone}"
+  json_data=$(echo ${zone} | jq -c -r '.')
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    json_data=$(echo ${json_data} | jq '. += {"is_default": true}')
+  fi
+  /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+        "api/v1/transport-zones" \
+        "POST" \
+        "${json_data}"
+#
+#
+#  /bin/bash /home/ubuntu/nsx/set_transport_zones.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+#              "${zone}"
 done
 #
 # register compute manager

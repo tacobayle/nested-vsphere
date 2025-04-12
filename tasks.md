@@ -11,6 +11,7 @@ to be done:
 
 
 done:
+- vsphere-nsx-vpc-avi: NSX: configure overlay zone as default
 - add a default resource pool for external vsphere
 - new use case - vsphere-nsx-vpc-avi
 - create a NSX-T LB for migration scenario:
