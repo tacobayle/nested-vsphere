@@ -708,9 +708,9 @@ do
               "${json_data}"
 done
 #
-# vpc use case
+# vpc use case for vsphere 9 only
 #
-if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]]; then
   #
   # ip block creation only for project default
   #
