@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-source /nested-vsphere/bash/download_file.sh
 source /nested-vsphere/bash/ip.sh
 source /nested-vsphere/bash/functions.sh
 #

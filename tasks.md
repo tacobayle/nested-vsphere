@@ -7,10 +7,11 @@ to be done:
 - Avi SE folders
 - logs in html page and/or in container logs
 - progress in html page
-
+- create a /etc/host entry for the external vCenter in the pod if really needed when no DNS resolution.
 
 
 done:
+- add a default resource pool for external vsphere
 - new use case - vsphere-nsx-vpc-avi
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"

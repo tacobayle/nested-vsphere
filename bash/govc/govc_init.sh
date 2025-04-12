@@ -17,4 +17,5 @@ load_govc () {
   export GOVC_INSECURE=true
   export GOVC_URL=${vsphere_host}
   export GOVC_CLUSTER=${vsphere_cluster}
+  export GOVC_RESOURCE_POOL=${vsphere_cluster}/Resources
 }
