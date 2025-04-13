@@ -453,6 +453,16 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_config_log_file}
     echo "Ending timestamp: $(date)" >> ${nsx_config_log_file} 2>&1
   fi
+  # NSX VPC config.
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    nsx_vpc_config_log_file="/nested-vsphere/log/${deployment_name}_nsx_vpc_config.stdout"
+    echo '------------------------------------------------------------' >> ${nsx_vpc_config_log_file} 2>&1
+    echo "Starting timestamp: $(date)" >> ${nsx_vpc_config_log_file} 2>&1
+    echo "Config. of NSX Manager - This should take about 10 minutes" >> ${nsx_vpc_config_log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/nsx/configure_nsx_vpc.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_vpc_config_log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx_vpc.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_vpc_config_log_file}
+    echo "Ending timestamp: $(date)" >> ${nsx_vpc_config_log_file} 2>&1
+  fi
   #
   # test for vpc use case
   #

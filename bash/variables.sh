@@ -412,7 +412,11 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
       ((global_count++))
     done
     nsx_ip_blocks=$(echo ${ip_blocks_json} | jq -c -r '.')
+    nsx_gw_connections=$(jq -c -r '.nsx.config.gw_connections' $jsonFile)
     nsx_projects=$(jq -c -r '.nsx.config.projects' $jsonFile)
+    nsx_transit_gateways=$(jq -c -r '.nsx.config.transit_gateways' $jsonFile)
+    nsx_vpc_connectivity_profiles=$(jq -c -r '.nsx.config.vpc_connectivity_profiles' $jsonFile)
+    nsx_vpc_service_profiles=$(jq -c -r '.nsx.config.vpc_service_profiles' $jsonFile)
     nsx_vpcs=$(jq -c -r '.nsx.config.vpcs' $jsonFile)
   fi
 fi
