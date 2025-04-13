@@ -867,6 +867,7 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
           "disable": false,
           "auto_snat": true
         },
+        "activate_default_dfw_rules": false,
         "default_gateway_path": "'${tier0_path}'",
         "site_infos": [
           {
