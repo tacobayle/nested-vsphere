@@ -391,6 +391,7 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
       ip_blocks_json=$(echo ${ip_blocks_json} | jq '.['${global_count}'] += {"name": "'$(jq -c -r '[.nsx.config.ip_blocks[] | select(.visibility == "PRIVATE") ]' $jsonFile | jq -c -r .[${private_count}].name)'",
                                                        "cidr": "'${cidr}'",
                                                        "visibility": "'$(jq -c -r '[.nsx.config.ip_blocks[] | select(.visibility == "PRIVATE") ]' $jsonFile | jq -c -r .[${private_count}].visibility)'",
+                                                       "scope": "'$(jq -c -r '[.nsx.config.ip_blocks[] | select(.visibility == "PRIVATE") ]' $jsonFile | jq -c -r .[${private_count}].scope)'",
                                                        "project_ref": "'$(jq -c -r '[.nsx.config.ip_blocks[] | select(.visibility == "PRIVATE") ]' $jsonFile | jq -c -r .[${private_count}].project_ref)'"}')
       ((private_count++))
       ((global_count++))

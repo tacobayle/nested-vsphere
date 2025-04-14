@@ -543,6 +543,10 @@
       "lb_ssl_profile_path": "/infra/lb-client-ssl-profiles/default-high-compatibility-client-ssl-profile",
       "ip_blocks": [
         {
+          "name": "ip_block_pub_project_default",
+          "visibility": "EXTERNAL"
+        },
+        {
           "name": "ip_block_pub_project1",
           "visibility": "EXTERNAL"
         },
@@ -555,40 +559,60 @@
           "visibility": "EXTERNAL"
         },
         {
+          "name": "ip_block_private_default",
+          "project_ref": "default",
+          "scope": "vpc_private",
+          "visibility": "PRIVATE"
+        },
+        {
+          "name": "ip_block_private_default_tgw",
+          "project_ref": "default",
+          "scope": "vpc_tgw",
+          "visibility": "PRIVATE"
+        },
+        {
           "name": "ip_block_private_project1",
           "project_ref": "project1",
-          "scope": "vpc",
+          "scope": "vpc_private",
           "visibility": "PRIVATE"
         },
         {
           "name": "ip_block_private_project1_tgw",
           "project_ref": "project1",
+          "scope": "vpc_tgw",
           "visibility": "PRIVATE"
         },
         {
           "name": "ip_block_private_project2",
           "project_ref": "project2",
-          "scope": "vpc",
+          "scope": "vpc_private",
           "visibility": "PRIVATE"
         },
         {
           "name": "ip_block_private_project2_tgw",
           "project_ref": "project2",
+          "scope": "vpc_tgw",
           "visibility": "PRIVATE"
         },
         {
           "name": "ip_block_private_project3",
           "project_ref": "project3",
-          "scope": "vpc",
+          "scope": "vpc_private",
           "visibility": "PRIVATE"
         },
         {
           "name": "ip_block_private_project3_tgw",
           "project_ref": "project3",
+          "scope": "vpc_tgw",
           "visibility": "PRIVATE"
         }
       ],
       "gw_connections": [
+        {
+          "name": "gw-connection-default",
+          "tier0_ref": "t0-01",
+          "project_ref": "default"
+        },
         {
           "name": "gw-connection-1",
           "tier0_ref": "t0-01",
@@ -631,6 +655,11 @@
       "transit_gateways": [
         {
           "name": "default",
+          "gw_connection_ref": "gw-connection-default",
+          "project_ref": "default"
+        },
+        {
+          "name": "default",
           "gw_connection_ref": "gw-connection-1",
           "project_ref": "project1"
         },
@@ -646,6 +675,13 @@
         }
       ],
       "vpc_connectivity_profiles" : [
+        {
+          "name": "vpc_connectivity_profile-default",
+          "project_ref": "default",
+          "external_ip_block_refs": ["ip_block_pub_project_default"],
+          "edge_cluster_refs": ["edge-cluster-01"],
+          "private_tgw_ip_block_refs": ["ip_block_private_default_tgw"]
+        },
         {
           "name": "vpc_connectivity_profile1",
           "project_ref": "project1",
@@ -670,6 +706,10 @@
       ],
       "vpc_service_profiles" : [
         {
+          "name": "vpc_service_profile-default",
+          "project_ref": "default"
+        },
+        {
           "name": "vpc_service_profile1",
           "project_ref": "project1"
         },
@@ -683,6 +723,13 @@
         }
       ],
       "vpcs": [
+        {
+          "name": "vpc-default",
+          "project_ref": "default",
+          "private_ips_refs": ["ip_block_private_default"],
+          "vpc_service_profile_ref": "vpc_service_profile-default",
+          "connectivity_profile_ref": "vpc_connectivity_profile-default"
+        },
         {
           "name": "vpc1",
           "project_ref": "project1",

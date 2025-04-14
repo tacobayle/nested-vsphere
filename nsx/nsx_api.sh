@@ -16,7 +16,7 @@ nsx_api () {
     response_body=$(sed '$ d' <<< "$response")
     response_code=$(tail -n1 <<< "$response")
     if [[ $response_code == 2[0-9][0-9] ]] ; then
-      echo "  HTTP $3 API call to https://$7/$8 was successful"
+      #echo "  HTTP $3 API call to https://$7/$8 was successful"
       break
     else
       echo "  Retrying HTTP $3 API call to https://$7/$8, http response code: $response_code, attempt: $attempt"

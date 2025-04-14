@@ -23,7 +23,7 @@ while true ; do
   http_code=$(tail -n1 <<< "$response")
   content=$(sed '$ d' <<< "$response")
   if [[ $http_code == 200 ]] ; then
-    echo "  Created NSX API session successfully: cookie file is $4 and header file is: $5"
+    #echo "  Created NSX API session successfully: cookie file is $4 and header file is: $5"
     break
   fi
   if [ $attempt -eq $retry ]; then
