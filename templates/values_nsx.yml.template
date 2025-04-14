@@ -46,6 +46,7 @@ nsxt:
   cloud:
     name: ${cloud_name}
     obj_name_prefix: ${cloud_obj_name_prefix}
+    vpc_mode: ${vpc_mode}
     dhcp_enabled: true
   domains:
     - name: ${domain}

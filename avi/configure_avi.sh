@@ -81,7 +81,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
       -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
       -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_vcenter.yml.template | tee /home/ubuntu/avi/avi_values.yml
 fi
-if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+if [[ ${kind} == "vsphere-nsx-avi" || ${kind} == "vsphere-nsx-vpc-avi" ]]; then
   #
   # patching certificatemanagementprofile with vault token
   #
@@ -94,6 +94,11 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
   # Network mgmt
   #
   network_management=$(echo ${segments_overlay} | jq -c -r '.[] | select( .avi_mgmt == true)')
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    vpc_mode=true
+  else
+    vpc_mode=false
+  fi
   #
   # templating yaml file
   #
@@ -125,6 +130,7 @@ if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       -e "s@\${users}@$(echo "${users}" | jq -c -r '.')@" \
       -e "s@\${cloud_name}@${nsx_cloud_name}@" \
       -e "s@\${cloud_obj_name_prefix}@${cloud_obj_name_prefix}@" \
+      -e "s@\${vpc_mode}@${vpc_mode}@" \
       -e "s@\${domain}@${avi_subdomain}.${domain}@" \
       -e "s@\${transport_zone_name}@$(echo ${transport_zones} | jq -c -r '.[] | select(.transport_type == "OVERLAY").display_name')@" \
       -e "s@\${network_management}@${network_management}@" \

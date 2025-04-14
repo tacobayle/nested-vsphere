@@ -464,13 +464,6 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${nsx_vpc_config_log_file} 2>&1
   fi
   #
-  # test for vpc use case
-  #
-  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-    # test after vCenter config
-    exit
-  fi
-  #
   #
   # Avi ctrl creation
   if [[ ${kind} == *"-avi" ]]; then
@@ -511,6 +504,13 @@ if [[ ${operation} == "apply" ]] ; then
     echo "running the following command from the gw: /home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${avi_config_log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${avi_config_log_file}
     echo "Ending timestamp: $(date)" >> ${avi_config_log_file} 2>&1
+  fi
+  #
+  # test for vpc use case
+  #
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    # test after vCenter config
+    exit
   fi
   # VKS config.
   if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
