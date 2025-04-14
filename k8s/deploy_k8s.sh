@@ -54,7 +54,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
     for index_ip in $(seq 1 2)
     do
-      if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+      if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
         cidr=$(echo ${segments_overlay} | jq -r -c '.[] | select(.kube == "true").cidr')
         if [[ ${cidr} =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.[0-9]{1,3}$ ]] ; then
           cidr_vip_three_octets="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
@@ -118,7 +118,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
       nsxtT1LR="''"
       avi_cloud_name="Default-Cloud"
     fi
-    if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+    if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
       file_json_output="/home/ubuntu/nsx/tier-1s.json"
       /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                   "policy/api/v1/infra/tier-1s" \

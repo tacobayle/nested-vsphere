@@ -81,7 +81,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
       -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
       -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_vcenter.yml.template | tee /home/ubuntu/avi/avi_values.yml
 fi
-if [[ ${kind} == "vsphere-nsx-avi" || ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   #
   # patching certificatemanagementprofile with vault token
   #
@@ -168,6 +168,6 @@ crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/avi/traffic_gen_client.sh" 
 #
 # lbaas cleanup
 #
-if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   /home/ubuntu/lbaas/cleanup.sh
 fi

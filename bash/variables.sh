@@ -441,7 +441,7 @@ avi_ctrl_name=$(jq -c -r '.avi.ctrl_name' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 avi_version=$(jq -c -r .spec.avi.version $jsonFile)
-if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   import_sslkeyandcertificate_ca='[{"name": "'${vault_pki_intermediate_name}'",
                                     "cert": {"path": "'${vault_pki_intermediate_cert_path_signed}'"}},
                                    {"name": "'${vault_pki_name}'",
@@ -682,7 +682,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   amount_of_segment=0
   se_group_ref="private"
 fi
-if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   nsx_cloud_name=$(jq -c -r '.avi.nsx.cloud.name' $jsonFile)
   cloud_obj_name_prefix=$(jq -c -r '.avi.nsx.cloud.cloud_obj_name_prefix' $jsonFile)
   playbook=$(jq -c -r '.playbook_nsx' $jsonFile)
@@ -714,7 +714,7 @@ fi
 # pools and vs definitions
 #
 one_done="false"
-if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
+if [[ ${kind} == *"-avi" ]] ; then
   if [[ ${ips_app} != "null" ]]; then
     pools="[]"
     virtual_services_http="[]"
@@ -730,7 +730,7 @@ if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]] ; then
         network_ref_app="$(echo ${net_app_list} | jq -r -c '.['${net}'].display_name')"
         server_preserve_ip=$(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip')
         ips_app_full=$(echo "$(jq -c -r '.avi.app.first.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_list} | jq -r -c '.['${net}'].cidr_three_octets')'." + (. | tostring))')
-        if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+        if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
           if [[ $(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
             pool="{}"
             pool=$(echo ${pool} | jq '. += {

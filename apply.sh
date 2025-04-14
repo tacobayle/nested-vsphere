@@ -103,8 +103,13 @@ if [[ ${operation} == "apply" ]] ; then
   if [[ ${kind} == "vsphere-nsx" ]]; then
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx.html.template | tee /nested-vsphere/html/details.html > /dev/null
   fi
-  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
+  if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
+    if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+      sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx-vpc-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
+    fi
+    if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+      sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
+    fi
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/api.js.template | tee /nested-vsphere/html/api.js > /dev/null
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/clean-up.js.template | tee /nested-vsphere/html/clean-up.js > /dev/null
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/script.js.template | tee /nested-vsphere/html/script.js > /dev/null
@@ -340,7 +345,7 @@ if [[ ${operation} == "apply" ]] ; then
         ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /var/www/html/*" >> ${log_file}
         ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /var/www/html/*" >> ${log_file}
         # lbaas config.
-        if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+        if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo mv /home/ubuntu/lbaas/avi-lbaas.service /etc/systemd/system/avi-lbaas.service" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chown root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo chgrp root /etc/systemd/system/avi-lbaas.service" >> ${log_file}
@@ -349,7 +354,7 @@ if [[ ${operation} == "apply" ]] ; then
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
         fi
         # yaml domain update
-        if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+        if [[ ${kind} == *"-avi" ]]; then
           sed -e "s@\${yaml_folder}@${yaml_folder}@" \
               -e "s@\${yaml_links}@${yaml_links}@" /nested-vsphere/templates/yaml_download_update.sh.template | tee /root/yaml_download_update.sh > /dev/null
           scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
@@ -513,7 +518,7 @@ if [[ ${operation} == "apply" ]] ; then
     exit
   fi
   # VKS config.
-  if [[ ${kind} == "vsphere-avi" || ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == *"-avi" ]]; then
     if [[ ${configure_supervisor} == "true" ]]; then
       vks_log_file="/nested-vsphere/log/${deployment_name}_vks.stdout"
       echo '------------------------------------------------------------' >> ${vks_log_file} 2>&1

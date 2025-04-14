@@ -69,7 +69,7 @@ if [[ ${ips_app} != "null" ]]; then
       govc library.deploy -options "/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
       govc vm.change -vm "${folder_app}/${network_ref_app}-${app_basename}${index}" -c ${app_cpu} -m ${app_memory}
       govc vm.power -on=true "${folder_app}/${network_ref_app}-${app_basename}${index}"
-      if [[ ${kind} == "vsphere-nsx-avi" && ${index} == 1 ]]; then
+      if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" && ${index} == 1 ]]; then
         for net_vip in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
         do
           if [[ $(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
@@ -151,7 +151,7 @@ fi
 # NSX LB config
 #
 count=1
-if [[ ${kind} == "vsphere-nsx-avi" ]] ; then
+if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
   echo ${tier1s} | jq -c -r .[] | while read item
   do
     if $(echo ${item} | jq -e '.lb' > /dev/null) ; then

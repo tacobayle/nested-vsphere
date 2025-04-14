@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nested Deployment Details</title>
+</head>
+<body>
+<h1>Nested Deployment Details</h1>
+<ul>
+    <li><a href="socks.html" target="_blank">Configure a SOCKS proxy</a></li>
+    <li><a href="vault.html" target="_blank">Vault details</a></li>
+    <li><a href="https://esxi01.${domain}" target="_blank">ESXi 01</a></li>
+    <li><a href="https://esxi02.${domain}" target="_blank">ESXi 02</a></li>
+    <li><a href="https://esxi03.${domain}" target="_blank">ESXi 03</a></li>
+    <li><a href="https://vcsa-01.${domain}" target="_blank">VCSA</a></li>
+    <li><a href="https://nsx-manager-01.${domain}" target="_blank">NSX Manager</a></li>
+    <li><a href="https://avi-ctrl-01.${domain}" target="_blank">Avi Ctrl</a></li>
+    <li><a href="https://demo.${domain}" target="_blank">Self Service Portal Demo</a></li>
+    <li><a href="https://demo.${domain}/clean-up.html" target="_blank">Self Service Portal Clean Up</a></li>
+</ul>
+<h1>Demo Tanzu/VKS</h1>
+<ul>
+    <li><a href="tkgs-service.html" target="_blank">Update TKGs service</a></li>
+    <li><a href="cci-service.html" target="_blank">Install CCI service</a></li>
+    <li><a href="tkgs-workload.html" target="_blank">Create workload clusters</a></li>
+</ul>
+</body>
+</html>

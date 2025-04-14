@@ -7,13 +7,14 @@ to be done:
 - Avi SE folders
 - logs in html page and/or in container logs
 - progress in html page
-- create a /etc/host entry for the external vCenter in the pod if really needed when no DNS resolution.
-
+- create a /etc/host entry for the external vCenter in the pod if really needed when no DNS resolution?
+- new use case - vsphere-nsx-vpc-avi - vpc 2.0:
+  - add ip route to external gw (to external cidr)
 
 done:
-- vsphere-nsx-vpc-avi: NSX: configure overlay zone as default
-- add a default resource pool for external vsphere
-- new use case - vsphere-nsx-vpc-avi
+
+- new use case - vsphere-nsx-vpc-avi - vpc 2.0:
+  - validate project and vpc creation
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"
   - rewrite tier1s if "lb: true" by adding "nsx_vip_cidr" coming from ".spec.nsx.supernet_vip"
@@ -26,6 +27,8 @@ done:
 - add the pod for egress demo
 
 validated:
+- vsphere-nsx-vpc-avi: NSX: configure overlay zone as default
+- add a default resource pool for external vsphere
 - create a Tanzu ns for VM service:
   - create the ns4
   - associate the policies and content library specific for vms
