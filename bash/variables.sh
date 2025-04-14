@@ -1094,7 +1094,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   supervisor_cluster_ingress_cidr="1.1.1.0/24"
   tanzu_namespaces=$(jq -c -r '.tanzu.namespaces' $jsonFile)
 fi
-if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   management_tanzu_segment=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).display_name' ${segment_overlay_file})
   management_tanzu_cidr=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).cidr' ${segment_overlay_file})
   management_tanzu_gw=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).gateway_address' ${segment_overlay_file})
