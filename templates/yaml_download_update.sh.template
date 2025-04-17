@@ -105,6 +105,13 @@ gw=$(echo ${gw} | jq '.spec.listeners[0] += {"hostname": "*.'${domain}'"}')
 gw=$(echo ${gw} | jq '.spec.listeners[1] += {"hostname": "*.'${domain}'"}')
 echo ${gw} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-gw-multiple-listeners.yml > /dev/null
 #
+gw=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-multiple-listeners-static-ip.yml)
+gw=$(echo ${gw} | jq '. | del (.spec.listeners[0].hostname)')
+gw=$(echo ${gw} | jq '. | del (.spec.listeners[1].hostname)')
+gw=$(echo ${gw} | jq '.spec.listeners[0] += {"hostname": "static-ip.'${domain}'"}')
+gw=$(echo ${gw} | jq '.spec.listeners[1] += {"hostname": "static-ip.'${domain}'"}')
+echo ${gw} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-gw-multiple-listeners-static-ip.yml > /dev/null
+#
 gw=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-single-listener.yml)
 gw=$(echo ${gw} | jq '. | del (.spec.listeners[0].hostname)')
 gw=$(echo ${gw} | jq '.spec.listeners[0] += {"hostname": "*.'${domain}'"}')

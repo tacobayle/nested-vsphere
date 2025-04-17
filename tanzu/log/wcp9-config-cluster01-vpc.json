@@ -1,0 +1,49 @@
+{
+  "specVersion": "1.0",
+  "supervisorSpec": {
+    "supervisorName": "cluster01"
+  },
+  "envSpec": {
+    "vcenterDetails": {
+      "vcenterAddress": "vcsa-01.lab9.com",
+      "vcenterCluster": "cluster01"
+    }
+  },
+  "tkgsComponentSpec": {
+    "tkgsMgmtNetworkSpec": {
+      "tkgsMgmtIpAssignmentMode": "STATICRANGE",
+      "tkgsMgmtNetworkName": "seg-mgmt-tanzu-supervisor",
+      "tkgsMgmtNetworkGatewayCidr": "192.168.2.1/24",
+      "tkgsMgmtNetworkStartingIp": "192.168.2.130 - 192.168.2.135",
+      "tkgsMgmtNetworkDnsServers": [
+        "10.6.248.74"
+      ],
+      "tkgsMgmtNetworkSearchDomains": [],
+      "tkgsMgmtNetworkNtpServers": [
+        "10.6.248.74"
+      ]
+    },
+    "tkgsStoragePolicySpec": {
+      "masterStoragePolicy": "vSAN Default Storage Policy",
+      "ephemeralStoragePolicy": "vSAN Default Storage Policy",
+      "imageStoragePolicy": "vSAN Default Storage Policy"
+    },
+    "nsxVpcNetworkInfo": {
+      "nsxVpcProject": "Default",
+      "nsxVpcConnectivityProfile": "vpc_connectivity_profile-default",
+      "tkgsWorkloadServiceCidr": "10.96.0.0/24",
+      "nsxVpcPrivateCidrs": [
+        "10.1.240.128/25"
+      ],
+      "nsxVpcDnsServers": [
+        "10.6.248.74"
+      ],
+      "nsxNtpDnsServers": [
+        "10.6.248.74"
+      ]
+    },
+    "controlPlaneSize": "TINY",
+    "apiServerDnsNames": [],
+    "cpvmCount": 1
+  }
+}
