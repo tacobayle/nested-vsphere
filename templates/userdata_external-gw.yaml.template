@@ -108,6 +108,8 @@ write_files:
           if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
             net_client_list='${net_client_list}'
             tier1s='${tier1s}'
+            #
+            # NSX cidr_vip routes
             echo $tier1s | jq -c -r .[] | while read item
             do
                 if $(echo ${item} | jq -e '.lb' > /dev/null) ; then
@@ -117,11 +119,28 @@ write_files:
                   fi
                 fi
             done
+            #
+            # Avi cidr_vip routes
             echo $net_client_list | jq -c -r .[] | while read cidr_vip
             do
               echo "            - to: $(echo $cidr_vip | jq -c -r .cidr_vip)" | tee -a /etc/netplan/50-cloud-init.yaml
               echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
             done
+            #
+            # NSX VPC external routes and NAT
+            if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+              ip_blocks_json='${ip_blocks_json}'
+              echo $ip_blocks_json | jq -c -r .[] | while read ip_block_json
+              do
+                if [[ $(echo ${ip_block_json} | jq -r -c .visibility) == "EXTERNAL" ]]; then
+                  echo "            - to: $(echo $ip_block_json | jq -c -r .vip)" | tee -a /etc/netplan/50-cloud-init.yaml
+                  echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
+                  sudo iptables -t nat -A POSTROUTING -s `echo $ip_block_json | jq -c -r .cidr` -o $ifaceFirstName -j MASQUERADE
+                fi
+              done
+            fi
+            #
+            # Supervisor cluster ingress
             echo "            - to: ${supervisor_cluster_ingress_cidr}" | tee -a /etc/netplan/50-cloud-init.yaml
             echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
             tanzu_namespaces='${tanzu_namespaces}'

@@ -146,6 +146,7 @@ k8s_apt_packages=$(jq -c -r '.k8s_apt_packages' $jsonFile)
 k8s_namespaces=$(jq -c -r '.k8s_namespaces' $jsonFile)
 docker_version=$(jq -c -r '.docker_version' $jsonFile)
 pod_cidr=$(jq -c -r '.pod_cidr' $jsonFile)
+ip_blocks_json="[]"
 #
 # NSX variables
 #
