@@ -8,13 +8,13 @@ to be done:
 - logs in html page and/or in container logs
 - progress in html page
 - create a /etc/host entry for the external vCenter in the pod if really needed when no DNS resolution?
-- new use case - vsphere-nsx-vpc-avi - vpc 2.0:
-  - add ip route to external gw (to external cidr)
+  
 
 done:
-
+- run deploy_k8s.sh whatever the use case if avi is deployed
 - new use case - vsphere-nsx-vpc-avi - vpc 2.0:
   - validate project and vpc creation
+  - add ip route to external gw (to external cidr)
 - create a NSX-T LB for migration scenario:
   - create a new dedicated tier1 with "lb: true"
   - rewrite tier1s if "lb: true" by adding "nsx_vip_cidr" coming from ".spec.nsx.supernet_vip"

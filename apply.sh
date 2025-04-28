@@ -492,7 +492,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${app_log_file} 2>&1
   fi
   # K8s clusters config creation
-  if [[ ${kind} == "vsphere-avi" ]]; then
+  if [[ ${kind} == *"-avi" ]]; then
     k8s_log_file="/nested-vsphere/log/${deployment_name}_k8s.stdout"
     echo '------------------------------------------------------------' >> ${k8s_log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${k8s_log_file} 2>&1
