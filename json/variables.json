@@ -1438,7 +1438,7 @@
   "app_apt_packages": ["docker.io", "apache2", "jq"],
   "docker_registry_repo_default_app" : "tacobayle/avi_app",
   "app_tcp_default" : 8080,
-  "docker_registry_repo_waf" : "mutzel/all-in-one-hackazon:postinstall",
+  "docker_registry_repo_waf" : "vulnerables/web-dvwa",
   "app_tcp_waf" : 8081,
   "app_cpu": 2,
   "app_memory": 2048,

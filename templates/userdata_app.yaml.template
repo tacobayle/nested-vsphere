@@ -54,7 +54,7 @@ write_files:
       sudo usermod -a -G docker ubuntu
       docker login --username ${docker_registry_username} --password ${docker_registry_password}
       docker run -d -p ${app_tcp_default}:80 ${docker_registry_repo_default_app}
-      docker run --name hackazon -d -p ${app_tcp_waf}:80 ${docker_registry_repo_waf} supervisord -n
+      docker run --name dvwa -d -p ${app_tcp_waf}:80 ${docker_registry_repo_waf}
       #
       # End of cloud init
       #

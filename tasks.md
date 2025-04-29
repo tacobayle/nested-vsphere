@@ -11,6 +11,7 @@ to be done:
   
 
 done:
+- update waf use case - replace hackazon app by dvwa
 - run deploy_k8s.sh whatever the use case if avi is deployed
 - new use case - vsphere-nsx-vpc-avi - vpc 2.0:
   - validate project and vpc creation
