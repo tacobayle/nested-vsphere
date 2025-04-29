@@ -17,6 +17,10 @@
     <li><a href="https://demo.${domain}" target="_blank">Self Service Portal Demo</a></li>
     <li><a href="https://demo.${domain}/clean-up.html" target="_blank">Self Service Portal Clean Up</a></li>
 </ul>
+<h1>Demo WAF</h1>
+<ul>
+    <li><a href="see-waf-details-api.html" target="_blank">See WAF details through the API</a></li>
+</ul>
 <h1>Demo Tanzu/VKS</h1>
 <ul>
     <li><a href="tkgs-service.html" target="_blank">Update TKGs service</a></li>

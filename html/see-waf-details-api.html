@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>See WAF ModSec rule through the API</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>See WAF Details through the API.</h1>
+<br>
+<table>
+    <tr>
+        <th>See WAF ModSec rule through the API - commands to use from the external gateway</th>
+        <td class="code-box">
+    <pre><code>
+jsonFile=json/nic-vsphere-nsx-avi_apply.json
+source bash/variables.sh
+# display variables
+echo ${avi_version}
+echo ${avi_username}
+echo ${ip_avi}
+curl -s -k -X POST -H "Content-Type: application/json" -d "{\"username\": \"${avi_username}\", \"password\": \"${GENERIC_PASSWORD}\"}" -c avi_cookie.txt https://${ip_avi}/login
+# show default WAF policy
+curl -s -k -X GET -H "Content-Type: application/json" -H "X-Avi-Version: ${avi_version}" -b avi_cookie.txt https://${ip_avi}/api/wafpolicy | jq '.results[] | select(.name == "System-WAF-Policy")'
+wafcrs_uuid=$(curl -s -k -X GET -H "Content-Type: application/json" -H "X-Avi-Version: ${avi_version}" -b avi_cookie.txt https://${ip_avi}/api/wafpolicy | jq -c -r '.results[] | select(.name == "System-WAF-Policy").waf_crs_ref' | cut -d"/" -f6)
+# show WAF CRS uuid
+echo ${wafcrs_uuid}
+# show specific CRS rule
+curl -s -k -X GET -H "Content-Type: application/json" -H "X-Avi-Version: ${avi_version}" -b avi_cookie.txt https://${ip_avi}/api/wafcrs/${wafcrs_uuid} | jq '.groups[] | select(.name == "CRS_942_Application_Attack_SQLi").rules[] | select(.name =="Check for SQL Injection (1/35)")'
+    </code></pre>
+            <button onclick="copyToClipboard(0)">Copy Code</button>
+        </td>
+    </tr>
+</table>
+<br>
+<br>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
+</body>
+</html>
