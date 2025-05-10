@@ -11,7 +11,7 @@ if [[ ${configure_supervisor} == "true" ]] ; then
   #
   # registering Avi in the NSX config
   #
-  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
     json_data='
     {
       "owned_by": "LCM",
@@ -123,6 +123,68 @@ if [[ ${configure_supervisor} == "true" ]] ; then
       "255.255.255.0" \
       "${cluster_id}" \
       "${supervisor_cluster_count_vm}"
+  fi
+  #
+  # vsphere-nsx-avi use case only for vSphere9
+  #
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]]; then
+    token=$(/bin/bash /home/ubuntu/vcenter/create_vcenter_api_session.sh "administrator" "${ssoDomain}" "${GENERIC_PASSWORD}" "${api_host}")
+    private_ip_block_name=$(echo ${nsx_vpcs} | jq -c -r --arg arg "${supervisor_cluster_project}" '.[] | select( .project_ref == $arg).private_ips_refs[0]')
+    private_ip_block_address="$(echo ${nsx_ip_blocks} | jq -c -r --arg arg ${private_ip_block_name} '.[] | select( .name == $arg).cidr' | cut -d"." -f1-3).128"
+    json_data='
+    {
+      "cluster_proxy_config": {
+        "proxy_settings_source": "VC_INHERITED"
+      },
+      "workload_ntp_servers": ["'${ip_gw}'"],
+      "image_storage":
+      {
+        "storage_policy":"'${storage_policy_id}'"
+      },
+      "master_NTP_servers":["'${ip_gw}'"],
+      "ephemeral_storage_policy":"'${storage_policy_id}'",
+      "service_cidr":
+      {
+        "address":"'$(echo ${supervisor_cluster_service_cidr} | cut -d"/" -f1)'",
+        "prefix": "'$(echo ${supervisor_cluster_service_cidr} | cut -d"/" -f2)'"
+      },
+      "size_hint":"'${supervisor_cluster_size}'",
+      "worker_DNS":["'${ip_gw}'"],
+      "master_DNS":["'${ip_gw}'"],
+      "network_provider": "NSX_VPC",
+      "master_storage_policy":"'${storage_policy_id}'",
+      "count": '${supervisor_cluster_count_vm}',
+      "master_management_network":
+      {
+        "mode":"STATICRANGE",
+        "address_range":
+          {
+            "subnet_mask":"255.255.255.0",
+            "starting_address":"'${master_management_network_starting_address}'",
+            "gateway":"'$(echo ${management_tanzu_gw} | cut -d"/" -f1)'",
+            "address_count":"'${management_tanzu_supervisor_count}'"
+          },
+        "network":"'${tanzu_supervisor_dvportgroup}'"
+      },
+      "vpc_network": {
+        "nsx_project": "/orgs/default/projects/'${supervisor_cluster_project}'",
+        "auto_created": true,
+        "default_private_cidrs": [
+          {
+            "address": "",
+            "prefix": 0
+          },
+          {
+            "address": "'${private_ip_block_address}'",
+            "prefix": 25
+          }
+        ],
+        "vpc_connectivity_profile": "/orgs/default/projects/'${supervisor_cluster_project}'/vpc-connectivity-profiles/'$(echo ${nsx_vpc_connectivity_profiles} | jq -c -r --arg arg "${supervisor_cluster_project}" '.[] | select( .project_ref == $arg).name')'"
+      },
+      "default_kubernetes_service_content_library":"'${content_library_id}'"
+    }'
+    echo "${json_data}"
+    vcenter_api 2 2 "POST" $token "${json_data}" $api_host "api/vcenter/namespace-management/clusters/${cluster_id}?action=enable"
   fi
   #
   # vsphere-nsx-avi use case

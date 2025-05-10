@@ -29,14 +29,7 @@ if [[ ${operation} == "apply" ]] ; then
     count=$(jq -c -r .count $jsonFile)
     app_profile=$(jq -c -r .app_profile $jsonFile)
     if [[ ${app_profile} != "public" && ${app_profile} != "private" ]] ; then echo "ERROR: Unsupported app_profile" ; exit 255 ; fi
-    if [[ ${app_profile} == "public" ]] ; then
-      tier1=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_public == true).tier1')
-      lbaas_segment=$(echo ${segments_overlay} | jq -r -c --arg arg1 "${tier1}" '.[] | select(.backend == true and .tier1 == $arg1).display_name')
-    fi
-    if [[ ${app_profile} == "private" ]] ; then
-      tier1=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).tier1')
-      lbaas_segment=$(echo ${segments_overlay} | jq -r -c --arg arg1 "${tier1}" '.[] | select(.backend == true and .tier1 == $arg1).display_name')
-    fi
+    lbaas_segment=$(echo ${net_app_list} | jq -r -c '.[] | select(.server_preserve_ip == false).display_name')
     for backend in $(seq 1 ${count})
     do
       list=$(govc find -json vm -name "unassigned*")

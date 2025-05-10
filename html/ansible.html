@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ansible Demo</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>Ansible Demo</h1>
+<br>
+<table>
+    <tr>
+        <th>Create a VS - commands to use from the external gateway</th>
+        <td class="code-box">
+    <pre><code>
+cd ~/automation/ansibleAviVsIpamDns
+# display variables
+more vars/app.yml
+more vars/infra.yml
+ansible-playbook local.yml -e @/home/ubuntu/.creds.json
+    </code></pre>
+            <button onclick="copyToClipboard(0)">Copy Code</button>
+        </td>
+    </tr>
+</table>
+<br>
+<br>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
+</body>
+</html>

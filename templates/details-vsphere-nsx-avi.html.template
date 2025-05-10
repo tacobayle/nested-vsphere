@@ -17,6 +17,11 @@
     <li><a href="https://demo.${domain}" target="_blank">Self Service Portal Demo</a></li>
     <li><a href="https://demo.${domain}/clean-up.html" target="_blank">Self Service Portal Clean Up</a></li>
 </ul>
+<h1>Demo Automation</h1>
+<ul>
+    <li><a href="ansible.html" target="_blank">Ansible Demo</a></li>
+    <li><a href="terraform.html" target="_blank">Terraform Demo</a></li>
+</ul>
 <h1>Demo WAF</h1>
 <ul>
     <li><a href="see-waf-details-api.html" target="_blank">See WAF details through the API</a></li>

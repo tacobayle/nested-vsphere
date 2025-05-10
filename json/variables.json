@@ -8,7 +8,7 @@
   },
   "K8s_version_short": "v1.31",
   "directories": ["esxi","yaml-files", ".kube", "openssl", "routes", "vault", "traffic_gen", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "unmanaged_k8s_clusters", "templates", "bin", "python", ".ssh"],
-  "folders_to_copy": ["vcenter", "nsx", "avi", "app", "tanzu", "templates", "bash", "json", "lbaas", "html", "openshift", "k8s"],
+  "folders_to_copy": ["vcenter", "nsx", "avi", "app", "tanzu", "templates", "bash", "json", "lbaas", "html", "openshift", "k8s", "automation"],
   "apt_packages": ["vault", "python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso", "expect", "iptables-persistent"],
   "pip3_packages": ["ansible-core==2.12.5", "ansible==5.7.1", "avisdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors", "pyvmomi"],
   "yaml_folder": "yaml-files",
@@ -51,7 +51,9 @@
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route1.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route2.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route1-crd.yml",
-    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route2-crd.yml"
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route2-crd.yml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-gw-multiple-listeners-static-ip.yml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-svc-LB-1-fixed-IP.yml"
   ],
   "vault": {
     "control_script": {
@@ -784,6 +786,7 @@
     "ips_se_lsc": [151, 152],
     "config_repo": "https://github.com/tacobayle/ansibleAviConfig",
     "helm_url": "oci://projects.registry.vmware.com/ako/helm-charts/ako",
+    "helm_url_broadcom": "oci://projects.packages.broadcom.com/ako/ako",
     "helm_url_amko": "oci://projects.registry.vmware.com/ako/helm-charts/amko",
     "image_repo_amko": "projects.registry.vmware.com/ako/amko",
     "image_repo_amko_federator": "projects.registry.vmware.com/ako/amko-federator",
@@ -1460,6 +1463,7 @@
       "count_vm": 1,
       "ingress_third_octet_increment": "1",
       "namespace_tier0": "t0-01",
+      "project": "default",
       "prefix_per_namespace": "27"
     },
     "content_library": {

@@ -1,0 +1,170 @@
+{
+  "cluster_proxy_config": {
+    "proxy_settings_source": "VC_INHERITED"
+  },
+  "workload_ntp_servers": [
+    "10.6.248.74"
+  ],
+  "content_libraries": [
+    {
+      "supervisor_services": [
+        "kubernetes.vmware.com"
+      ],
+      "content_library": "794a4ac0-e347-41ab-8c7b-2a807695a116"
+    }
+  ],
+  "image_storage": {
+    "storage_policy": "aa6d5a82-1c88-45da-85d3-3d74b91a5bad"
+  },
+  "supervisor_image_source": {
+    "source_type": "EMBEDDED"
+  },
+  "vsphere_pods_enabled": true,
+  "api_servers": [
+    "192.168.2.131",
+    "192.168.2.130",
+    "10.1.240.195"
+  ],
+  "api_server_management_endpoint": "192.168.2.130",
+  "master_NTP_servers": [
+    "10.6.248.74"
+  ],
+  "default_image_repository": "",
+  "ephemeral_storage_policy": "aa6d5a82-1c88-45da-85d3-3d74b91a5bad",
+  "service_cidr": {
+    "address": "10.96.0.0",
+    "prefix": 24
+  },
+  "size_hint": "TINY",
+  "default_image_registry": {
+    "hostname": "",
+    "port": 443
+  },
+  "worker_DNS": [
+    "10.6.248.74"
+  ],
+  "master_DNS": [
+    "10.6.248.74"
+  ],
+  "network_provider": "NSX_VPC",
+  "master_storage_policy": "aa6d5a82-1c88-45da-85d3-3d74b91a5bad",
+  "master_DNS_search_domains": [],
+  "stat_summary": {
+    "cpu_used": 2613,
+    "storage_capacity": 96123,
+    "memory_used": 7856,
+    "cpu_capacity": 126199,
+    "memory_capacity": 292051,
+    "storage_used": 49336
+  },
+  "api_server_cluster_endpoint": "192.168.240.7",
+  "count": 1,
+  "master_management_network": {
+    "mode": "STATICRANGE",
+    "network_segment": {
+      "networks": [
+        "dvportgroup-33009"
+      ]
+    },
+    "address_range": {
+      "subnet_mask": "255.255.255.0",
+      "starting_address": "192.168.2.130",
+      "gateway": "192.168.2.1",
+      "address_count": 6
+    },
+    "network": "dvportgroup-33009"
+  },
+  "vpc_network": {
+    "nsx_project": "/orgs/default/projects/default",
+    "auto_created": true,
+    "default_private_cidrs": [
+      {
+        "address": "",
+        "prefix": 0
+      },
+      {
+        "address": "10.1.240.128",
+        "prefix": 25
+      }
+    ],
+    "vpc_connectivity_profile": "/orgs/default/projects/default/vpc-connectivity-profiles/vpc_connectivity_profile-default"
+  },
+  "max_concurrent_DNS_forwards": 1000,
+  "Master_DNS_names": [],
+  "config_status": "RUNNING",
+  "tls_management_endpoint_certificate": "-----BEGIN CERTIFICATE-----\nMIIDBTCCAe2gAwIBAgIIOEMQdz0fywMwDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE\nAxMKa3ViZXJuZXRlczAeFw0yNTA0MTYxMTU1NTBaFw0zNTA0MTQxMjAwNTBaMBUx\nEzARBgNVBAMTCmt1YmVybmV0ZXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQDMJxfOAoP9bpYMVAdE+W/5D5+ibjpYMLMNzUlziRV65Xb5C4lyzCwDsdKX\nkR23dCn1W2B3eHtIixmGA0ClfAAOk82OmtiVmWU1z1TO6RcsoRz5xR7kW16Ht0cC\nuDRphxJpAyCXGu156FUSBiRXL1xnuxeRPGxwBXtfQnGWM/1/Yl0PEen/AKVL1/y3\n0URrafu00FsqSxk4cUSqwFUhbn0tZ9PC8/To2sqwBXqOW3nuZzLTijr9r5bj2tOm\nxvJpNMMifLfN+lhozTv9qZxWbPMYKhwZctPzBqJqBB7KoYh5Ek2iKUnQ6OQlv7IG\nbSFpmXZMyMw/rlpf4CwAGR9QmKYhAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP\nBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQgxOihQsvsL/YYBrSLGIQrzxKF8zAV\nBgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQBZhImKimoq\nm1nOZq2QGS3FwzsFf+vyiizcNHeC7z+DlARD0iRvUKKlUxHgaMit8JuN9MBzkSAm\nvqJV4/XR8TjiVKJ0llWMREvbHCqREsk3AQEeeUS9u7iB5+yd5acV70m28mjtETpi\nSc3PKA2RnjYmAOa4oCDNHCKNpkNUIBGAQ+tJ+Zj9W9szTSkTdjm7u8ns4HjzhQe3\nveu9iJun1tag77Wdiz2KXG6cTLAYeRKQXe6tZT3RDubix170QQ1InaelEncw481F\nOH0eR29AMTXMylTHmiKgkvqcLrOY7ZbprwLoFtASFsCFDRs2JswOt1TvtngzLw0a\npQEhRkXx/Rgq\n-----END CERTIFICATE-----\n",
+  "login_banner": "",
+  "kubernetes_status": "READY",
+  "kubernetes_status_messages": [],
+  "tls_endpoint_certificate": "-----BEGIN CERTIFICATE-----\nMIIE9zCCA1+gAwIBAgIJAO+NNZ1E9R0zMA0GCSqGSIb3DQEBCwUAMIGXMQswCQYD\nVQQDDAJDQTEXMBUGCgmSJomT8ixkARkWB3ZzcGhlcmUxFTATBgoJkiaJk/IsZAEZ\nFgVsb2NhbDELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExGTAXBgNV\nBAoMEHZjc2EtMDEubGFiOS5jb20xGzAZBgNVBAsMElZNd2FyZSBFbmdpbmVlcmlu\nZzAeFw0yNTA0MTYxMjAyMThaFw0yNjA0MTYxMjAyMThaMD8xGTAXBgNVBAsTEHZj\nc2EtMDEubGFiOS5jb20xIjAgBgNVBAMTGWt1YmUtYXBpc2VydmVyLWRvbWFpbi1j\nMTAwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQC3IthPq9GdpmvUjAr0\n/7vjNpGm/IHlb/wUDFcGNOOfhk2VpoU+Dnrk+VQa+4EkDNxRYz1BI0Af70qI8CK5\nnbOhPXz8XAfJVbLTTgu2qNrPqtg5aG7o2E3poh7QnOzm6AuOOQ17DTGaVfp/Nw4b\ngJdk14qFVk1gPXIw6mANYRX1gZ5vaBRNsME0UpNok1Nn3JU9YZLTLcYSSTWVvQXQ\nxc/mM0waaE4EqoSnzuMVJkmZETLvlWAAM+ovSjBpgA6/o5HzzetUZNwgSOyO8LXX\ntDRp6JXn1aqxNdwCjA182SzSWhnbjlULFKR4KgoMc/Ac92RZwbUuwUpqyyWrteIX\nYuI+p+ECdZL1mTqe9CgACIztlvzzBAsqVixAWHStt7mlBbDDQNpCKI14iwGb2hr/\nOR4Y1u3jfeUXvAuiempX0RjDTQSzC9kzKrL/n+Ylv/201nwU84H2y8AYiKLuIs21\ndgXb5/Em4r7RezFmwcQrYVHaaFcgvhHFrlSBp+POl6XpbxkCAwEAAaOBnDCBmTAP\nBgNVHREECDAGhwTAqPAHMA4GA1UdDwEB/wQEAwIAoDATBgNVHSUEDDAKBggrBgEF\nBQcDATAfBgNVHSMEGDAWgBTkgLAcTXBKyHw91GuXo8u2rzZXOjBABggrBgEFBQcB\nAQQ0MDIwMAYIKwYBBQUHMAKGJGh0dHBzOi8vdmNzYS0wMS5sYWI5LmNvbS9hZmQv\ndmVjcy9jYTANBgkqhkiG9w0BAQsFAAOCAYEATWAHoJEJ6l3g/94YujGYHTJ9A3sg\nY3mB6zLj+87biWczFpiGu+QAmZ9JpGNPIfH1iZQF2ELmuTZu6urcBX8OuEEnVS6n\ne9prPEJQDFm4IjBnX5styxn8BGdmmddQoJlJcQVh5eLpVYS60OwauorWER4jLmZc\ntG3iQUhlHxC5e2d2TktO2FLjwNdnaXbjjyqb2CVO+iBCpI2JofV0M6ou+DVVJwEg\nYgaV9sDYQg2/uJacgVOoiI2LByCQJseKc3PsleBV8rzWsehfGhsemnjwVZy91fQ6\nSLPYkASKZ38FgAn7ZcWaSqGpWdepCEROHk3cXCEWu+locMzJO4Fs5uFtP8hxKdDN\nagrsP3mUwYcGs4N1jmqgdbBuKqucv3sXC+PoBi/k833zi9KHa7oDL34eajeSpO9y\n/Ix1LFEh3H7bWmWUMpm17+SFCNO/brscpCeeSCpV7MX7WpnZ/Fl4Wz8wYNfUQ3LZ\nWi289sMtqFeNKhXnr2jYg4WqodGIJ5mElgzu\n-----END CERTIFICATE-----\n",
+  "messages": [],
+  "supervisor_services_enabled": true,
+  "conditions": [
+    {
+      "severity": "",
+      "reason": "",
+      "description": {
+        "args": [],
+        "default_message": "Initialized vSphere resources",
+        "id": "vcenter.wcp.condition.type_description.infrastructure_initialized"
+      },
+      "messages": [],
+      "last_transition_time": "2025-04-16T11:47:25.946Z",
+      "type": "InfrastructureInitialized",
+      "status": "TRUE"
+    },
+    {
+      "severity": "",
+      "reason": "",
+      "description": {
+        "args": [],
+        "default_message": "Deployed Control Plane VMs",
+        "id": "vcenter.wcp.condition.type_description.control_plane_deployed"
+      },
+      "messages": [],
+      "last_transition_time": "2025-04-16T11:58:09.546Z",
+      "type": "ControlPlaneVMsDeployed",
+      "status": "TRUE"
+    },
+    {
+      "severity": "",
+      "reason": "",
+      "description": {
+        "args": [],
+        "default_message": "Configured Control Plane VMs",
+        "id": "vcenter.wcp.condition.type_description.control_plane_configured"
+      },
+      "messages": [],
+      "last_transition_time": "2025-04-16T12:18:14.313Z",
+      "type": "ControlPlaneVMsConfigured",
+      "status": "TRUE"
+    },
+    {
+      "severity": "",
+      "reason": "",
+      "description": {
+        "args": [],
+        "default_message": "Configured Core Supervisor Services",
+        "id": "vcenter.wcp.condition.type_description.core_services_configured"
+      },
+      "messages": [],
+      "last_transition_time": "2025-05-01T05:10:48.898Z",
+      "type": "CoreServicesConfigured",
+      "status": "TRUE"
+    },
+    {
+      "severity": "",
+      "reason": "",
+      "description": {
+        "args": [],
+        "default_message": "Configured Load Balancer fronting the kubernetes API Server",
+        "id": "vcenter.wcp.condition.type_description.load_balancer_configured"
+      },
+      "messages": [],
+      "last_transition_time": "2025-04-16T12:12:17.871Z",
+      "type": "LoadbalancerConfigured",
+      "status": "TRUE"
+    }
+  ],
+  "default_kubernetes_service_content_library": "794a4ac0-e347-41ab-8c7b-2a807695a116"
+}

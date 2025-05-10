@@ -806,6 +806,27 @@ if [[ ${kind} == *"-avi" ]] ; then
                              ]
                     }')
             virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
+            #
+            # Ansible and Terraform infra variables build
+            #
+            if [ ! -f "/home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml" ] || [ ! -f "/home/ubuntu/automation/tfAviVsIpamDns/infra.json" ]; then
+              if [[ ${net_vip} -eq 0 && ${pool_ports_index} -eq 0 ]]; then
+                json_data='
+                {
+                  "avi_servers_ips": '$(echo ${ips_app_full} | jq -c -r .)',
+                  "avi_cloud": {
+                     "name": "'${nsx_cloud_name}'"
+                  },
+                  "domain_name": "'${avi_subdomain}.${domain}'",
+                  "tier1_name": "'${tier1_name}'",
+                  "network_cidr": "'${cidr_vip_prefix}'",
+                  "network_name": "'${network_ref_vip}'",
+                  "tenant" : "'${lbaas_tenant}'"
+                }'
+                echo ${json_data} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml >/dev/null 2>&1
+                echo ${json_data} | jq . | tee /home/ubuntu/automation/tfAviVsIpamDns/infra.json >/dev/null 2>&1
+              fi
+            fi
           fi
         done
         #
@@ -1102,6 +1123,7 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   management_tanzu_supervisor_starting_ip=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_starting_ip' ${segment_overlay_file})
   management_tanzu_supervisor_count=$(jq -c -r '.[] | select(has("tanzu_supervisor_starting_ip") and has("tanzu_supervisor_count")).tanzu_supervisor_count' ${segment_overlay_file})
   supervisor_cluster_namespace_tier0=$(jq -c -r '.tanzu.supervisor_cluster.namespace_tier0' $jsonFile)
+  supervisor_cluster_project=$(jq -c -r '.tanzu.supervisor_cluster.project' $jsonFile)
   supervisor_cluster_prefix_per_namespace=$(jq -c -r '.tanzu.supervisor_cluster.prefix_per_namespace' $jsonFile)
   #supervisor_cluster_namespace_cidr=$(jq -c -r '.tanzu.supervisor_cluster.namespace_cidr' $jsonFile)
   supervisor_supernet_namespace=$(jq -c -r '.spec.tanzu.supernet_namespace' $jsonFile)
