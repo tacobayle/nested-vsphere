@@ -28,6 +28,10 @@ done:
 - add the pod for egress demo
 
 validated:
+- add yaml file for external gw static ip
+- add yaml file for svc type lb static
+- add Automation/Ansible use case
+- add Automation/Terraform use case
 - vsphere-nsx-vpc-avi: NSX: configure overlay zone as default
 - add a default resource pool for external vsphere
 - create a Tanzu ns for VM service:

@@ -806,26 +806,29 @@ if [[ ${kind} == *"-avi" ]] ; then
                              ]
                     }')
             virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
-            if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-              #
-              # Ansible and Terraform infra variables build
-              #
-              if [ ! -f "/home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml" ] || [ ! -f "/home/ubuntu/automation/tfAviVsIpamDns/infra.json" ]; then
-                if [[ ${net_vip} -eq 0 && ${pool_ports_index} -eq 0 ]]; then
-                  json_data='
-                  {
-                    "avi_servers_ips": '$(echo ${ips_app_full} | jq -c -r .)',
-                    "avi_cloud": {
-                       "name": "'${nsx_cloud_name}'"
-                    },
-                    "domain_name": "'${avi_subdomain}.${domain}'",
-                    "tier1_name": "'${tier1_name}'",
-                    "network_cidr": "'${cidr_vip_prefix}'",
-                    "network_name": "'${network_ref_vip}'",
-                    "tenant" : "'${lbaas_tenant}'"
-                  }'
-                  echo ${json_data} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml >/dev/null 2>&1
-                  echo ${json_data} | jq . | tee /home/ubuntu/automation/tfAviVsIpamDns/infra.json >/dev/null 2>&1
+            #
+            # Ansible and Terraform infra variables build
+            #
+            if [ ! -f "/home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml" ] || [ ! -f "/home/ubuntu/automation/tfAviVsIpamDns/infra.json" ]; then
+              if [[ ${net_vip} -eq 0 && ${pool_ports_index} -eq 0 ]]; then
+                json_data='
+                {
+                  "avi_servers_ips": '$(echo ${ips_app_full} | jq -c -r .)',
+                  "avi_cloud": {
+                     "name": "'${nsx_cloud_name}'"
+                  },
+                  "domain_name": "'${avi_subdomain}.${domain}'",
+                  "tier1_name": "'${tier1_name}'",
+                  "network_cidr": "'${cidr_vip_prefix}'",
+                  "network_name": "'${network_ref_vip}'",
+                  "tenant" : "'${lbaas_tenant}'"
+                }'
+                echo ${json_data} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml >/dev/null 2>&1
+                echo ${json_data} | jq . | tee /home/ubuntu/automation/tfAviVsIpamDns/infra.json >/dev/null 2>&1
+                if [[ ${kind} == "vsphere-avi" ]]; then
+                  cat /home/ubuntu/automation/ansibleAviVsIpamDns/local.yml | grep -v vrf_context_ref | grep -v vrf_ref | tee /home/ubuntu/automation/ansibleAviVsIpamDns/local_wo_nsx.yml >/dev/null 2>&1
+                  mv /home/ubuntu/automation/ansibleAviVsIpamDns/local.yml /home/ubuntu/automation/ansibleAviVsIpamDns/local.yml.old
+                  mv /home/ubuntu/automation/ansibleAviVsIpamDns/local_wo_nsx.yml /home/ubuntu/automation/ansibleAviVsIpamDns/local.yml
                 fi
               fi
             fi

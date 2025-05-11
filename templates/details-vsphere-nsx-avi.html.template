@@ -14,23 +14,23 @@
     <li><a href="https://vcsa-01.${domain}" target="_blank">VCSA</a></li>
     <li><a href="https://nsx-manager-01.${domain}" target="_blank">NSX Manager</a></li>
     <li><a href="https://avi-ctrl-01.${domain}" target="_blank">Avi Ctrl</a></li>
-    <li><a href="https://demo.${domain}" target="_blank">Self Service Portal Demo</a></li>
-    <li><a href="https://demo.${domain}/clean-up.html" target="_blank">Self Service Portal Clean Up</a></li>
+</ul>
+<h1>Enable Tanzu/VKS</h1>
+<ul>
+    <li><a href="tkgs-service.html" target="_blank">Update TKGs service</a></li>
+    <li><a href="cci-service.html" target="_blank">Install CCI service</a></li>
+    <li><a href="tkgs-workload.html" target="_blank">Create workload clusters</a></li>
 </ul>
 <h1>Demo Automation</h1>
 <ul>
     <li><a href="ansible.html" target="_blank">Ansible Demo</a></li>
     <li><a href="terraform.html" target="_blank">Terraform Demo</a></li>
+    <li><a href="https://demo.${domain}" target="_blank">Self Service Portal Demo</a></li>
+    <li><a href="https://demo.${domain}/clean-up.html" target="_blank">Self Service Portal Clean Up</a></li>
 </ul>
 <h1>Demo WAF</h1>
 <ul>
     <li><a href="see-waf-details-api.html" target="_blank">See WAF details through the API</a></li>
-</ul>
-<h1>Demo Tanzu/VKS</h1>
-<ul>
-    <li><a href="tkgs-service.html" target="_blank">Update TKGs service</a></li>
-    <li><a href="cci-service.html" target="_blank">Install CCI service</a></li>
-    <li><a href="tkgs-workload.html" target="_blank">Create workload clusters</a></li>
 </ul>
 </body>
 </html>
