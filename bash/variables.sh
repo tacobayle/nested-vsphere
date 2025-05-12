@@ -784,6 +784,13 @@ if [[ ${kind} == *"-avi" ]] ; then
                         "lb_algorithm": "LB_ALGORITHM_ROUND_ROBIN",
                         "avi_app_server_ips": '$(echo ${ips_app_full} | jq -c -r .)'
                       }')
+            # patching pool algorithm for waf
+            if [[ $(echo ${pool_ports} | jq -r -c '.['${pool_ports_index}']') == ${app_tcp_waf} ]]; then
+              pool=$(echo ${pool} | jq '. += {
+                          "lb_algorithm": "LB_ALGORITHM_CONSISTENT_HASH",
+                          "lb_algorithm_hash": "LB_ALGORITHM_CONSISTENT_HASH_SOURCE_IP_ADDRESS"
+                      }')
+            fi
             pools=$(jq '. += [$new_item]' --argjson new_item "${pool}" <<< "${pools}")
             virtual_service_http="{}"
             virtual_service_http=$(echo ${virtual_service_http} | jq '. += {
