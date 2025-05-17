@@ -32,7 +32,7 @@ fi
 #
 # avi ctrl creation
 #
-list_vm=$(govc find -json vm -name "${avi_ctrl_name}")
+list_vm=$(govc find -json -type m -name "${avi_ctrl_name}")
 if [[ ${list_vm} != "null" ]] ; then
   echo "ERROR: unable to create VM ${avi_ctrl_name}: it already exists"
 else

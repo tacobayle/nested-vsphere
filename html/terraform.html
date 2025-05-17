@@ -50,9 +50,18 @@ more app.tf
 more infra.json
 terraform init
 terraform apply -auto-approve -var-file=./infra.json -var-file=/home/ubuntu/.creds.json
-#terraform destroy -auto-approve -var-file=./infra.json -var-file=/home/ubuntu/.creds.json
     </code></pre>
             <button onclick="copyToClipboard(1)">Copy Code</button>
+        </td>
+    </tr>
+    <tr>
+        <th>Destroy a VS - commands to use from the external gateway</th>
+        <td class="code-box">
+    <pre><code>
+cd ~/automation/tfAviVsIpamDns
+terraform destroy -auto-approve -var-file=./infra.json -var-file=/home/ubuntu/.creds.json
+    </code></pre>
+            <button onclick="copyToClipboard(2)">Copy Code</button>
         </td>
     </tr>
 </table>

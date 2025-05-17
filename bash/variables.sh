@@ -423,6 +423,27 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
   fi
 fi
 #
+# ACT variables
+#
+act_folder=$(jq -c -r '.act.folder' $jsonFile)
+act_last_octet=$(jq -c -r '.act.last_octet' $jsonFile)
+ip_act="${cidr_mgmt_three_octets}.${act_last_octet}"
+act_name=$(jq -c -r '.act.name' $jsonFile)
+if [[ $(jq -c -r '.spec.act.ova_url' $jsonFile) != "null" ]]; then
+  act_ova_url=$(jq -c -r '.spec.act.ova_url' $jsonFile)
+fi
+#
+# VRA variables
+#
+vra_folder=$(jq -c -r '.vra.folder' $jsonFile)
+vra_last_octet=$(jq -c -r '.vra.last_octet' $jsonFile)
+ip_vra="${cidr_mgmt_three_octets}.${vra_last_octet}"
+vra_name=$(jq -c -r '.vra.name' $jsonFile)
+vra_deployment=$(jq -c -r '.vra.deployment' $jsonFile)
+if [[ $(jq -c -r '.spec.vra.ova_url' $jsonFile) != "null" ]]; then
+  vra_ova_url=$(jq -c -r '.spec.vra.ova_url' $jsonFile)
+fi
+#
 # Avi variables
 #
 folder_avi=$(jq -c -r '.avi.ctrl_folder' $jsonFile)

@@ -1,0 +1,76 @@
+{
+  "Deployment": "medium",
+  "DiskProvisioning": "thin",
+  "IPAllocationPolicy": "dhcpPolicy",
+  "IPProtocol": "IPv4",
+  "PropertyMapping": [
+    {
+      "Key": "vami.hostname",
+      "Value": ""
+    },
+    {
+      "Key": "varoot-password",
+      "Value": ""
+    },
+    {
+      "Key": "va-ssh-enabled",
+      "Value": "False"
+    },
+    {
+      "Key": "k8s-cluster-cidr",
+      "Value": "10.244.0.0/22"
+    },
+    {
+      "Key": "k8s-service-cidr",
+      "Value": "10.244.4.0/22"
+    },
+    {
+      "Key": "ntp-servers",
+      "Value": ""
+    },
+    {
+      "Key": "fips-mode",
+      "Value": "disabled"
+    },
+    {
+      "Key": "features-switch",
+      "Value": ""
+    },
+    {
+      "Key": "vami.gateway.vRealize_Automation",
+      "Value": ""
+    },
+    {
+      "Key": "vami.domain.vRealize_Automation",
+      "Value": ""
+    },
+    {
+      "Key": "vami.searchpath.vRealize_Automation",
+      "Value": ""
+    },
+    {
+      "Key": "vami.DNS.vRealize_Automation",
+      "Value": ""
+    },
+    {
+      "Key": "vami.ip0.vRealize_Automation",
+      "Value": ""
+    },
+    {
+      "Key": "vami.netmask0.vRealize_Automation",
+      "Value": ""
+    }
+  ],
+  "NetworkMapping": [
+    {
+      "Name": "Network 1",
+      "Network": ""
+    }
+  ],
+  "Annotation": "Aria Automation",
+  "MarkAsTemplate": false,
+  "PowerOn": false,
+  "InjectOvfEnv": false,
+  "WaitForIP": false,
+  "Name": null
+}

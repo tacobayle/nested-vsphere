@@ -157,6 +157,12 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s/\${vcsa_name}/${vcsa_name}/" \
         -e "s/\${esxi_basename}/${esxi_basename}/" \
         -e "s/\${ip_nsx}/${ip_nsx}/" \
+        -e "s/\${ip_act}/${ip_act}/" \
+        -e "s/\${act_name}/${act_name}/" \
+        -e "s/\${act_last_octet}/${act_last_octet}/" \
+        -e "s/\${ip_vra}/${ip_vra}/" \
+        -e "s/\${vra_name}/${vra_name}/" \
+        -e "s/\${vra_last_octet}/${vra_last_octet}/" \
         -e "s/\${ip_avi}/${ip_avi}/" \
         -e "s/\${ip_avi_last_octet}/${ip_avi_last_octet}/" \
         -e "s/\${ip_nsx_last_octet}/${ip_nsx_last_octet}/" \
@@ -294,7 +300,7 @@ if [[ ${operation} == "apply" ]] ; then
       vcenter_api 2 2 "POST" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm/${esxi_nested_vm_id}/hardware/adapter/sata"
       # adding a cdrom based on sata
       json_data='{"type": "SATA", "start_connected": true, "backing": {"iso_file": "['${GOVC_DATASTORE}'] '${deployment_name}'-tmp/'$(basename ${iso_location}-${esxi}.iso)'","type": "ISO_FILE"}}'
-      vcenter_api 2 2 "POST" $token "${json_data}" ams-cm2w1-vc1.ams.broadcom.net "api/vcenter/vm/${esxi_nested_vm_id}/hardware/cdrom"
+      vcenter_api 2 2 "POST" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm/${esxi_nested_vm_id}/hardware/cdrom"
       # adding a cdrom based on IDE
       # govc device.cdrom.add -vm "${folder}/${name_esxi}" > /dev/null
       # govc device.cdrom.insert -vm "${folder}/${name_esxi}" -device cdrom-3000 ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
@@ -422,6 +428,8 @@ if [[ ${operation} == "apply" ]] ; then
     if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then
       ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${openshift_installer_url}\" \"/home/ubuntu/bin/$(basename ${openshift_installer_url})\" \"${deployment_name}, OpenShift Installer\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
     fi
+    # Start downloading ACT remotely
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${act_ova_url}\" \"/home/ubuntu/bin/$(basename ${act_ova_url})\" \"${deployment_name}, ACT OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   fi
   # vCenter Deployment and Config.
   vcsa_deploy_log_file="/nested-vsphere/log/${deployment_name}_vcsa_deploy.stdout"
@@ -436,6 +444,13 @@ if [[ ${operation} == "apply" ]] ; then
     exit
   fi
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+  # Start downloading VRA remotely if vsphere 8
+  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "8" ]] ; then
+    if [[ ${vra_ova_url} != "null" ]]; then
+      # Start downloading VRA OVA remotely
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${vra_ova_url}\" \"/home/ubuntu/bin/$(basename ${vra_ova_url})\" \"${deployment_name}, VRA OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+    fi
+  fi
   #
   #
   # NSX creation
@@ -501,6 +516,22 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/k8s/deploy_k8s.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${k8s_log_file}
     echo "Ending timestamp: $(date)" >> ${k8s_log_file} 2>&1
   fi
+  # ACT creation
+  if [[ ${act_ova_url} != "null" ]]; then
+    deploy_log_file="/nested-vsphere/log/${deployment_name}_act_deploy.stdout"
+    echo '------------------------------------------------------------' >> ${deploy_log_file} 2>&1
+    echo "running the following command from the gw: /home/ubuntu/act/deploy_act.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/act/deploy_act.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} &
+  fi
+  # VRA creation
+  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "8" ]] ; then
+    if [[ ${vra_ova_url} != "null" ]]; then
+      deploy_log_file="/nested-vsphere/log/${deployment_name}_vra_deploy.stdout"
+      echo '------------------------------------------------------------' >> ${deploy_log_file} 2>&1
+      echo "running the following command from the gw: /home/ubuntu/vra/deploy_vra.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} 2>&1
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vra/deploy_vra.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} &
+    fi
+  fi
   # Avi ctrl config.
   if [[ ${kind} == *"-avi" ]]; then
     avi_config_log_file="/nested-vsphere/log/${deployment_name}_avi_config.stdout"
@@ -511,6 +542,8 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${avi_config_log_file}
     echo "Ending timestamp: $(date)" >> ${avi_config_log_file} 2>&1
   fi
+  #
+  wait
   #
   # test for vpc use case
   #

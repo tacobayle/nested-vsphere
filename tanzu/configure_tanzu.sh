@@ -125,7 +125,7 @@ if [[ ${configure_supervisor} == "true" ]] ; then
       "${supervisor_cluster_count_vm}"
   fi
   #
-  # vsphere-nsx-avi use case only for vSphere9
+  # vsphere-nsx-vpc-avi use case only for vSphere9
   #
   if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]]; then
     token=$(/bin/bash /home/ubuntu/vcenter/create_vcenter_api_session.sh "administrator" "${ssoDomain}" "${GENERIC_PASSWORD}" "${api_host}")

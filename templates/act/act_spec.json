@@ -1,0 +1,58 @@
+{
+  "DiskProvisioning": "thin",
+  "IPAllocationPolicy": "dhcpPolicy",
+  "IPProtocol": "IPv4",
+  "PropertyMapping": [
+    {
+      "Key": "instance-id",
+      "Value": "id-ovf"
+    },
+    {
+      "Key": "hostname",
+      "Value": "migrationtools"
+    },
+    {
+      "Key": "public-keys",
+      "Value": ""
+    },
+    {
+      "Key": "user-data",
+      "Value": ""
+    },
+    {
+      "Key": "password",
+      "Value": ""
+    },
+    {
+      "Key": "avi.mgmt-ip-v4-enable.AVIMIGRATIONTOOLS",
+      "Value": "False"
+    },
+    {
+      "Key": "avi.mgmt-ip.AVIMIGRATIONTOOLS",
+      "Value": ""
+    },
+    {
+      "Key": "avi.mgmt-mask.AVIMIGRATIONTOOLS",
+      "Value": ""
+    },
+    {
+      "Key": "avi.default-gw.AVIMIGRATIONTOOLS",
+      "Value": ""
+    },
+    {
+      "Key": "avi.dns-servers.AVIMIGRATIONTOOLS",
+      "Value": "8.8.8.8"
+    }
+  ],
+  "NetworkMapping": [
+    {
+      "Name": "Management",
+      "Network": ""
+    }
+  ],
+  "MarkAsTemplate": false,
+  "PowerOn": false,
+  "InjectOvfEnv": false,
+  "WaitForIP": false,
+  "Name": null
+}

@@ -237,6 +237,8 @@ write_files:
       if [[ ${ip_avi} != ${ip_gw} ]]; then
         echo "${avi_ctrl_name}       IN            A       ${ip_avi}" | tee -a /var/lib/bind/db.${domain}
       fi
+      echo "${vra_name}       IN            A       ${ip_vra}" | tee -a /var/lib/bind/db.${domain}
+      echo "${act_name}       IN            A       ${ip_act}" | tee -a /var/lib/bind/db.${domain}
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
       do
@@ -281,6 +283,8 @@ write_files:
       if [[ ${ip_avi} != ${ip_gw} ]]; then
         echo "${ip_avi_last_octet}            PTR     ${avi_ctrl_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
       fi
+      echo "${vra_last_octet}            PTR     ${vra_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
+      echo "${act_last_octet}            PTR     ${act_name}.${domain}." | tee -a /var/lib/bind/db.${reverse_mgmt}
       count_esxi=1
       echo '${ips_esxi}' | jq -c -r .[] | while read ip_esxi
       do
