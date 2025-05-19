@@ -9,7 +9,7 @@ source /home/ubuntu/bash/variables.sh
 sed -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
     -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
     -e "s@\${jsonFile}@${jsonFile}@" \
-    -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh" >/dev/null 2>&1
+    -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh" > /dev/null 2>&1
 chmod u+x /home/ubuntu/k8s/k8s-config.sh
 cp /home/ubuntu/k8s/k8s-config.sh /home/ubuntu/tkc/k8s-config.sh
 #
@@ -37,6 +37,59 @@ if [[ ${k8s_clusters} != "null" ]]; then
   #
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
+    values_amko="{}"
+    values_amko=$(echo ${values_amko} | jq '. += {"replicaCount": 1}')
+    values_amko=$(echo ${values_amko} | jq '. += {"image": {"repository": "'${image_repo_amko}'", "pullPolicy": "IfNotPresent"}}')
+    values_amko=$(echo ${values_amko} | jq '. += {"federation": {"image": {"repository": "'${image_repo_amko_federator}'", "pullPolicy": "IfNotPresent"}}}')
+    values_amko=$(echo ${values_amko} | jq '.federation += {"currentCluster": "context0'${index}'"}')
+    if [[ ${index} -eq 1 ]] ; then currentClusterIsLeader=true ; else currentClusterIsLeader=false; fi
+    values_amko=$(echo ${values_amko} | jq '.federation += {"currentClusterIsLeader": '$(echo $currentClusterIsLeader)'}')
+    values_amko=$(echo ${values_amko} | jq '.federation += {"memberClusters": []}')
+    values_amko=$(echo ${values_amko} | jq '.federation.memberClusters += [ "context0'${index}'"]')
+    values_amko=$(echo ${values_amko} | jq '.configs.memberClusters += [ {"clusterContext": "context0'${index_}'"}]')
+    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy.matchClusters += [ {"cluster": "context0'${index}'"}]')
+    #
+    values_amko=$(echo ${values_amko} | jq '. += {"serviceDiscovery": {"image": {"repository": "'${image_repo_amko_service_discovery}'", "pullPolicy": "IfNotPresent"}}}')
+    values_amko=$(echo ${values_amko} | jq '. += {"multiClusterIngress": {"enable": false}}')
+    values_amko=$(echo ${values_amko} | jq '. += {"replicaCount": 1}')
+    # .configs
+    values_amko=$(echo ${values_amko} | jq '. += {"configs": {"gslbLeaderController": "'${ip_avi}'"}}')
+    values_amko=$(echo ${values_amko} | jq '.configs += {"controllerVersion": "'${avi_version}'"}')
+    values_amko=$(echo ${values_amko} | jq '.configs += {"memberClusters": []}')
+
+    values_amko=$(echo ${values_amko} | jq '.configs += {"refreshInterval": 1800}')
+    values_amko=$(echo ${values_amko} | jq '.configs += {"logLevel": "INFO"}')
+    values_amko=$(echo ${values_amko} | jq '.configs += {"logLevel": "INFO"}')
+    values_amko=$(echo ${values_amko} | jq '.configs += {"useCustomGlobalFqdn": true}')
+    # .gslbLeaderCredentials
+    values_amko=$(echo ${values_amko} | jq '. += {"gslbLeaderCredentials": {"username": "admin"}}')
+    values_amko=$(echo ${values_amko} | jq '.gslbLeaderCredentials += {"password": "'${GENERIC_PASSWORD}'"}')
+    # .globalDeploymentPolicy
+    values_amko=$(echo ${values_amko} | jq '. += {"globalDeploymentPolicy": {"appSelector": {"label": {"app": "'${amko_app_selector}'"}}}}')
+    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy += {"matchClusters": []}')
+    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy.matchClusters += [ {"cluster": "context0'${index}'"}]')
+    # .serviceAccount
+    values_amko=$(echo ${values_amko} | jq '. += {"serviceAccount": {"create": true}}')
+    values_amko=$(echo ${values_amko} | jq '.serviceAccount += {"annotations": {}}')
+    values_amko=$(echo ${values_amko} | jq '.serviceAccount += {"name": ""}')
+    # .resources
+    values_amko=$(echo ${values_amko} | jq '. += {"resources": {"limits": {"cpu": "250m", "memory": "300Mi"}}}')
+    values_amko=$(echo ${values_amko} | jq '.resources += {"requests": {"cpu": "100m", "memory": "200Mi"}}')
+    # .service
+    values_amko=$(echo ${values_amko} | jq '. += {"service": {"type": "ClusterIP", "port": 80}}')
+    # .rbac
+    values_amko=$(echo ${values_amko} | jq '. += {"rbac": {"pspEnable": false}}')
+    # .persistentVolumeClaim
+    values_amko=$(echo ${values_amko} | jq '. += {"persistentVolumeClaim": ""}')
+    # .mountPath
+    values_amko=$(echo ${values_amko} | jq '. += {"mountPath": "/log"}')
+    # .logFile
+    values_amko=$(echo ${values_amko} | jq '. += {"logFile": "amko.log"}')
+    # .federatorLogFile
+    values_amko=$(echo ${values_amko} | jq '. += {"federatorLogFile": "amko-federator.log"}')
+    #
+    echo ${values_amko} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/values_amko_${k8s_basename}${index}.yml > /dev/null
+    sudo cp /home/ubuntu/k8s/values_amko_${k8s_basename}${index}.yml /var/www/html/
     #
     # folder creation for k8s cluster
     #
@@ -84,13 +137,13 @@ if [[ ${k8s_clusters} != "null" ]]; then
           -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
           -e "s/\${cni}/${cni}/" \
           -e "s/\${cni_version}/${cni_version}/" \
-          -e "s/\${K8s_version}/${K8s_version}/" /home/ubuntu/templates/userdata_k8s_node.yaml.template | tee /home/ubuntu/app/userdata_${k8s_basename}${index}_node${index_ip}.yaml
+          -e "s/\${K8s_version}/${K8s_version}/" /home/ubuntu/templates/userdata_k8s_node.yaml.template | tee /home/ubuntu/app/userdata_${k8s_basename}${index}_node${index_ip}.yaml > /dev/null 2>&1
       #
       sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
           -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_${k8s_basename}${index}_node${index_ip}.yaml -w 0)@" \
           -e "s/\${password}/${GENERIC_PASSWORD}/" \
           -e "s@\${network_ref}@${network_ref_vip}@" \
-          -e "s/\${vm_name}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}.json"
+          -e "s/\${vm_name}/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}.json" > /dev/null 2>&1
       #
   #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
       govc library.deploy -options "/home/ubuntu/app/${k8s_basename}${index}-${k8s_basename_vm}${index_ip}.json" -folder "${k8s_basename}${index}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
@@ -116,7 +169,6 @@ if [[ ${k8s_clusters} != "null" ]]; then
     cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
     if [[ ${kind} == "vsphere-avi" ]]; then
       nsxtT1LR="''"
-      avi_cloud_name="Default-Cloud"
     fi
     if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
       file_json_output="/home/ubuntu/nsx/tier-1s.json"
@@ -125,7 +177,6 @@ if [[ ${k8s_clusters} != "null" ]]; then
                   "${file_json_output}"
       connectivity_path=$(jq -c -r --arg arg1 "$(echo ${segments_overlay} | jq -r -c '.[] | select(.display_name == "segment-vip-1").tier1')" '.results[] | select(.display_name == $arg1).path' ${file_json_output})
       nsxtT1LR="${connectivity_path}"
-      avi_cloud_name="${nsx_cloud_name}"
       network_ref_vip=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).display_name')
       cidr_vip_full=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).cidr')
     fi
@@ -142,105 +193,22 @@ if [[ ${k8s_clusters} != "null" ]]; then
         -e "s/\${cloudName}/${avi_cloud_name}/" \
         -e "s/\${controllerHost}/${ip_avi}/" \
         -e "s/\${tenant}/${k8s_basename}${index}/" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values_api_gw.yml.${ako_version}.template | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null
+        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values_api_gw.yml.${ako_version}.template | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null 2>&1
     sudo cp /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml /var/www/html/
-    #
-    # amko_gslb_member_file
-    #
-    # clusters
-    cluster_certificate_authority_data=$(/home/ubuntu/.local/bin/yq -c -r '.clusters[0].cluster."certificate-authority-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
-    cluster_server=$(/home/ubuntu/.local/bin/yq -c -r '.clusters[0].cluster.server' /home/ubuntu/k8s/config-${k8s_basename}${index})
-    cluster_name=${k8s_basename}${index}
-    gslb_members_json=$(echo $gslb_members_json | jq '.clusters += [{"cluster": {"certificate-authority-data": "'${cluster_certificate_authority_data}'", "server": "'${cluster_server}'"}, "name": "'${cluster_name}'"}]')
-    # contexts
-    context_user=user0${index}
-    context_name=context0${index}
-    gslb_members_json=$(echo $gslb_members_json | jq '.contexts += [{"context": {"cluster": "'${cluster_name}'", "user": "'${context_user}'"}, "name": "'${context_name}'"}]')
-    # users
-    user_name=user0${index}
-    user_client_certificate_data=$(/home/ubuntu/.local/bin/yq -c -r '.users[0].user."client-certificate-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
-    user_client_key_data=$(/home/ubuntu/.local/bin/yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
-    gslb_members_json=$(echo $gslb_members_json | jq '.users += [{"user": {"client-certificate-data": "'${user_client_certificate_data}'", "client-key-data": "'${user_client_key_data}'"}, "name": "'${user_name}'"}]')
-    #
-    # values_amko.yml
-    #
-    values_amko="{}"
-    values_amko=$(echo ${values_amko} | jq '. += {"replicaCount": 1}')
-    values_amko=$(echo ${values_amko} | jq '. += {"image": {"repository": "'${image_repo_amko}'", "pullPolicy": "IfNotPresent"}}')
-    values_amko=$(echo ${values_amko} | jq '. += {"federation": {"image": {"repository": "'${image_repo_amko_federator}'", "pullPolicy": "IfNotPresent"}}}')
-    values_amko=$(echo ${values_amko} | jq '.federation += {"currentCluster": "context0'${index}'"}')
-    if [[ ${index} -eq 1 ]] ; then currentClusterIsLeader=true ; else currentClusterIsLeader=false; fi
-    values_amko=$(echo ${values_amko} | jq '.federation += {"currentClusterIsLeader": '$(echo $currentClusterIsLeader)'}')
-    values_amko=$(echo ${values_amko} | jq '.federation += {"memberClusters": []}')
-    #
-    for index_member_clusters in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
-    do
-      values_amko=$(echo ${values_amko} | jq '.federation.memberClusters += [ "context0'${index_member_clusters}'"]')
-    done
-    values_amko=$(echo ${values_amko} | jq '. += {"serviceDiscovery": {"image": {"repository": "'${image_repo_amko_service_discovery}'", "pullPolicy": "IfNotPresent"}}}')
-    values_amko=$(echo ${values_amko} | jq '. += {"multiClusterIngress": {"enable": false}}')
-    values_amko=$(echo ${values_amko} | jq '. += {"replicaCount": 1}')
-    # .configs
-    values_amko=$(echo ${values_amko} | jq '. += {"configs": {"gslbLeaderController": "'${ip_avi}'"}}')
-    values_amko=$(echo ${values_amko} | jq '.configs += {"controllerVersion": "'${avi_version}'"}')
-    values_amko=$(echo ${values_amko} | jq '.configs += {"memberClusters": []}')
-    for index_member_clusters in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
-    do
-      values_amko=$(echo ${values_amko} | jq '.configs.memberClusters += [ {"clusterContext": "context0'${index_member_clusters}'"}]')
-    done
-    values_amko=$(echo ${values_amko} | jq '.configs += {"refreshInterval": 1800}')
-    values_amko=$(echo ${values_amko} | jq '.configs += {"logLevel": "INFO"}')
-    values_amko=$(echo ${values_amko} | jq '.configs += {"logLevel": "INFO"}')
-    values_amko=$(echo ${values_amko} | jq '.configs += {"useCustomGlobalFqdn": true}')
-    # .gslbLeaderCredentials
-    values_amko=$(echo ${values_amko} | jq '. += {"gslbLeaderCredentials": {"username": "admin"}}')
-    values_amko=$(echo ${values_amko} | jq '.gslbLeaderCredentials += {"password": "'${GENERIC_PASSWORD}'"}')
-    # .globalDeploymentPolicy
-    values_amko=$(echo ${values_amko} | jq '. += {"globalDeploymentPolicy": {"appSelector": {"label": {"app": "'${amko_app_selector}'"}}}}')
-    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy += {"matchClusters": []}')
-    for index_member_clusters in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
-    do
-      values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy.matchClusters += [ {"cluster": "context0'${index_member_clusters}'"}]')
-    done
-    # .serviceAccount
-    values_amko=$(echo ${values_amko} | jq '. += {"serviceAccount": {"create": true}}')
-    values_amko=$(echo ${values_amko} | jq '.serviceAccount += {"annotations": {}}')
-    values_amko=$(echo ${values_amko} | jq '.serviceAccount += {"name": ""}')
-    # .resources
-    values_amko=$(echo ${values_amko} | jq '. += {"resources": {"limits": {"cpu": "250m", "memory": "300Mi"}}}')
-    values_amko=$(echo ${values_amko} | jq '.resources += {"requests": {"cpu": "100m", "memory": "200Mi"}}')
-    # .service
-    values_amko=$(echo ${values_amko} | jq '. += {"service": {"type": "ClusterIP", "port": 80}}')
-    # .rbac
-    values_amko=$(echo ${values_amko} | jq '. += {"rbac": {"pspEnable": false}}')
-    # .persistentVolumeClaim
-    values_amko=$(echo ${values_amko} | jq '. += {"persistentVolumeClaim": ""}')
-    # .mountPath
-    values_amko=$(echo ${values_amko} | jq '. += {"mountPath": "/log"}')
-    # .logFile
-    values_amko=$(echo ${values_amko} | jq '. += {"logFile": "amko.log"}')
-    # .federatorLogFile
-    values_amko=$(echo ${values_amko} | jq '. += {"federatorLogFile": "amko-federator.log"}')
-    #
-    echo ${values_amko} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/values_amko_${k8s_basename}${index}.yml > /dev/null
-    sudo cp /home/ubuntu/k8s/values_amko_${k8s_basename}${index}.yml /var/www/html/
     #
     # ingress
     #
     per_cluster_ingress='{"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"name":"ingress-'${k8s_basename}${index}'","labels":{"app":"'${amko_app_selector}'"}},"spec":{"rules":[{"host":"ingress-'${k8s_basename}${index}'.'${avi_subdomain}'.'${domain}'","http":{"paths":[{"pathType":"Prefix","path":"/","backend":{"service":{"name":"svc-v1","port":{"number":80}}}}]}}]}}'
-    echo ${per_cluster_ingress} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/ingress-${k8s_basename}${index}.yml > /dev/null
+    echo ${per_cluster_ingress} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/ingress-${k8s_basename}${index}.yml > /dev/null 2>&1
     #
     # GSLB CRD
     #
     ingress_global_fqdn='{"apiVersion":"ako.vmware.com/v1alpha1","kind":"HostRule","metadata":{"name":"my-host-rule1","namespace":"default"},"spec":{"virtualhost":{"fqdn":"ingress-'${k8s_basename}${index}'.'${avi_subdomain}'.'${domain}'","enableVirtualHost":true,"wafPolicy":"System-WAF-Policy","tls":{"sslKeyCertificate":{"name":"System-Default-Cert-EC","type":"ref"}},"gslb":{"fqdn":"ingress.'${avi_gslb_subdomain}'.'${domain}'","includeAliases":false}}}}'
-    echo ${ingress_global_fqdn} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/ingress-global-fqdn.yml > /dev/null
+    echo ${ingress_global_fqdn} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/ingress-global-fqdn.yml > /dev/null 2>&1
   done
-fi
-echo ${gslb_members_json} | /home/ubuntu/.local/bin/yq -y . | tee ${amko_gslb_member_file_path} > /dev/null
-#
-# VM k8s_clusters check and config
-#
-if [[ ${k8s_clusters} != "null" ]]; then
+  #
+  # VM k8s_clusters check and config
+  #
   kube_increment_ip=0
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
@@ -251,7 +219,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     sed -e "s/\${total_node}/${total_node}/" \
         -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@g" \
         -e "s@\${deployment_name}@${deployment_name}@" \
-        -e "s/\${clusterName}/${k8s_basename}${index}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh"
+        -e "s/\${clusterName}/${k8s_basename}${index}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh" > /dev/null 2>&1
     for index_ip in $(seq 1 2)
     do
       kube_last_octet=$((kube_starting_ip+kube_increment_ip))
@@ -259,7 +227,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
       retry=60 ; pause=10 ; attempt=1
       while true ; do
         echo "attempt $attempt to verify VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is ready"
-        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" -q "exit" >/dev/null 2>&1
+        ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" -q "exit" > /dev/null 2>&1
         if [[ $? -eq 0 ]]; then
           echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is reachable."
           ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
@@ -291,11 +259,9 @@ if [[ ${k8s_clusters} != "null" ]]; then
       ((kube_increment_ip++))
     done
   done
-fi
-#
-# VM k8s_clusters final check and k8s config file consolidation in the external gw
-#
-if [[ ${k8s_clusters} != "null" ]]; then
+  #
+  # VM k8s_clusters final check and k8s config file consolidation in the external gw
+  #
   #
   # html /home/ubuntu/k8s/vanilla-k8s.html
   #
@@ -453,36 +419,37 @@ EOT
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "/bin/bash /home/ubuntu/K8s_check_${k8s_basename}${index}.sh"
         echo "check file"
         ls /home/ubuntu/k8s/config-${k8s_basename}${index}
+        #
+        # amko_gslb_member_file
+        #
         # clusters
         cluster_certificate_authority_data=$(/home/ubuntu/.local/bin/yq -c -r '.clusters[0].cluster."certificate-authority-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
         cluster_server=$(/home/ubuntu/.local/bin/yq -c -r '.clusters[0].cluster.server' /home/ubuntu/k8s/config-${k8s_basename}${index})
+        cluster_name=${k8s_basename}${index}
+        gslb_members_json=$(echo $gslb_members_json | jq '.clusters += [{"cluster": {"certificate-authority-data": "'${cluster_certificate_authority_data}'", "server": "'${cluster_server}'"}, "name": "'${cluster_name}'"}]')
+        # contexts
+        context_user=user0${index}
+        context_name=context0${index}
+        gslb_members_json=$(echo $gslb_members_json | jq '.contexts += [{"context": {"cluster": "'${cluster_name}'", "user": "'${context_user}'"}, "name": "'${context_name}'"}]')
+        # users
+        user_name=user0${index}
+        user_client_certificate_data=$(/home/ubuntu/.local/bin/yq -c -r '.users[0].user."client-certificate-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
+        user_client_key_data=$(/home/ubuntu/.local/bin/yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
+        gslb_members_json=$(echo $gslb_members_json | jq '.users += [{"user": {"client-certificate-data": "'${user_client_certificate_data}'", "client-key-data": "'${user_client_key_data}'"}, "name": "'${user_name}'"}]')
+        #
+        # clusters
         name=${k8s_basename}${index}
         kube_config_json=$(echo ${kube_config_json} | jq '.clusters += [{"cluster": {"certificate-authority-data": "'${cluster_certificate_authority_data}'", "server": "'${cluster_server}'"}, "name": "'${name}'"}]')
-        echo "check clusters"
-        echo ${cluster_certificate_authority_data}
-        echo ${cluster_server}
-        echo ${name}
-        echo ${kube_config_json}
         # contexts
         context_cluster=${k8s_basename}${index}
         context_user=user${index}
         name=context${index}
         kube_config_json=$(echo ${kube_config_json} | jq '.contexts += [{"context": {"cluster": "'${context_cluster}'", "user": "'${context_user}'"}, "name": "'${name}'"}]')
-        echo "check contexts"
-        echo ${context_cluster}
-        echo ${context_user}
-        echo ${name}
-        echo ${kube_config_json}
         # users
         name=user${index}
         user_client_certificate_data=$(/home/ubuntu/.local/bin/yq -c -r '.users[0].user."client-certificate-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
         user_client_key_data=$(/home/ubuntu/.local/bin/yq -c -r '.users[0].user."client-key-data"' /home/ubuntu/k8s/config-${k8s_basename}${index})
         kube_config_json=$(echo ${kube_config_json} | jq '.users += [{"user": {"client-certificate-data": "'${user_client_certificate_data}'", "client-key-data": "'${user_client_key_data}'"}, "name": "'${name}'"}]')
-        echo "check users"
-        echo ${user_client_certificate_data}
-        echo ${user_client_key_data}
-        echo ${name}
-        echo ${kube_config_json}
       fi
       ((kube_increment_ip++))
     done
@@ -517,11 +484,17 @@ EOT
   #
   sudo cp /home/ubuntu/k8s/vanilla-k8s.html /var/www/html/
   echo ${kube_config_json}
-  echo ${kube_config_json} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/config
+  echo ${kube_config_json} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/config > /dev/null 2>&1
   chmod 600 /home/ubuntu/k8s/config
   echo "Updating /home/ubuntu/.profile"
-  contents=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
-  echo "${contents}" | tee /home/ubuntu/.profile > /dev/null
-  contents="export KUBECONFIG=/home/ubuntu/.kube/config:/home/ubuntu/k8s/config"
-  echo "${contents}" | tee -a /home/ubuntu/.profile > /dev/null
+  contents_wo_KUBECONFIG=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
+  echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null 2>&1
+  KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2 | grep /home/ubuntu/k8s/config)
+  if [ -z "${KUBECONFIG}" ]; then
+    KUBECONFIG="export KUBECONFIG=/home/ubuntu/k8s/config"
+  else
+    KUBECONFIG="${KUBECONFIG}:/home/ubuntu/k8s/config"
+  fi
+  echo "${KUBECONFIG}" | tee -a /home/ubuntu/.profile > /dev/null
+  echo ${gslb_members_json} | /home/ubuntu/.local/bin/yq -y . | tee ${amko_gslb_member_file_path} > /dev/null 2>&1
 fi

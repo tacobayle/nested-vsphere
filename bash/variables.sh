@@ -448,6 +448,7 @@ fi
 #
 folder_avi=$(jq -c -r '.avi.ctrl_folder' $jsonFile)
 ip_avi="${cidr_mgmt_three_octets}.$(jq -c -r .avi.ip_controller $jsonFile)"
+ip_avi_2="${cidr_mgmt_three_octets}.$(jq -c -r .avi.ip_controller_2 $jsonFile)"
 vsdatascriptset=$(jq -c -r '.avi.vsdatascriptset' $jsonFile)
 avi_username=$(jq -c -r '.avi.username' $jsonFile)
 lbaas_username=$(jq -c -r '.avi.lbaas_username' $jsonFile)
@@ -460,6 +461,7 @@ openshift_ingress_ip_last_octet=$(jq -c -r '.avi.openshift_ingress_ip_last_octet
 openshift_node_starting_ip_last_octet=$(jq -c -r '.avi.openshift_node_starting_ip_last_octet' $jsonFile)
 content_library_name=$(jq -c -r '.avi.app.content_library_name' $jsonFile)
 avi_ctrl_name=$(jq -c -r '.avi.ctrl_name' $jsonFile)
+avi_ctrl_name_2=$(jq -c -r '.avi.ctrl_name_2' $jsonFile)
 network_avi=$(jq -c -r --arg arg "mgmt" '.port_groups[] | select( .scope == $arg).name' $jsonFile)
 avi_ova_url=$(jq -c -r .spec.avi.ova_url $jsonFile)
 avi_version=$(jq -c -r .spec.avi.version $jsonFile)
@@ -582,12 +584,14 @@ image_repo_amko_federator=$(jq -c -r '.avi.image_repo_amko_federator' $jsonFile)
 image_repo_amko_service_discovery=$(jq -c -r '.avi.image_repo_amko_service_discovery' $jsonFile)
 amko_app_selector=$(jq -c -r '.avi.amko_app_selector' $jsonFile)
 avi_content_library_name=$(jq -c -r '.avi_content_library_name' $jsonFile)
+avi_content_library_name_2=$(jq -c -r '.avi_content_library_name_2' $jsonFile)
 avi_ipam_first=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f1)
 avi_ipam_last=$(jq -c -r '.avi.ipam_pool' $jsonFile | cut -d"-" -f2)
 service_engine_groups=$(jq -c -r '.service_engine_groups' $jsonFile)
 openshift_api_ip="1.1.1.1"
 openshift_ingress_ip="1.1.1.1"
 if [[ ${kind} == "vsphere-avi" ]]; then
+  avi_cloud_name="Default-Cloud"
   avi_lsc_se_folder=$(jq -c -r '.avi_lsc_se_folder' $jsonFile)
   avi_lsc_kernel_version=$(jq -c -r '.avi_lsc_kernel_version' $jsonFile)
   lsc_ova_url=$(jq -c -r '.spec.avi.lsc.ova_url' $jsonFile)
@@ -706,6 +710,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
 fi
 if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   nsx_cloud_name=$(jq -c -r '.avi.nsx.cloud.name' $jsonFile)
+  avi_cloud_name=${nsx_cloud_name}
   cloud_obj_name_prefix=$(jq -c -r '.avi.nsx.cloud.cloud_obj_name_prefix' $jsonFile)
   playbook=$(jq -c -r '.playbook_nsx' $jsonFile)
   tag=$(jq -c -r '.tag_nsx' $jsonFile)
@@ -843,7 +848,7 @@ if [[ ${kind} == *"-avi" ]] ; then
                 {
                   "avi_servers_ips": '$(echo ${ips_app_full} | jq -c -r .)',
                   "avi_cloud": {
-                     "name": "'${nsx_cloud_name}'"
+                     "name": "'${avi_cloud_name}'"
                   },
                   "domain_name": "'${avi_subdomain}.${domain}'",
                   "tier1_name": "'${tier1_name}'",

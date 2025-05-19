@@ -129,8 +129,18 @@ write_files:
       #
       # CNI download images
       #
+      cni=${cni}
+      if [ "$cni" == "calico" ] ; then
+        docker pull docker.io/calico/node:${cni_version}
+        docker pull docker.io/calico/pod2daemon-flexvol:${cni_version}
+        docker pull docker.io/calico/typha:${cni_version}
+        docker pull docker.io/calico/cni:${cni_version}
+        docker pull docker.io/calico/kube-controllers:${cni_version}
+        docker pull docker.io/calico/csi:${cni_version}
+        docker pull docker.io/calico/apiserver:${cni_version}
+        docker pull docker.io/calico/node-driver-registrar:${cni_version}
+      fi
       if [[ ${node_type} == "master" ]]; then
-        cni=${cni}
         if [ "$cni" == "cilium" ] ; then
           CILIUM_CLI_VERSION=${cni_version}
           CLI_ARCH=amd64
@@ -148,14 +158,6 @@ write_files:
           run_cmd 'kubectl apply -f /tmp/antrea.yml'
         fi
         if [ "$cni" == "calico" ] ; then
-          docker pull docker.io/calico/node:${cni_version}
-          docker pull docker.io/calico/pod2daemon-flexvol:${cni_version}
-          docker pull docker.io/calico/typha:${cni_version}
-          docker pull docker.io/calico/cni:${cni_version}
-          docker pull docker.io/calico/kube-controllers:${cni_version}
-          docker pull docker.io/calico/csi:${cni_version}
-          docker pull docker.io/calico/apiserver:${cni_version}
-          docker pull docker.io/calico/node-driver-registrar:${cni_version}
           kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/${cni_version}/manifests/tigera-operator.yaml
           kubectl replace -f https://raw.githubusercontent.com/projectcalico/calico/${cni_version}/manifests/tigera-operator.yaml
           curl https://raw.githubusercontent.com/projectcalico/calico/${cni_version}/manifests/custom-resources.yaml -O

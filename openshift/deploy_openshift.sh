@@ -39,10 +39,14 @@ if [[ ${openshift} != "null" ]]; then
   cp /home/ubuntu/openshift/install-config.yaml /home/ubuntu/openshift/install-config.yaml.archive
   /home/ubuntu/openshift/openshift-install create cluster --dir /home/ubuntu/openshift --log-level info
   echo "Updating /home/ubuntu/.profile"
-  contents=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
-  echo "${contents}" | tee /home/ubuntu/.profile > /dev/null
-  contents="export KUBECONFIG=/home/ubuntu/.kube/config:/home/ubuntu/k8s/config:/home/ubuntu/openshift/auth/kubeconfig"
-  echo "${contents}" | tee -a /home/ubuntu/.profile > /dev/null
+  contents_wo_KUBECONFIG=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
+  echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null
+  KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2 | grep /home/ubuntu/openshift/auth/kubeconfig)
+  if [ -z "${KUBECONFIG}" ]; then
+    KUBECONFIG="export KUBECONFIG=/home/ubuntu/k8s/config"
+  else
+    KUBECONFIG="${KUBECONFIG}:/home/ubuntu/openshift/auth/kubeconfig"
+  fi
   # copy kube config to the hosts
   ssh -o StrictHostKeyChecking=no core@${cidr_vip_three_octets}.$((openshift_node_starting_ip_last_octet+1)) "mkdir .kube"
   ssh -o StrictHostKeyChecking=no core@${cidr_vip_three_octets}.$((openshift_node_starting_ip_last_octet+2)) "mkdir .kube"
@@ -86,7 +90,6 @@ if [[ ${openshift} != "null" ]]; then
   disableStaticRouteSync="false" # needs to be true if NodePortLocal is enabled
   if [[ ${kind} == "vsphere-avi" ]]; then
     nsxtT1LR="''"
-    avi_cloud_name="Default-Cloud"
   fi
   sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
       -e "s/\${clusterName}/${openshift_cluster_name}/" \
@@ -186,7 +189,7 @@ ssh -o StrictHostKeyChecking=no core@${cidr_vip_three_octets}.$((openshift_node_
     <pre><code>
 k config use-context admin
 helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version ${openshift_ako_version} \\
--f /home/ubuntu/openshift/ako_${openshift_cluster_name}_values.yml --namespace=avi-system
+-f /home/ubuntu/openshift/ako_${openshift_cluster_name}_${openshift_ako_version}_values.yml --namespace=avi-system
     </code></pre>
 <button onclick="copyToClipboard($((javascript_count+2)))">Copy Code</button>
             </td>

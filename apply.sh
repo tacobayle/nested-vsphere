@@ -441,7 +441,7 @@ if [[ ${operation} == "apply" ]] ; then
   if [ $? -ne 0 ] ; then
     echo "ERROR: vCenter Deployment or Configuration failed" >> ${vcsa_deploy_log_file} 2>&1
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ERROR: vCenter Deployment or Configuration failed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-    exit
+    # exit
   fi
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   # Start downloading VRA remotely if vsphere 8

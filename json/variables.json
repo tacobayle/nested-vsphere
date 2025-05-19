@@ -769,9 +769,11 @@
   },
   "avi": {
     "ctrl_name": "avi-ctrl-01",
+    "ctrl_name_2": "avi-ctrl-02",
     "ctrl_folder": "avi-ctrl",
     "username": "admin",
     "ip_controller": 18,
+    "ip_controller_2": 48,
     "vsdatascriptset": [
       {
         "datascript": [
@@ -1099,6 +1101,7 @@
     }
   ],
   "avi_content_library_name": "content_library_avi_se",
+  "avi_content_library_name_2": "content_library_avi_se_2",
   "playbook_vcenter": "vcenter.yml",
   "tag_vcenter": "v2.68",
   "playbook_nsx": "nsx.yml",
@@ -1419,7 +1422,7 @@
   "app_basename": "app-v1-0",
   "app_basename_second": "app-v2-0",
   "client_basename": "client0",
-  "k8s_basename": "cluster0",
+  "k8s_basename": "unmanaged-cluster0",
   "k8s_basename_vm": "node0",
   "k8s_node_cpu": 4,
   "k8s_node_memory": 8192,

@@ -486,10 +486,8 @@ EOT
     disableStaticRouteSync="true" # needs to be true if NodePortLocal is enabled
     if [[ ${kind} == "vsphere-avi" ]]; then
       nsxtT1LR="''"
-      avi_cloud_name="Default-Cloud"
     fi
     if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-      avi_cloud_name=${nsx_cloud_name}
       if [[ $(echo ${cluster} | jq -c -r '.se_in_provider_context') == "true" ]]; then
         serviceEngineGroupName="${cluster_id}:$(jq -c -r '.about.instanceUuid' ${vcsa_about_json_file})"
       fi
