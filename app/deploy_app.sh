@@ -152,12 +152,12 @@ fi
 #
 count=1
 if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
-  echo ${tier1s} | jq -c -r .[] | while read item
+  echo ${segments_overlay} | jq -c -r .[] | while read item
   do
     if $(echo ${item} | jq -e '.lb' > /dev/null) ; then
       if [[ $(echo ${item} | jq -c -r '.lb') == "true" ]] ; then
         display_name="${nsx_lb_basename}-${count}"
-        nsx_vip_ip="$(echo $item | jq -c -r .nsx_vip_cidr | cut -d'.' -f1-3).${nsx_vip_last_octet}"
+        nsx_vip_ip="$(echo $item | jq -c -r .cidr_three_octets | cut -d'.' -f1-3).${nsx_vip_last_octet}"
         network_ref_app=$(echo ${segments_overlay} | jq -c -r '[.[] | select(.backend == true and keys[] | select(. != "server_preserve_ip"))] | first | .display_name')
         tier1_group_name=$(echo ${segments_overlay} | jq -c -r '[.[] | select(.backend == true and keys[] | select(. != "server_preserve_ip"))] | first | .tier1')
         nsx_lb_group_name="${nsx_group_app_name}_${network_ref_app}_${tier1_group_name}"
@@ -166,7 +166,7 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
         json_key="t1_path"
         /bin/bash /home/ubuntu/nsx/retrieve_object_path.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                     "policy/api/v1/infra/tier-1s" \
-                    "$(echo $item | jq -c -r .display_name)" \
+                    "$(echo $item | jq -c -r .tier1)" \
                     "${file_json_output}" \
                     "${json_key}"
         tier1_lb_path=$(jq -c -r '.'${json_key}'' ${file_json_output})
@@ -260,11 +260,12 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
         echo "IP.1 = ${nsx_vip_ip}" | tee -a ${directory}/${lb_app_cert}.v3.ext >/dev/null 2>&1
         openssl x509 -req -in ${directory}/${lb_app_cert}.csr -CA ${directory}/${ca_name}.crt -passin pass:${ca_private_key_passphrase} -CAkey ${directory}/${ca_name}.key -CAcreateserial -out ${directory}/${lb_app_cert}.crt -days 730 -sha256 -extfile ${directory}/${lb_app_cert}.v3.ext >/dev/null 2>&1
         /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                    "api/v1/trust-management/certificates?action=import" \
-                    "POST" \
+                    "policy/api/v1/infra/certificates/${display_name}-${lb_app_cert}" \
+                    "PATCH" \
                     "{\"display_name\": \"${display_name}-${lb_app_cert}\",
                       \"pem_encoded\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${lb_app_cert}.crt)\",
-                      \"private_key\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${lb_app_cert}.key)\"
+                      \"private_key\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${lb_app_cert}.key)\",
+                      \"passphrase\": \"$(cat ${directory}/ca_private_key_passphrase.txt)\"
                     }"
         # vs creation
         /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \

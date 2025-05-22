@@ -531,6 +531,13 @@
           "avi_ipam_pool_vip": "11-99",
           "transport_zone": "tz_overlay",
           "vip_preserve_ip": true
+        },
+        {
+          "display_name": "seg-nsx-vip",
+          "tier1": "t1-04",
+          "dhcp_ranges": ["50-99"],
+          "lb": true,
+          "transport_zone": "tz_overlay"
         }
       ],
       "segment_overlay_file": "/tmp/segments_overlay.json",
@@ -769,11 +776,9 @@
   },
   "avi": {
     "ctrl_name": "avi-ctrl-01",
-    "ctrl_name_2": "avi-ctrl-02",
     "ctrl_folder": "avi-ctrl",
     "username": "admin",
     "ip_controller": 18,
-    "ip_controller_2": 48,
     "vsdatascriptset": [
       {
         "datascript": [

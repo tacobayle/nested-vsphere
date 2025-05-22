@@ -36,3 +36,7 @@ if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${vra_folder}'")' >/dev/nu
 else
   echo "$(date): ERROR: unable to delete folder ${vra_folder}: it does not exist"
 fi
+#
+# ssh cleanup
+#
+ssh-keygen -f "/home/ubuntu/.ssh/known_hosts" -R "${ip_vra}"

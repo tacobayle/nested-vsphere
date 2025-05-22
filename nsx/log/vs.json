@@ -1,0 +1,37 @@
+ubuntu@nic-vsphere-nsx-avi-gw:~$ jq '.results[] | select(.display_name == "test-vs-nsx")' nsx/vs.json
+{
+"enabled": true,
+"ip_address": "192.168.21.11",
+"ports": [
+"443"
+],
+"access_log_enabled": false,
+"lb_service_path": "/infra/lb-services/nsx-lb-1",
+"pool_path": "/infra/lb-pools/nsx-lb-1-pool",
+"application_profile_path": "/infra/lb-app-profiles/default-http-lb-app-profile",
+"client_ssl_profile_binding": {
+"default_certificate_path": "/infra/certificates/test-cert-app1",
+"client_auth": "IGNORE",
+"certificate_chain_depth": 3
+},
+"log_significant_event_only": false,
+"resource_type": "LBVirtualServer",
+"id": "test-vs-nsx",
+"display_name": "test-vs-nsx",
+"path": "/infra/lb-virtual-servers/test-vs-nsx",
+"relative_path": "test-vs-nsx",
+"parent_path": "/infra",
+"unique_id": "1f680448-9c40-413e-8b9d-3fcd44c91cf1",
+"realization_id": "1f680448-9c40-413e-8b9d-3fcd44c91cf1",
+"owner_id": "67198296-2ddb-49cf-8641-d842c623f909",
+"marked_for_delete": false,
+"overridden": false,
+"_system_owned": false,
+"_protection": "NOT_PROTECTED",
+"_create_time": 1747922693674,
+"_create_user": "admin",
+"_last_modified_time": 1747922749231,
+"_last_modified_user": "admin",
+"_revision": 1
+}
+ubuntu@nic-vsphere-nsx-avi-gw:~$

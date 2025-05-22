@@ -1,0 +1,103 @@
+#!/bin/bash
+#
+log_prefix="ACT-Bootstrap"
+echo "--- $(date): ${log_prefix} start ---"
+source /home/ubuntu/bash/functions.sh
+jsonFile=${1}
+source /home/ubuntu/bash/variables.sh
+#
+# Configure ACT account
+#
+curl -k -X POST -H "Content-Type: application/json" -d '{"userName":"admin","password":"'$(echo ${GENERIC_PASSWORD} | base64)'","email":""}' https://${ip_act}/api/user/registerUser
+#
+# HTML doc update
+#
+tee /home/ubuntu/act/act.html> /dev/null <<EOT
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo ACT</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>Demo ACT</h1>
+<ul>
+    <br>
+    <table>
+        <tr>
+            <th>ACT Username</th>
+            <td>admin</td>
+        </tr>
+        <tr>
+            <th>ACT Password</th>
+            <td>${GENERIC_PASSWORD}</td>
+        </tr>
+        <tr>
+            <th>ACT UI</th>
+            <td><a href="https://${ip_act}" target="_blank">https://${ip_act}</a></td>
+        </tr>
+        <tr>
+            <th>NSX Manager IP</th>
+            <td>${ip_nsx}</td>
+        </tr>
+        <tr>
+            <th>NSX username</th>
+            <td>admin</td>
+        </tr>
+        <tr>
+            <th>NSX Password</th>
+            <td>${GENERIC_PASSWORD}</td>
+        </tr>
+        <tr>
+            <th>Avi Ctrl IP</th>
+            <td>${ip_avi}</td>
+        </tr>
+        <tr>
+            <th>Avi username</th>
+            <td>admin</td>
+        </tr>
+        <tr>
+            <th>Avi Password</th>
+            <td>${GENERIC_PASSWORD}</td>
+        </tr>
+    </table>
+    <br>
+    <br>
+</ul>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
+</body>
+</html>
+EOT
+sudo cp /home/ubuntu/act/act.html /var/www/html/
+#
+#
+#
+echo "--- $(date): ${log_prefix} end ---"

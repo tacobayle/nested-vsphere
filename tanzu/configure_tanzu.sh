@@ -133,6 +133,90 @@ if [[ ${configure_supervisor} == "true" ]] ; then
     private_ip_block_address="$(echo ${nsx_ip_blocks} | jq -c -r --arg arg ${private_ip_block_name} '.[] | select( .name == $arg).cidr' | cut -d"." -f1-3).128"
     json_data='
     {
+        "control_plane": {
+          "count": '${supervisor_cluster_count_vm}',
+          "network": {
+            "backing": {
+              "backing": "NETWORK_SEGMENT",
+              "network_segment": {
+                "networks": [ "'${tanzu_supervisor_dvportgroup}'" ]
+              }
+            },
+            "ip_management": {
+              "dhcp_enabled": false,
+              "gateway_address": "'$(echo ${management_tanzu_gw} | cut -d"/" -f1)'",
+              "ip_assignments": [ {
+                "assignee": "NODE",
+                "ranges": [ {
+                  "address": "'${master_management_network_starting_address}'",
+                  "count": "'${management_tanzu_supervisor_count}'"
+                } ]
+              } ]
+            },
+            "network": "managementnetwork0",
+            "proxy": {
+              "proxy_settings_source": "VC_INHERITED"
+            },
+            "services": {
+              "dns": {
+                "search_domains": [ "'${domain}'" ],
+                "servers": [ "'${ip_gw}'" ]
+              },
+              "ntp": {
+                "servers": [ "'${ip_gw}'" ]
+              }
+            }
+          },
+          "size": "'${supervisor_cluster_size}'",
+          "storage_policy": "'${storage_policy_id}'"
+        },
+        "name": "sup-01",
+        "workloads": {
+          "edge": {
+            "provider": "NSX_VPC"
+          },
+          "network": {
+            "ip_management": {
+              "dhcp_enabled": false,
+              "gateway_address": "'$(echo ${management_tanzu_gw} | cut -d"/" -f1)'",
+              "ip_assignments": [ {
+                "assignee": "SERVICE",
+                "ranges": [ {
+                  "address": "'${master_management_network_starting_address}'",
+                  "count": "'${management_tanzu_supervisor_count}'"
+                } ]
+              } ]
+            },
+            "network": "workloadnetwork0",
+            "network_type": "NSX_VPC",
+            "nsx_vpc": {
+              "default_private_cidrs": [ {
+                "address": "'${private_ip_block_address}'",
+                "prefix": 25
+              } ],
+              "nsx_project": "/orgs/default/projects/'${supervisor_cluster_project}'",
+              "vpc_connectivity_profile": "/orgs/default/projects/'${supervisor_cluster_project}'/vpc-connectivity-profiles/'$(echo ${nsx_vpc_connectivity_profiles} | jq -c -r --arg arg "${supervisor_cluster_project}" '.[] | select( .project_ref == $arg).name')'"
+              },
+              "services": {
+                "dns": {
+                  "search_domains": [ "'${domain}'" ],
+                  "servers": [ "'${ip_gw}'" ]
+                },
+                "ntp": {
+                  "servers": [ "'${ip_gw}'" ]
+                }
+              }
+          },
+          "storage": {
+            "ephemeral_storage_policy": "'${storage_policy_id}'",
+            "image_storage_policy": "'${storage_policy_id}'"
+          }
+        }
+    }'
+
+
+    json_data='
+    {
       "cluster_proxy_config": {
         "proxy_settings_source": "VC_INHERITED"
       },

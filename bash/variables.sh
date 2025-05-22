@@ -230,21 +230,21 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
   #
   # tier1s - add nsx_vip_cidr if .nsx.config.tier1s[].lb is true
   #
-  tier1s_spec=$(jq -c -r .nsx.config.tier1s $jsonFile)
-  tier1s_file=$(jq -c -r '.nsx.config.tier1s_overlay_file' $jsonFile)
-  tier1s="[]"
-  echo ${tier1s_spec} | jq -c -r .[] | while read item
-  do
-    if $(echo ${item} | jq -e '.lb' > /dev/null) ; then
-      if [[ $(echo ${item} | jq -c -r '.lb') == "true" ]] ; then
-        item=$(echo ${item} | jq '. += {"nsx_vip_cidr": "'${supernet_nsx_vip_first_two_octets}'.'${supernet_nsx_vip_third_octet}'.0/24"}')
-        ((supernet_nsx_vip_third_octet++))
-      fi
-    fi
-    tier1s=$(echo ${tier1s} | jq '. += ['$(echo ${item} | jq -c -r '.')']')
-    echo ${tier1s} | tee ${tier1s_file} > /dev/null 2>&1
-  done
-  tier1s=$(jq -c -r . ${tier1s_file})
+  tier1s=$(jq -c -r .nsx.config.tier1s $jsonFile)
+#  tier1s_file=$(jq -c -r '.nsx.config.tier1s_overlay_file' $jsonFile)
+#  tier1s="[]"
+#  echo ${tier1s_spec} | jq -c -r .[] | while read item
+#  do
+#    if $(echo ${item} | jq -e '.lb' > /dev/null) ; then
+#      if [[ $(echo ${item} | jq -c -r '.lb') == "true" ]] ; then
+#        item=$(echo ${item} | jq '. += {"nsx_vip_cidr": "'${supernet_nsx_vip_first_two_octets}'.'${supernet_nsx_vip_third_octet}'.0/24"}')
+#        ((supernet_nsx_vip_third_octet++))
+#      fi
+#    fi
+#    tier1s=$(echo ${tier1s} | jq '. += ['$(echo ${item} | jq -c -r '.')']')
+#    echo ${tier1s} | tee ${tier1s_file} > /dev/null 2>&1
+#  done
+#  tier1s=$(jq -c -r . ${tier1s_file})
   #
   supernet_overlay_third_octet=$(echo "${supernet_overlay}" | cut -d'.' -f3)
   supernet_first_two_octets=$(echo "${supernet_overlay}" | cut -d'.' -f1-2)
@@ -268,6 +268,11 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
                                                      "dhcp_ranges": ["'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f1)'-'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].dhcp_ranges[0]' $jsonFile | cut -d'-' -f2)'"]
                                                      }')
 
+    if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.lb' > /dev/null) ; then
+      if [[ $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq '.lb') == "true" ]] ; then
+        segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"lb": true}')
+      fi
+    fi
     if $(echo $(jq -c -r '.nsx.config.segments_overlay['${segment_count}']' $jsonFile) | jq -e '.tanzu_supervisor_starting_ip' > /dev/null) ; then
       segments_overlay=$(echo ${segments_overlay} | jq '.['${segment_count}'] += {"tanzu_supervisor_starting_ip": "'${cidr_three_octets}'.'$(jq -c -r '.nsx.config.segments_overlay['${segment_count}'].tanzu_supervisor_starting_ip' $jsonFile)'"}')
     fi
@@ -440,8 +445,10 @@ vra_last_octet=$(jq -c -r '.vra.last_octet' $jsonFile)
 ip_vra="${cidr_mgmt_three_octets}.${vra_last_octet}"
 vra_name=$(jq -c -r '.vra.name' $jsonFile)
 vra_deployment=$(jq -c -r '.vra.deployment' $jsonFile)
-if [[ $(jq -c -r '.spec.vra.ova_url' $jsonFile) != "null" ]]; then
+vra_lic=
+if [[ $(jq -c -r '.spec.vra.ova_url' $jsonFile) != "null" && $(jq -c -r '.spec.vra.license' $jsonFile) != "null" ]]; then
   vra_ova_url=$(jq -c -r '.spec.vra.ova_url' $jsonFile)
+  vra_license=$(jq -c -r '.spec.vra.license' $jsonFile)
 fi
 #
 # Avi variables
