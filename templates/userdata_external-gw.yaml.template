@@ -121,7 +121,7 @@ write_files:
               echo $ip_blocks_json | jq -c -r .[] | while read ip_block_json
               do
                 if [[ $(echo ${ip_block_json} | jq -r -c .visibility) == "EXTERNAL" ]]; then
-                  echo "            - to: $(echo $ip_block_json | jq -c -r .vip)" | tee -a /etc/netplan/50-cloud-init.yaml
+                  echo "            - to: $(echo $ip_block_json | jq -c -r .cidr)" | tee -a /etc/netplan/50-cloud-init.yaml
                   echo "              via: ${cidr_nsx_external_three_octets}.${tier0_vip_starting_ip}" | tee -a /etc/netplan/50-cloud-init.yaml
                   sudo iptables -t nat -A POSTROUTING -s `echo $ip_block_json | jq -c -r .cidr` -o $ifaceFirstName -j MASQUERADE
                 fi
