@@ -216,9 +216,9 @@ if [[ ${kind} == "vsphere-nsx"* ]]; then
     supernet_vip_first_two_octets="1.1" #place holder for vsphere-nsx use case
   fi
   supernet_vip_third_octet=$(echo "${supernet_vip}" | cut -d'.' -f3)
-  supernet_nsx_vip=$(jq -c -r '.spec.nsx.supernet_vip' $jsonFile)
-  supernet_nsx_vip_first_two_octets=$(echo "${supernet_nsx_vip}" | cut -d'.' -f1-2)
-  supernet_nsx_vip_third_octet=$(echo "${supernet_nsx_vip}" | cut -d'.' -f3)
+#  supernet_nsx_vip=$(jq -c -r '.spec.nsx.supernet_vip' $jsonFile)
+#  supernet_nsx_vip_first_two_octets=$(echo "${supernet_nsx_vip}" | cut -d'.' -f1-2)
+#  supernet_nsx_vip_third_octet=$(echo "${supernet_nsx_vip}" | cut -d'.' -f3)
   nsx_vip_last_octet=$(jq -c -r '.nsx.config.nsx_vip_last_octet' $jsonFile)
   nsx_lb_size=$(jq -c -r '.nsx.config.lb_size' $jsonFile)
   nsx_lb_basename=$(jq -c -r '.nsx.config.lb_basename' $jsonFile)
