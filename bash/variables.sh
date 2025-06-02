@@ -1,23 +1,14 @@
 #!/bin/bash
 #
-SLACK_WEBHOOK_URL=$(jq -c -r .SLACK_WEBHOOK_URL $jsonFile)
-SLACK_WEBHOOK_URL_AVI=$(jq -c -r .SLACK_WEBHOOK_URL_AVI $jsonFile)
+SLACK_WEBHOOK_URL=$(jq -c -r '.spec.slack_webhook' $jsonFile)
+SLACK_WEBHOOK_URL_AVI=$(jq -c -r '.spec.avi.slack_webhook' $jsonFile)
 deployment_name=$(jq -c -r .metadata.name $jsonFile)
-GENERIC_PASSWORD=$(jq -c -r .GENERIC_PASSWORD $jsonFile)
-AVI_OLD_PASSWORD=$(jq -c -r .AVI_OLD_PASSWORD $jsonFile)
-DOCKER_REGISTRY_USERNAME=$(jq -c -r .DOCKER_REGISTRY_USERNAME $jsonFile)
-DOCKER_REGISTRY_PASSWORD=$(jq -c -r .DOCKER_REGISTRY_PASSWORD $jsonFile)
-NSX_LICENSE=$(jq -c -r .NSX_LICENSE $jsonFile)
-DOCKER_REGISTRY_EMAIL=$(jq -c -r .DOCKER_REGISTRY_EMAIL $jsonFile)
-# openshift auth
-CLOUD_OPENSHIFT_COM_AUTH=$(jq -c -r .CLOUD_OPENSHIFT_COM_AUTH $jsonFile)
-CLOUD_OPENSHIFT_COM_EMAIL=$(jq -c -r .CLOUD_OPENSHIFT_COM_EMAIL $jsonFile)
-QUAY_IO_AUTH=$(jq -c -r .QUAY_IO_AUTH $jsonFile)
-QUAY_IO_EMAIL=$(jq -c -r .QUAY_IO_EMAIL $jsonFile)
-REGISTRY_CONNECT_REDHAT_COM_AUTH=$(jq -c -r .REGISTRY_CONNECT_REDHAT_COM_AUTH $jsonFile)
-REGISTRY_CONNECT_REDHAT_COM_EMAIL=$(jq -c -r .REGISTRY_CONNECT_REDHAT_COM_EMAIL $jsonFile)
-REGISTRY_REDHAT_IO_AUTH=$(jq -c -r .REGISTRY_REDHAT_IO_AUTH $jsonFile)
-REGISTRY_REDHAT_IO_EMAIL=$(jq -c -r .REGISTRY_REDHAT_IO_EMAIL $jsonFile)
+GENERIC_PASSWORD=$(jq -c -r .spec.generic_password $jsonFile)
+AVI_OLD_PASSWORD=$(jq -c -r '.spec.avi.avi_old_password' $jsonFile)
+DOCKER_REGISTRY_USERNAME=$(jq -c -r '.spec.docker_registry.username' $jsonFile)
+DOCKER_REGISTRY_PASSWORD=$(jq -c -r '.spec.docker_registry.token' $jsonFile)
+DOCKER_REGISTRY_EMAIL=$(jq -c -r '.spec.docker_registry.email' $jsonFile)
+NSX_LICENSE=$(jq -c -r '.spec.nsx.license' $jsonFile)
 #
 #
 #
@@ -32,7 +23,7 @@ vcsa_about_json_file=$(jq -c -r '.vcsa_about_json_file' $jsonFile)
 vcsa_cert_file=$(jq -c -r '.vcsa_cert_file' $jsonFile)
 domain=$(jq -c -r '.spec.domain' $jsonFile)
 api_host="${vcsa_name}.${domain}"
-folder=$(jq -c -r .spec.folder $jsonFile)
+folder=$(jq -c -r .spec.vsphere_external.folder $jsonFile)
 gw_name="${deployment_name}-gw"
 gw_readonly_user=$(jq -c -r '.gw.readonly_user' $jsonFile)
 gw_readonly_password=$(jq -c -r '.gw.readonly_password' $jsonFile)
@@ -128,6 +119,14 @@ k8s_basename=$(jq -c -r '.k8s_basename' $jsonFile)
 k8s_clusters=$(jq -c -r '.spec.k8s_clusters' $jsonFile)
 openshift=$(jq -c -r '.spec.openshift' $jsonFile)
 if [[ ${openshift} != "null" ]]; then
+  CLOUD_OPENSHIFT_COM_AUTH=$(jq -c -r '.spec.openshift.cloud_openshift_com_auth' $jsonFile)
+  CLOUD_OPENSHIFT_COM_EMAIL=$(jq -c -r '.spec.openshift.cloud_openshift_com_email' $jsonFile)
+  QUAY_IO_AUTH=$(jq -c -r '.spec.openshift.quay_io_auth' $jsonFile)
+  QUAY_IO_EMAIL=$(jq -c -r '.spec.openshift.quay_io_email' $jsonFile)
+  REGISTRY_CONNECT_REDHAT_COM_AUTH=$(jq -c -r '.spec.openshift.registry_connect_redhat_com_auth' $jsonFile)
+  REGISTRY_CONNECT_REDHAT_COM_EMAIL=$(jq -c -r '.spec.openshift.registry_connect_redhat_com_email' $jsonFile)
+  REGISTRY_REDHAT_IO_AUTH=$(jq -c -r '.spec.openshift.registry_redhat_io_auth' $jsonFile)
+  REGISTRY_REDHAT_IO_EMAIL=$(jq -c -r '.spec.openshift.registry_redhat_io_email' $jsonFile)
   openshift_installer_url=$(jq -c -r '.spec.openshift.installer_url' $jsonFile)
   openshift_version=$(jq -c -r '.spec.openshift.version' $jsonFile)
   openshift_ako_version=$(jq -c -r '.spec.openshift.ako_version' $jsonFile)
@@ -445,11 +444,14 @@ vra_last_octet=$(jq -c -r '.vra.last_octet' $jsonFile)
 ip_vra="${cidr_mgmt_three_octets}.${vra_last_octet}"
 vra_name=$(jq -c -r '.vra.name' $jsonFile)
 vra_deployment=$(jq -c -r '.vra.deployment' $jsonFile)
-vra_lic=
 if [[ $(jq -c -r '.spec.vra.ova_url' $jsonFile) != "null" && $(jq -c -r '.spec.vra.license' $jsonFile) != "null" ]]; then
   vra_ova_url=$(jq -c -r '.spec.vra.ova_url' $jsonFile)
   vra_license=$(jq -c -r '.spec.vra.license' $jsonFile)
 fi
+vra_project=$(jq -c -r '.vra.project' $jsonFile)
+vra_avi_cloud_account=$(jq -c -r '.vra.avi_cloud_account' $jsonFile)
+vra_avi_template=$(jq -c -r '.vra.avi_template' $jsonFile)
+vra_avi_policy=$(jq -c -r '.vra.avi_policy' $jsonFile)
 #
 # Avi variables
 #

@@ -45,9 +45,14 @@ if [[ ${k8s_clusters} != "null" ]]; then
     if [[ ${index} -eq 1 ]] ; then currentClusterIsLeader=true ; else currentClusterIsLeader=false; fi
     values_amko=$(echo ${values_amko} | jq '.federation += {"currentClusterIsLeader": '$(echo $currentClusterIsLeader)'}')
     values_amko=$(echo ${values_amko} | jq '.federation += {"memberClusters": []}')
-    values_amko=$(echo ${values_amko} | jq '.federation.memberClusters += [ "context0'${index}'"]')
-    values_amko=$(echo ${values_amko} | jq '.configs.memberClusters += [ {"clusterContext": "context0'${index_}'"}]')
-    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy.matchClusters += [ {"cluster": "context0'${index}'"}]')
+    values_amko=$(echo ${values_amko} | jq '.configs += {"memberClusters": []}')
+    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy += {"matchClusters": []}')
+    for index_cluster in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
+    do
+      values_amko=$(echo ${values_amko} | jq '.federation.memberClusters += [ "context0'${index_cluster}'"]')
+      values_amko=$(echo ${values_amko} | jq '.configs.memberClusters += [ {"clusterContext": "context0'${index_cluster}'"}]')
+      values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy.matchClusters += [ {"cluster": "context0'${index_cluster}'"}]')
+    done
     #
     values_amko=$(echo ${values_amko} | jq '. += {"serviceDiscovery": {"image": {"repository": "'${image_repo_amko_service_discovery}'", "pullPolicy": "IfNotPresent"}}}')
     values_amko=$(echo ${values_amko} | jq '. += {"multiClusterIngress": {"enable": false}}')
@@ -55,7 +60,6 @@ if [[ ${k8s_clusters} != "null" ]]; then
     # .configs
     values_amko=$(echo ${values_amko} | jq '. += {"configs": {"gslbLeaderController": "'${ip_avi}'"}}')
     values_amko=$(echo ${values_amko} | jq '.configs += {"controllerVersion": "'${avi_version}'"}')
-    values_amko=$(echo ${values_amko} | jq '.configs += {"memberClusters": []}')
 
     values_amko=$(echo ${values_amko} | jq '.configs += {"refreshInterval": 1800}')
     values_amko=$(echo ${values_amko} | jq '.configs += {"logLevel": "INFO"}')
@@ -66,8 +70,6 @@ if [[ ${k8s_clusters} != "null" ]]; then
     values_amko=$(echo ${values_amko} | jq '.gslbLeaderCredentials += {"password": "'${GENERIC_PASSWORD}'"}')
     # .globalDeploymentPolicy
     values_amko=$(echo ${values_amko} | jq '. += {"globalDeploymentPolicy": {"appSelector": {"label": {"app": "'${amko_app_selector}'"}}}}')
-    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy += {"matchClusters": []}')
-    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy.matchClusters += [ {"cluster": "context0'${index}'"}]')
     # .serviceAccount
     values_amko=$(echo ${values_amko} | jq '. += {"serviceAccount": {"create": true}}')
     values_amko=$(echo ${values_amko} | jq '.serviceAccount += {"annotations": {}}')
@@ -199,13 +201,18 @@ if [[ ${k8s_clusters} != "null" ]]; then
     # ingress
     #
     per_cluster_ingress='{"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"name":"ingress-'${k8s_basename}${index}'","labels":{"app":"'${amko_app_selector}'"}},"spec":{"rules":[{"host":"ingress-'${k8s_basename}${index}'.'${avi_subdomain}'.'${domain}'","http":{"paths":[{"pathType":"Prefix","path":"/","backend":{"service":{"name":"svc-v1","port":{"number":80}}}}]}}]}}'
-    echo ${per_cluster_ingress} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/ingress-${k8s_basename}${index}.yml > /dev/null 2>&1
+    echo ${per_cluster_ingress} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/amko/ingress-${k8s_basename}${index}.yml > /dev/null 2>&1
     #
-    # GSLB CRD
+    # CRD including GSLB
     #
     ingress_global_fqdn='{"apiVersion":"ako.vmware.com/v1alpha1","kind":"HostRule","metadata":{"name":"my-host-rule1","namespace":"default"},"spec":{"virtualhost":{"fqdn":"ingress-'${k8s_basename}${index}'.'${avi_subdomain}'.'${domain}'","enableVirtualHost":true,"wafPolicy":"System-WAF-Policy","tls":{"sslKeyCertificate":{"name":"System-Default-Cert-EC","type":"ref"}},"gslb":{"fqdn":"ingress.'${avi_gslb_subdomain}'.'${domain}'","includeAliases":false}}}}'
-    echo ${ingress_global_fqdn} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/ingress-global-fqdn.yml > /dev/null 2>&1
+    echo ${ingress_global_fqdn} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/amko/crd-gslb-${k8s_basename}${index}.yml > /dev/null 2>&1
   done
+  #
+  # GSLB GSLBHostRule
+  #
+  GSLBHostRule='{"apiVersion":"amko.vmware.com/v1alpha1","kind":"GSLBHostRule","metadata":{"name":"gslb-host-rule-1","namespace":"avi-system"},"spec":{"fqdn":"ingress.'${avi_gslb_subdomain}'.'${domain}'","ttl":0}}'
+  echo ${GSLBHostRule} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/amko/crd-GSLBHostRule.yml
   #
   # VM k8s_clusters check and config
   #
@@ -216,10 +223,11 @@ if [[ ${k8s_clusters} != "null" ]]; then
     cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
     cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
     total_node=2
+    K8s_check_file=/home/ubuntu/templates/K8s_check.sh.template
     sed -e "s/\${total_node}/${total_node}/" \
         -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@g" \
         -e "s@\${deployment_name}@${deployment_name}@" \
-        -e "s/\${clusterName}/${k8s_basename}${index}/" /home/ubuntu/templates/K8s_check.sh.template | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh" > /dev/null 2>&1
+        -e "s/\${clusterName}/${k8s_basename}${index}/" ${K8s_check_file} | tee "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh" > /dev/null 2>&1
     for index_ip in $(seq 1 2)
     do
       kube_last_octet=$((kube_starting_ip+kube_increment_ip))
@@ -269,7 +277,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Demo vanilla K8s</title>
+    <title>Demo AKO and Vanilla K8s</title>
     <style>
 table, th, td {
   border: 1px solid black;
@@ -285,8 +293,44 @@ table, th, td {
 </style>
 </head>
 <body>
-<h1>Demo vanilla K8s</h1>
+<h1>Demo AKO and Vanilla K8s</h1>
 <ul>
+EOT
+  #
+  # html /home/ubuntu/k8s/vanilla-k8s-amko.html
+  #
+  tee /home/ubuntu/k8s/vanilla-k8s-amko.html> /dev/null <<EOT
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo AKO and Vanilla K8s</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>Demo AMKO and Vanilla K8s</h1>
+<ul>
+    <li>Make sure that GSLB config is done</li>
+    <br>
+    <table>
+        <tr>
+            <th>GSLB config</th>
+            <td>GSLB config enabled on Avi ${ip_avi} with domain gslb.${domain}</td>
+        </tr>
+    </table>
+    <br>
+    <br>
 EOT
   #
   #
@@ -294,6 +338,7 @@ EOT
   kube_config_json="{\"apiVersion\": \"v1\"}"
   kube_increment_ip=0
   javascript_count=0
+  javascript_amko_count=0
   for index in $(seq 1 $(echo ${k8s_clusters} | jq -c -r '. | length'))
   do
     K8s_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].k8s_version')
@@ -364,6 +409,27 @@ helm install --generate-name ${helm_url}  --version ${ako_version} \\
 <button onclick="copyToClipboard($((javascript_count+3)))">Copy Code</button>
             </td>
         </tr>
+    </table>
+    <br>
+    <br>
+EOT
+    #
+    # html /home/ubuntu/k8s/vanilla-k8s-amko.html
+    #
+    tee -a /home/ubuntu/k8s/vanilla-k8s-amko.html> /dev/null <<EOT
+    <li>${clusterName}</li>
+    <br>
+    <table>
+        <tr>
+            <th>Make sure AKO is already installed</th>
+            <td class="code-box">
+    <pre><code>
+k config use-context context${index}
+k get pod -n avi-system
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_amko_count)))">Copy Code</button>
+            </td>
+        </tr>
         <tr>
             <th>AMKO values Yaml</th>
             <td><a href="values_amko_${k8s_basename}${index}.yml" target="_blank">AMKO values Yaml</a></td>
@@ -378,14 +444,45 @@ k create secret generic gslb-config-secret --from-file ${amko_gslb_member_file_p
 helm install --generate-name ${helm_url_amko} --version 1.13.1 \\
 -f /home/ubuntu/k8s/values_amko_${k8s_basename}${index}.yml  --namespace=avi-system
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count+4)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_amko_count+1)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Troubleshoot AMKO</th>
+            <td class="code-box">
+    <pre><code>
+k config use-context context${index}
+kubectl logs amko-0 -n avi-system -c amko
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_amko_count+2)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a local FQDN ingress</th>
+            <td class="code-box">
+    <pre><code>
+k config use-context context${index}
+kubectl apply -f /home/ubuntu/yaml-files/amko/ingress-${k8s_basename}${index}.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_amko_count+3)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Apply the hostrule CRD which include the GSLB global FQDN</th>
+            <td class="code-box">
+    <pre><code>
+k config use-context context${index}
+kubectl apply -f /home/ubuntu/yaml-files/amko/crd-gslb-${k8s_basename}${index}.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_amko_count+4)))">Copy Code</button>
             </td>
         </tr>
     </table>
     <br>
     <br>
 EOT
-    javascript_count=$((javascript_count+5))
+    javascript_count=$((javascript_count+4))
+    javascript_amko_count=$((javascript_amko_count+5))
     #
     #
     #
@@ -480,9 +577,58 @@ function copyToClipboard(boxIndex) {
 </html>
 EOT
   #
+  # html /home/ubuntu/k8s/vanilla-k8s-amko.html>
+  #
+  tee -a /home/ubuntu/k8s/vanilla-k8s-amko.html> /dev/null <<EOT
+    <li>GSLBHostRule CRD</li>
+    <br>
+    <table>
+        <tr>
+            <th>Apply this CRD on the leader cluster</th>
+            <td class="code-box">
+    <pre><code>
+k config use-context context1
+k apply -f /home/ubuntu/yaml-files/amko/crd-GSLBHostRule.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_amko_count+1)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Test the GSLB global FQDN</th>
+            <td class="code-box">
+    <pre><code>
+while true ; do curl -s -k https://ingress.gslb.${domain} | grep cluster; sleep 1 ; done
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_amko_count+2)))">Copy Code</button>
+            </td>
+        </tr>
+    </table>
+</ul>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
+</body>
+</html>
+EOT
+  #
   #
   #
   sudo cp /home/ubuntu/k8s/vanilla-k8s.html /var/www/html/
+  sudo cp /home/ubuntu/k8s/vanilla-k8s-amko.html /var/www/html/
   echo ${kube_config_json}
   echo ${kube_config_json} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/config > /dev/null 2>&1
   chmod 600 /home/ubuntu/k8s/config

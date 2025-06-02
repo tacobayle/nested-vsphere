@@ -21,41 +21,7 @@ jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} > ${jsonFile}
 #
 # add env variables in json
 #
-variables_json=$(jq -c -r . $jsonFile)
-variables_json=$(echo ${variables_json} | jq '. += {"SLACK_WEBHOOK_URL": "'${SLACK_WEBHOOK_URL}'"}')
-variables_json=$(echo ${variables_json} | jq '. += {"SLACK_WEBHOOK_URL_AVI": "'${SLACK_WEBHOOK_URL_AVI}'"}')
-variables_json=$(echo ${variables_json} | jq '. += {"GENERIC_PASSWORD": "'${GENERIC_PASSWORD}'"}')
-variables_json=$(echo ${variables_json} | jq '. += {"NSX_LICENSE": "'${NSX_LICENSE}'"}')
-variables_json=$(echo ${variables_json} | jq '. += {"AVI_OLD_PASSWORD": "'${AVI_OLD_PASSWORD}'"}')
-variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_USERNAME": "'${DOCKER_REGISTRY_USERNAME}'"}')
-variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_PASSWORD": "'${DOCKER_REGISTRY_PASSWORD}'"}')
-variables_json=$(echo ${variables_json} | jq '. += {"DOCKER_REGISTRY_EMAIL": "'${DOCKER_REGISTRY_EMAIL}'"}')
-# openshift auth
-if [[ -n "${CLOUD_OPENSHIFT_COM_AUTH}" ]]; then
-  variables_json=$(echo ${variables_json} | jq '. += {"CLOUD_OPENSHIFT_COM_AUTH": "'${CLOUD_OPENSHIFT_COM_AUTH}'"}')
-fi
-if [[ -n "${CLOUD_OPENSHIFT_COM_EMAIL}" ]]; then
-  variables_json=$(echo ${variables_json} | jq '. += {"CLOUD_OPENSHIFT_COM_EMAIL": "'${CLOUD_OPENSHIFT_COM_EMAIL}'"}')
-fi
-if [[ -n "${QUAY_IO_AUTH}" ]]; then
-  variables_json=$(echo ${variables_json} | jq '. += {"QUAY_IO_AUTH": "'${QUAY_IO_AUTH}'"}')
-fi
-if [[ -n "${QUAY_IO_EMAIL}" ]]; then
-  variables_json=$(echo ${variables_json} | jq '. += {"QUAY_IO_EMAIL": "'${QUAY_IO_EMAIL}'"}')
-fi
-if [[ -n "${REGISTRY_CONNECT_REDHAT_COM_AUTH}" ]]; then
-  variables_json=$(echo ${variables_json} | jq '. += {"REGISTRY_CONNECT_REDHAT_COM_AUTH": "'${REGISTRY_CONNECT_REDHAT_COM_AUTH}'"}')
-fi
-if [[ -n "${REGISTRY_CONNECT_REDHAT_COM_EMAIL}" ]]; then
-  variables_json=$(echo ${variables_json} | jq '. += {"REGISTRY_CONNECT_REDHAT_COM_EMAIL": "'${REGISTRY_CONNECT_REDHAT_COM_EMAIL}'"}')
-fi
-if [[ -n "${REGISTRY_REDHAT_IO_AUTH}" ]]; then
-  variables_json=$(echo ${variables_json} | jq '. += {"REGISTRY_REDHAT_IO_AUTH": "'${REGISTRY_REDHAT_IO_AUTH}'"}')
-fi
-if [[ -n "${REGISTRY_REDHAT_IO_EMAIL}" ]]; then
-  variables_json=$(echo ${variables_json} | jq '. += {"REGISTRY_REDHAT_IO_EMAIL": "'${REGISTRY_REDHAT_IO_EMAIL}'"}')
-fi
-echo ${variables_json} | jq . | tee $jsonFile > /dev/null
+echo $(jq -c -r . $jsonFile) | jq . | tee $jsonFile > /dev/null
 #
 # source the variables
 #
@@ -389,7 +355,7 @@ if [[ ${operation} == "apply" ]] ; then
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   #
   # affinity rule
-  if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
+  if [[ $(jq -c -r .spec.vsphere_external.affinity $jsonFile) == "true" ]] ; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
     echo "Creation of a affinity rule on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
@@ -629,7 +595,7 @@ if [[ ${operation} == "destroy" ]] ; then
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
   #
-  if [[ $(jq -c -r .spec.affinity $jsonFile) == "true" ]] ; then
+  if [[ $(jq -c -r .spec.vsphere_external.affinity $jsonFile) == "true" ]] ; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
     echo "Deletion of a affinity rule on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1

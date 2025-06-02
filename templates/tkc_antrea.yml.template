@@ -14,5 +14,6 @@ spec:
         AntreaTraceflow: true
         NetworkPolicyStats: true
         EgressSeparateSubnet: true
+        NodePortLocal: true
   antreaNSX:
     enable: true

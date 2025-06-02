@@ -30,7 +30,8 @@
 </ul>
 <h1>Demo Vanilla K8s</h1>
 <ul>
-    <li><a href="vanilla-k8s.html" target="_blank">Demo Vanilla K8s</a></li>
+    <li><a href="vanilla-k8s.html" target="_blank">Demo AKO and Vanilla K8s</a></li>
+    <li><a href="vanilla-k8s-amko.html" target="_blank">Demo AMKO and Vanilla K8s</a></li>
 </ul>
 <h1>Demo OpenShift</h1>
 <ul>
