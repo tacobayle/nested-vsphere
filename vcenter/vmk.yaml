@@ -23,7 +23,7 @@
       community.vmware.vmware_vmkernel:
         hostname: "{{ vcsa_name }}.{{ spec.domain }}"
         username: "administrator@{{ spec.vsphere.ssoDomain }}"
-        password: "{{ GENERIC_PASSWORD }}"
+        password: "{{ spec.generic_password }}"
         validate_certs: false
         device: "{{ port_groups[1].vmk }}"
         esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
@@ -41,7 +41,7 @@
       community.vmware.vmware_vmkernel:
         hostname: "{{ vcsa_name }}.{{ spec.domain }}"
         username: "administrator@{{ spec.vsphere.ssoDomain }}"
-        password: "{{ GENERIC_PASSWORD }}"
+        password: "{{ spec.generic_password }}"
         validate_certs: false
         device: "{{ port_groups[2].vmk }}"
         esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
@@ -59,7 +59,7 @@
       community.vmware.vmware_vmkernel:
         hostname: "{{ vcsa_name }}.{{ spec.domain }}"
         username: "administrator@{{ spec.vsphere.ssoDomain }}"
-        password: "{{ GENERIC_PASSWORD }}"
+        password: "{{ spec.generic_password }}"
         validate_certs: false
         device: "{{ port_groups[3].vmk }}"
         esxi_hostname: "{{ esxi_basename }}{{ my_idx + 1 }}.{{ spec.domain }}"
