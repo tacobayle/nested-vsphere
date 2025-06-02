@@ -19,10 +19,6 @@ if [[ ${operation} != "apply" && ${operation} != "destroy" ]] ; then echo "ERROR
 jsonFile="/root/${deployment_name}_${operation}.json"
 jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} > ${jsonFile}
 #
-# add env variables in json
-#
-echo $(jq -c -r . $jsonFile) | jq . | tee $jsonFile > /dev/null
-#
 # source the variables
 #
 source /nested-vsphere/bash/variables.sh
