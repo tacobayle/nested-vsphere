@@ -58,7 +58,7 @@
   "vault": {
     "control_script": {
       "name": "vault_control_script",
-      "path": "/home/ubuntu/templates/control-script-vault.py"
+      "path": "/home/ubuntu/templates/avi/control-script-vault.py"
     },
     "certificate_mgmt_profile": {
       "name": "vault_cert_profile"

@@ -10,7 +10,7 @@ source /home/ubuntu/bash/variables.sh
 #
 sed -e "s/\${vra_avi_cloud_account}/${vra_avi_cloud_account}/" \
     -e "s/\${vra_vrf_context_ref}/$(echo ${net_client_list} | jq -r -c '[.[] | select(.vip_preserve_ip == false )][0].tier1')/" \
-    -e "s/\${${network_ref}}/$(echo ${net_client_list} | jq -r -c '[.[] | select(.vip_preserve_ip == false )][0]..display_name')/" \
+    -e "s/\${${network_ref}}/$(echo ${net_client_list} | jq -r -c '[.[] | select(.vip_preserve_ip == false )][0].display_name')/" \
     -e "s/\${domain}/${domain}/" \
     -e "s/\${avi_subdomain}/${avi_subdomain}/" /home/ubuntu/templates/vra/vra_avi_template.yml.template | tee /home/ubuntu/vra/vra_avi_template.yml
 sudo cp /home/ubuntu/vra/vra_avi_template.yml /var/www/html/

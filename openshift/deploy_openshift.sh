@@ -35,7 +35,7 @@ if [[ ${openshift} != "null" ]]; then
       -e "s#\${REGISTRY_CONNECT_REDHAT_COM_AUTH}#${REGISTRY_CONNECT_REDHAT_COM_AUTH}#" \
       -e "s#\${REGISTRY_CONNECT_REDHAT_COM_EMAIL}#${REGISTRY_CONNECT_REDHAT_COM_EMAIL}#" \
       -e "s#\${REGISTRY_REDHAT_IO_AUTH}#${REGISTRY_REDHAT_IO_AUTH}#" \
-      -e "s#\${REGISTRY_REDHAT_IO_EMAIL}#${REGISTRY_REDHAT_IO_EMAIL}#" /home/ubuntu/templates/install-config.yaml.template | tee "/home/ubuntu/openshift/install-config.yaml"
+      -e "s#\${REGISTRY_REDHAT_IO_EMAIL}#${REGISTRY_REDHAT_IO_EMAIL}#" /home/ubuntu/templates/openshift/install-config.yaml.template | tee "/home/ubuntu/openshift/install-config.yaml"
   cp /home/ubuntu/openshift/install-config.yaml /home/ubuntu/openshift/install-config.yaml.archive
   /home/ubuntu/openshift/openshift-install create cluster --dir /home/ubuntu/openshift --log-level info
   echo "Updating /home/ubuntu/.profile"
@@ -104,7 +104,7 @@ if [[ ${openshift} != "null" ]]; then
       -e "s/\${cloudName}/${avi_cloud_name}/" \
       -e "s/\${controllerHost}/${ip_avi}/" \
       -e "s/\${tenant}/${openshift_tenant_name}/" \
-      -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values_api_gw.yml.${openshift_ako_version}.template | tee /home/ubuntu/openshift/ako_${openshift_cluster_name}_${openshift_ako_version}_values.yml > /dev/null
+      -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/ako/values_api_gw.yml.${openshift_ako_version}.template | tee /home/ubuntu/openshift/ako_${openshift_cluster_name}_${openshift_ako_version}_values.yml > /dev/null
   sudo cp /home/ubuntu/openshift/ako_${openshift_cluster_name}_${openshift_ako_version}_values.yml /var/www/html/
   #
   # openshift config file
@@ -114,7 +114,7 @@ if [[ ${openshift} != "null" ]]; then
       -e "s/\${domain}/${domain}/" \
       -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
       -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
-      -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/openshift-config.sh.template | tee /home/ubuntu/openshift/openshift-config.sh > /dev/null
+      -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/openshift/openshift-config.sh.template | tee /home/ubuntu/openshift/openshift-config.sh > /dev/null
   scp /home/ubuntu/openshift/openshift-config.sh core@${cidr_vip_three_octets}.$((openshift_node_starting_ip_last_octet+1)):/var/home/core/openshift-config.sh
   ssh -o StrictHostKeyChecking=no core@${cidr_vip_three_octets}.$((openshift_node_starting_ip_last_octet+1)) "chmod u+x /var/home/core/openshift-config.sh"
   #

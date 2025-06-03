@@ -270,7 +270,7 @@ sed -e "s/\${vsphere_username}/${vsphere_nested_username}/" \
     -e "s/\${vsphere_password}/${vsphere_nested_password}/" \
     -e "s/\${vsphere_server}/${api_host}/" \
     -e "s@\${dc}@${dc}@" \
-    -e "s/\${cluster}/${cluster_basename}1/" /home/ubuntu/templates/silence_vsan_expect_script.sh.template | tee /home/ubuntu/vcenter/silence_vsan_expect_script.sh
+    -e "s/\${cluster}/${cluster_basename}1/" /home/ubuntu/templates/vsphere/silence_vsan_expect_script.sh.template | tee /home/ubuntu/vcenter/silence_vsan_expect_script.sh
 #
 chmod u+x /home/ubuntu/vcenter/silence_vsan_expect_script.sh
 /home/ubuntu/vcenter/silence_vsan_expect_script.sh

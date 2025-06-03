@@ -195,7 +195,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
         -e "s/\${cloudName}/${avi_cloud_name}/" \
         -e "s/\${controllerHost}/${ip_avi}/" \
         -e "s/\${tenant}/${k8s_basename}${index}/" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/values_api_gw.yml.${ako_version}.template | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null 2>&1
+        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/ako/values_api_gw.yml.${ako_version}.template | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null 2>&1
     sudo cp /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml /var/www/html/
     #
     # ingress

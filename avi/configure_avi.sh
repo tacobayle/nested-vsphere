@@ -35,7 +35,7 @@ if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl
 #
 # templating python control script
 #
-sed -e "s@\${webhook_url}@${SLACK_WEBHOOK_URL_AVI}@" /home/ubuntu/templates/avi_slack_cs.py.template | tee $(jq -c -r .avi_slack.path $jsonFile)
+sed -e "s@\${webhook_url}@${SLACK_WEBHOOK_URL_AVI}@" /home/ubuntu/templates/avi/avi_slack_cs.py.template | tee $(jq -c -r .avi_slack.path $jsonFile)
 #
 #
 #
@@ -79,7 +79,7 @@ if [[ ${kind} == "vsphere-avi" ]]; then
       -e "s@\${service_engine_groups}@$(echo ${service_engine_groups} | jq -c -r '.')@" \
       -e "s@\${pools}@$(echo ${pools} | jq -c -r '.')@" \
       -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
-      -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_vcenter.yml.template | tee /home/ubuntu/avi/avi_values.yml
+      -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/avi/values_vcenter.yml.template | tee /home/ubuntu/avi/avi_values.yml
 fi
 if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   #
@@ -140,7 +140,7 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
       -e "s@\${network_services}@$(echo "${network_services}" | jq -c -r '.')@" \
       -e "s@\${pools}@$(echo ${pools} | jq -c -r '.')@" \
       -e "s@\${pool_groups}@$(echo ${pool_groups} | jq -c -r '.')@" \
-      -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/values_nsx.yml.template | tee /home/ubuntu/avi/avi_values.yml
+      -e "s@\${virtual_services}@$(echo ${virtual_services} | jq -c -r '.')@" /home/ubuntu/templates/avi/values_nsx.yml.template | tee /home/ubuntu/avi/avi_values.yml
 fi
 #
 # starting ansible configuration
@@ -161,7 +161,7 @@ if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl
 #
 sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
     -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
-    -e "s/\${avi_username}/admin/" /home/ubuntu/templates/traffic_gen_client.sh.template | tee /home/ubuntu/avi/traffic_gen_client.sh
+    -e "s/\${avi_username}/admin/" /home/ubuntu/templates/avi/traffic_gen_client.sh.template | tee /home/ubuntu/avi/traffic_gen_client.sh
 chmod u+x /home/ubuntu/avi/traffic_gen_client.sh
 jq -c -r '.[]' /home/ubuntu/json/loopback_ips.json | while read ip ; do sudo ip a add ${ip} dev lo: ; done
 crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/avi/traffic_gen_client.sh" | crontab -

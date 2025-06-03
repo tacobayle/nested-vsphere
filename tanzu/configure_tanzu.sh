@@ -330,14 +330,14 @@ if [[ ${configure_supervisor} == "true" ]] ; then
   #
   # vsphere plugin install
   #
-  sed -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" /home/ubuntu/templates/vsphere_plugin_install.sh.template | tee /home/ubuntu/tanzu/vsphere_plugin_install.sh > /dev/null
+  sed -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" /home/ubuntu/templates/vks/vsphere_plugin_install.sh.template | tee /home/ubuntu/tanzu/vsphere_plugin_install.sh > /dev/null
   /bin/bash /home/ubuntu/tanzu/vsphere_plugin_install.sh
   #
   # auth supervisor script
   #
   sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
       -e "s/\${sso_domain_name}/${ssoDomain}/" \
-      -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" /home/ubuntu/templates/tanzu_auth_supervisor.sh.template | tee /home/ubuntu/tanzu/auth_supervisor.sh > /dev/null
+      -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" /home/ubuntu/templates/vks/tanzu_auth_supervisor.sh.template | tee /home/ubuntu/tanzu/auth_supervisor.sh > /dev/null
   chmod u+x /home/ubuntu/tanzu/auth_supervisor.sh
 fi
 #
@@ -351,7 +351,7 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
     sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
         -e "s/\${sso_domain_name}/${ssoDomain}/" \
         -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
-        -e "s/\${namespace_ref}/$(echo ${ns} | jq -c -r .name)/" /home/ubuntu/templates/tanzu_auth_ns.sh.template | tee /home/ubuntu/tanzu/auth_$(echo ${ns} | jq -c -r .name).sh > /dev/null
+        -e "s/\${namespace_ref}/$(echo ${ns} | jq -c -r .name)/" /home/ubuntu/templates/vks/tanzu_auth_ns.sh.template | tee /home/ubuntu/tanzu/auth_$(echo ${ns} | jq -c -r .name).sh > /dev/null
     chmod u+x /home/ubuntu/tanzu/auth_$(echo ${ns} | jq -c -r .name).sh
     #
     if $(echo $ns | jq -e '.tkc' > /dev/null) ; then
@@ -516,11 +516,11 @@ EOT
     # yaml antrea config map templating
     if [[ ${kind} == "vsphere-nsx-avi" ]]; then
       sed -e "s/\${name}/${tkc_name}/" \
-          -e "s/\${namespace_ref}/${namespace}/" /home/ubuntu/templates/tkc_antrea.yml.template | tee /home/ubuntu/tkc/${tkc_name}-antrea-package.yml > /dev/null
+          -e "s/\${namespace_ref}/${namespace}/" /home/ubuntu/templates/vks/tkc_antrea.yml.template | tee /home/ubuntu/tkc/${tkc_name}-antrea-package.yml > /dev/null
     fi
     if [[ ${kind} == "vsphere-avi" ]]; then
       sed -e "s/\${name}/${tkc_name}/" \
-          -e "s/\${namespace_ref}/${namespace}/" /home/ubuntu/templates/tkc_antrea_wo_nsx.yml.template | tee /home/ubuntu/tkc/${tkc_name}-antrea-package.yml > /dev/null
+          -e "s/\${namespace_ref}/${namespace}/" /home/ubuntu/templates/vks/tkc_antrea_wo_nsx.yml.template | tee /home/ubuntu/tkc/${tkc_name}-antrea-package.yml > /dev/null
     fi
     sudo cp /home/ubuntu/tkc/${tkc_name}-antrea-package.yml /var/www/html/
     # yaml cluster templating
@@ -533,7 +533,7 @@ EOT
         -e "s/\${control_plane_count}/$(echo ${cluster} | jq -c -r .control_plane_count)/" \
         -e "s/\${cluster_count}/${cluster_count}/" \
         -e "s/\${workers_count}/$(echo ${cluster} | jq -c -r .workers_count)/" \
-        -e "s/\${vm_class}/$(echo ${cluster} | jq -c -r .vm_class)/" /home/ubuntu/templates/tkc.yml.template | tee /home/ubuntu/tkc/${tkc_name}.yml > /dev/null
+        -e "s/\${vm_class}/$(echo ${cluster} | jq -c -r .vm_class)/" /home/ubuntu/templates/vks/tkc.yml.template | tee /home/ubuntu/tkc/${tkc_name}.yml > /dev/null
     sudo cp /home/ubuntu/tkc/${tkc_name}.yml /var/www/html/
     # bash cluster create templating
     sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
@@ -542,21 +542,21 @@ EOT
         -e "s/\${namespace_ref}/${namespace}/" \
         -e "s@\${yaml_antrea_path}@/home/ubuntu/tkc/${tkc_name}-antrea-package.yml@" \
         -e "s@\${yaml_path}@/home/ubuntu/tkc/${tkc_name}.yml@" \
-        -e "s/\${cluster_name}/${tkc_name}/" /home/ubuntu/templates/tkc_wo_antrea_wo_clusterbootstrap.sh.template | tee /home/ubuntu/tkc/${tkc_name}_create.sh > /dev/null
+        -e "s/\${cluster_name}/${tkc_name}/" /home/ubuntu/templates/vks/tkc_wo_antrea_wo_clusterbootstrap.sh.template | tee /home/ubuntu/tkc/${tkc_name}_create.sh > /dev/null
     chmod u+x /home/ubuntu/tkc/${tkc_name}_create.sh
     # bash cluster delete templating
     sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
         -e "s/\${sso_domain_name}/${ssoDomain}/" \
         -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
         -e "s/\${namespace_ref}/${namespace}/" \
-        -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tkc_destroy.sh.template | tee /home/ubuntu/tkc/${tkc_name}_destroy.sh > /dev/null
+        -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/vks/tkc_destroy.sh.template | tee /home/ubuntu/tkc/${tkc_name}_destroy.sh > /dev/null
     chmod u+x /home/ubuntu/tkc/${tkc_name}_destroy.sh
     # bash auth tkc templating
     sed -e "s/\${kubectl_password}/${GENERIC_PASSWORD}/" \
         -e "s/\${sso_domain_name}/${ssoDomain}/" \
         -e "s/\${api_server_cluster_endpoint}/${api_server_cluster_endpoint}/" \
         -e "s/\${namespace_ref}/${namespace}/" \
-        -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/tanzu_auth_tkc.sh.template | tee /home/ubuntu/tkc/auth_${tkc_name}.sh > /dev/null
+        -e "s/\${name}/${tkc_name}/" /home/ubuntu/templates/vks/tanzu_auth_tkc.sh.template | tee /home/ubuntu/tkc/auth_${tkc_name}.sh > /dev/null
     chmod u+x /home/ubuntu/tkc/auth_${tkc_name}.sh
     # bash create tkc exec
     if [[ ${configure_workload} == "true" ]] ; then
@@ -632,7 +632,7 @@ EOT
         -e "s/\${cloudName}/${avi_cloud_name}/" \
         -e "s/\${controllerHost}/${ip_avi}/" \
         -e "s/\${tenant}/$(echo ${cluster} | jq -c -r .avi_tenant_name)/" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/${ako_template_file_name} | tee /home/ubuntu/tkc/ako_${tkc_name}_values.yml > /dev/null
+        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/ako/${ako_template_file_name} | tee /home/ubuntu/tkc/ako_${tkc_name}_values.yml > /dev/null
     sudo cp /home/ubuntu/tkc/ako_${tkc_name}_values.yml /var/www/html/
     ((cluster_count++))
   done

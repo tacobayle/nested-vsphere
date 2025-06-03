@@ -54,27 +54,27 @@ if [[ ${operation} == "apply" ]] ; then
   #download_file_from_url_to_location "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
   #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
-  sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/socks.html.template | tee /nested-vsphere/html/socks.html > /dev/null
-  sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/vault.html.template | tee /nested-vsphere/html/vault.html.tmp > /dev/null
+  sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/html/socks.html.template | tee /nested-vsphere/html/socks.html > /dev/null
+  sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/html/vault.html.template | tee /nested-vsphere/html/vault.html.tmp > /dev/null
   if [[ ${kind} == "vsphere" ]]; then
-    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere.html.template | tee /nested-vsphere/html/details.html > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/details-vsphere.html.template | tee /nested-vsphere/html/details.html > /dev/null
   fi
   if [[ ${kind} == "vsphere-avi" ]]; then
-    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/details-vsphere-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
   fi
   if [[ ${kind} == "vsphere-nsx" ]]; then
-    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx.html.template | tee /nested-vsphere/html/details.html > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/details-vsphere-nsx.html.template | tee /nested-vsphere/html/details.html > /dev/null
   fi
   if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
     if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-      sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx-vpc-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
+      sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/details-vsphere-nsx-vpc-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
     fi
     if [[ ${kind} == "vsphere-nsx-avi" ]]; then
-      sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/details-vsphere-nsx-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
+      sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/details-vsphere-nsx-avi.html.template | tee /nested-vsphere/html/details.html > /dev/null
     fi
-    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/api.js.template | tee /nested-vsphere/html/api.js > /dev/null
-    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/clean-up.js.template | tee /nested-vsphere/html/clean-up.js > /dev/null
-    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/script.js.template | tee /nested-vsphere/html/script.js > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/api.js.template | tee /nested-vsphere/html/api.js > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/clean-up.js.template | tee /nested-vsphere/html/clean-up.js > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/script.js.template | tee /nested-vsphere/html/script.js > /dev/null
   fi
   if [[ ${list_gw} != "null" ]] ; then
     echo "ERROR: unable to create VM ${gw_name}: it already exists" >> ${log_file} 2>&1
@@ -238,7 +238,7 @@ if [[ ${operation} == "apply" ]] ; then
           -e "s/\${ntp_servers}/${ip_gw}/" \
           -e "s/\${hostname}/${name_esxi}/" \
           -e "s/\${domain}/${domain}/" \
-          -e "s/\${gateway}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)/" /nested-vsphere/templates/ks_cust.cfg.template | tee ${iso_build_location}/ks_cust.cfg > /dev/null
+          -e "s/\${gateway}/$(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).gw' $jsonFile)/" /nested-vsphere/templates/vsphere/ks_cust.cfg.template | tee ${iso_build_location}/ks_cust.cfg > /dev/null
           echo "Modifying ${iso_build_location}/ks_cust.cfg" >> ${log_file} 2>&1
       # the following needs to be uncommented if kickstart file needs to be consumed by http
       #      if [[ $(basename ${iso_esxi_url}) == "VMware-VMvisor-Installer-9.0.0.0.24528266.x86_64.iso" ]]; then
@@ -299,7 +299,7 @@ if [[ ${operation} == "apply" ]] ; then
               -e "s/\${deployment_name}/${deployment_name}/" \
               -e "s/\${cluster_basename}/${cluster_basename}/" \
               -e "s/\${name_esxi}/${name_esxi}/" \
-              -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
+              -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/vsphere/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
           chmod u+x /root/esxi_customization-$esxi.sh
           scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
         done
@@ -405,8 +405,11 @@ if [[ ${operation} == "apply" ]] ; then
     # exit
   fi
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+  # Transfer of vcsa_about_json_file from the gw to the pod
+  scp -o StrictHostKeyChecking=no ubuntu@${ip_gw}:${vcsa_about_json_file} /root/${deployment_name}_$(basename ${vcsa_about_json_file})
+  #
   # Start downloading VRA remotely if vsphere 8
-  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "8" ]] ; then
+  if [[ $(jq -c -r '.about.version' /root/${deployment_name}_$(basename ${vcsa_about_json_file}) | cut -d"." -f1) == "8" ]] ; then
     if [[ ${vra_ova_url} != "null" ]]; then
       # Start downloading VRA OVA remotely
       ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${vra_ova_url}\" \"/home/ubuntu/bin/$(basename ${vra_ova_url})\" \"${deployment_name}, VRA OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
@@ -485,7 +488,7 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/act/deploy_act.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} &
   fi
   # vRA creation
-  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "8" ]] ; then
+  if [[ $(jq -c -r '.about.version' /root/${deployment_name}_$(basename ${vcsa_about_json_file}) | cut -d"." -f1) == "8" ]] ; then
     if [[ ${vra_ova_url} != "null" ]]; then
       deploy_log_file="/nested-vsphere/log/${deployment_name}_vra_deploy.stdout"
       echo '------------------------------------------------------------' >> ${deploy_log_file} 2>&1
