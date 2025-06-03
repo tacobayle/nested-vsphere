@@ -41,10 +41,6 @@ table, th, td {
             <td>admin</td>
         </tr>
         <tr>
-            <th>ACT Password</th>
-            <td>${GENERIC_PASSWORD}</td>
-        </tr>
-        <tr>
             <th>ACT UI</th>
             <td><a href="https://${ip_act}" target="_blank">https://${ip_act}</a></td>
         </tr>

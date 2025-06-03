@@ -9,7 +9,7 @@ source /home/ubuntu/bash/variables.sh
 sed -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
     -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
     -e "s@\${jsonFile}@${jsonFile}@" \
-    -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh" > /dev/null 2>&1
+    -e "s/\${docker_registry_email}/${DOCKER_REGISTRY_EMAIL}/" /home/ubuntu/templates/k8s/k8s-config.sh.template | tee "/home/ubuntu/k8s/k8s-config.sh" > /dev/null 2>&1
 chmod u+x /home/ubuntu/k8s/k8s-config.sh
 cp /home/ubuntu/k8s/k8s-config.sh /home/ubuntu/tkc/k8s-config.sh
 #
@@ -139,7 +139,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
           -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" \
           -e "s/\${cni}/${cni}/" \
           -e "s/\${cni_version}/${cni_version}/" \
-          -e "s/\${K8s_version}/${K8s_version}/" /home/ubuntu/templates/userdata_k8s_node.yaml.template | tee /home/ubuntu/app/userdata_${k8s_basename}${index}_node${index_ip}.yaml > /dev/null 2>&1
+          -e "s/\${K8s_version}/${K8s_version}/" /home/ubuntu/templates/k8s/userdata_k8s_node.yaml.template | tee /home/ubuntu/app/userdata_${k8s_basename}${index}_node${index_ip}.yaml > /dev/null 2>&1
       #
       sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
           -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_${k8s_basename}${index}_node${index_ip}.yaml -w 0)@" \
@@ -223,7 +223,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     cni=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni')
     cni_version=$(echo ${k8s_clusters} | jq -c -r '.['$(expr ${index} - 1)'].cni_version')
     total_node=2
-    K8s_check_file=/home/ubuntu/templates/K8s_check.sh.template
+    K8s_check_file=/home/ubuntu/templates/k8s/K8s_check.sh.template
     sed -e "s/\${total_node}/${total_node}/" \
         -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@g" \
         -e "s@\${deployment_name}@${deployment_name}@" \

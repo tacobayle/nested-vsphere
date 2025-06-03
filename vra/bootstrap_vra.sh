@@ -14,7 +14,7 @@ while true ; do
   sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no "root@${ip_vra}" -q "exit" >/dev/null 2>&1
   if [[ $? -eq 0 ]]; then
     echo "${log_prefix}: $(date) VRA ${vra_name} is reachable."
-    wait=300
+    wait=600
     echo "${log_prefix}: $(date): waiting ${wait} seconds for VRA to be ready"
     sleep ${wait}
     break
@@ -32,6 +32,7 @@ done
 sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no "root@${ip_vra}" -q "vracli reset vidm --confirm"
 sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no "root@${ip_vra}" -q "echo ${GENERIC_PASSWORD} | tee password-file"
 sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no "root@${ip_vra}" -q "echo yes | vracli ldap set admin password-file"
+sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no "root@${ip_vra}" -q "rm password-file"
 sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no "root@${ip_vra}" -q "vracli license add ${vra_license}"
 sshpass -p "${GENERIC_PASSWORD}" ssh -o StrictHostKeyChecking=no "root@${ip_vra}" -q "/opt/scripts/deploy.sh"
 #

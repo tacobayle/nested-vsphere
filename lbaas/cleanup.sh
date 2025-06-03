@@ -72,7 +72,7 @@ do
       sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
           -e "s/\${hostname}/unassigned-${backend}/" \
           -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
-          -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/userdata_lbaas_backend.yaml.template | tee /tmp/userdata_${backend}.yaml > /dev/null
+          -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/lbaas/userdata_lbaas_backend.yaml.template | tee /tmp/userdata_${backend}.yaml > /dev/null
       #
       sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
           -e "s@\${base64_userdata}@$(base64 /tmp/userdata_${backend}.yaml -w 0)@" \

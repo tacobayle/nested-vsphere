@@ -57,7 +57,7 @@ if [[ ${ips_app} != "null" ]]; then
           -e "s/\${prefix}/${prefix_app}/" \
           -e "s/\${packages}/${app_apt_packages}/" \
           -e "s/\${default_gw}/${gw_app}/" \
-          -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/userdata_app.yaml.template | tee /home/ubuntu/app/userdata_app${index}.yaml
+          -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/app/userdata_app.yaml.template | tee /home/ubuntu/app/userdata_app${index}.yaml
       #
       sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
           -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app${index}.yaml -w 0)@" \
@@ -133,7 +133,7 @@ if [[ ${ips_app_second} != "null" ]]; then
         -e "s/\${prefix}/${prefix_app}/" \
         -e "s/\${packages}/${app_apt_packages}/" \
         -e "s/\${default_gw}/${gw_app}/" \
-        -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/userdata_app_second.yaml.template | tee /home/ubuntu/app/userdata_app_second${index}.yaml
+        -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/app/userdata_app_second.yaml.template | tee /home/ubuntu/app/userdata_app_second${index}.yaml
     #
     sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
         -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app_second${index}.yaml -w 0)@" \

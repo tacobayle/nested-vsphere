@@ -46,7 +46,7 @@ if [[ ${operation} == "apply" ]] ; then
         sed -e "s/\${password}/${GENERIC_PASSWORD}/" \
             -e "s/\${hostname}/${vs_name}-${backend}/" \
             -e "s/\${docker_registry_username}/${DOCKER_REGISTRY_USERNAME}/" \
-            -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/userdata_lbaas_backend.yaml.template | tee /tmp/${vs_name}-${backend} > /dev/null
+            -e "s/\${docker_registry_password}/${DOCKER_REGISTRY_PASSWORD}/" /home/ubuntu/templates/lbaas/userdata_lbaas_backend.yaml.template | tee /tmp/${vs_name}-${backend} > /dev/null
         #
         sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
             -e "s@\${base64_userdata}@$(base64 /tmp/${vs_name}-${backend} -w 0)@" \

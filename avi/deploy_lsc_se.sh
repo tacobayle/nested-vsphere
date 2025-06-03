@@ -45,7 +45,7 @@ if [[ ${lsc_ips_mgmt} != "null" ]]; then
         -e "s#\${netmask_backend}#255.255.255.0#" \
         -e "s#\${ip_vip}#${ip_lsc_vip}#" \
         -e "s#\${netmask_vip}#255.255.255.0#" \
-        -e "s/\${kernelVersion}/${avi_lsc_kernel_version}${index}/" /home/ubuntu/templates/userdata_lsc_se.yaml.template | tee /home/ubuntu/avi/userdata_lsc_se_${index}.yaml
+        -e "s/\${kernelVersion}/${avi_lsc_kernel_version}${index}/" /home/ubuntu/templates/avi/userdata_lsc_se.yaml.template | tee /home/ubuntu/avi/userdata_lsc_se_${index}.yaml
     #
     sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
         -e "s@\${base64_userdata}@$(base64 /home/ubuntu/avi/userdata_lsc_se_${index}.yaml -w 0)@" \

@@ -15,11 +15,15 @@
     <li><a href="https://nsx-manager-01.${domain}" target="_blank">NSX Manager</a></li>
     <li><a href="https://avi-ctrl-01.${domain}" target="_blank">Avi Ctrl</a></li>
 </ul>
-<h1>Enable Tanzu/VKS</h1>
+<h1>Enable/Configure Tanzu/VKS</h1>
 <ul>
     <li><a href="tkgs-service.html" target="_blank">Update TKGs service</a></li>
     <li><a href="cci-service.html" target="_blank">Install CCI service</a></li>
     <li><a href="tkgs-workload.html" target="_blank">Create workload clusters</a></li>
+</ul>
+<h1>Enable/Configure vRA</h1>
+<ul>
+    <li><a href="configure-vra.html" target="_blank">Configure vRA</a></li>
 </ul>
 <h1>Demo Automation</h1>
 <ul>
