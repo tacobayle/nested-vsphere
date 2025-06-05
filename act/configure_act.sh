@@ -8,7 +8,7 @@ source /home/ubuntu/bash/variables.sh
 #
 # Configure ACT account
 #
-curl -k -X POST -H "Content-Type: application/json" -d '{"userName":"admin","password":"'$(echo ${GENERIC_PASSWORD} | base64)'","email":""}' https://${ip_act}/api/user/registerUser
+#curl -k -X POST -H "Content-Type: application/json" -d '{"userName":"admin","password":"'$(echo ${GENERIC_PASSWORD} | base64)'","email":""}' https://${ip_act}/api/user/registerUser
 #
 # HTML doc update
 #
@@ -36,6 +36,25 @@ table, th, td {
 <ul>
     <br>
     <table>
+EOT
+echo ${segments_overlay} | jq -c -r .[] | while read item
+do
+  if $(echo ${item} | jq -e '.lb' > /dev/null) ; then
+    if [[ $(echo ${item} | jq -c -r '.lb') == "true" ]] ; then
+      tee -a /home/ubuntu/act/act.html> /dev/null <<EOT
+      <tr>
+          <th>Update Avi Cloud Configuration</th>
+          <td>add the following tier1 and network: $(echo $item | jq -c -r .tier1), $(echo $item | jq -c -r .display_name)</td>
+      </tr>
+      <tr>
+          <th>Update Avi VRF $(echo $item | jq -c -r .tier1) static ip route</th>
+          <td>0.0.0.0/0 via $(echo $item | jq -c -r .cidr_three_octets).1</td>
+      </tr>
+EOT
+    fi
+  fi
+done
+tee -a /home/ubuntu/act/act.html> /dev/null <<EOT
         <tr>
             <th>ACT Username</th>
             <td>admin</td>
@@ -53,20 +72,12 @@ table, th, td {
             <td>admin</td>
         </tr>
         <tr>
-            <th>NSX Password</th>
-            <td>${GENERIC_PASSWORD}</td>
-        </tr>
-        <tr>
             <th>Avi Ctrl IP</th>
             <td>${ip_avi}</td>
         </tr>
         <tr>
             <th>Avi username</th>
             <td>admin</td>
-        </tr>
-        <tr>
-            <th>Avi Password</th>
-            <td>${GENERIC_PASSWORD}</td>
         </tr>
     </table>
     <br>

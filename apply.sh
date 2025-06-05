@@ -507,9 +507,9 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${avi_config_log_file} 2>&1
   fi
   #
-  # ACT bootstrap
+  # ACT configure
   #
-  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
     log_file="/nested-vsphere/log/${deployment_name}_act_bootstrap.stdout"
     script_file="/home/ubuntu/act/configure_act.sh"
     echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1

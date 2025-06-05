@@ -58,9 +58,8 @@ if [[ ${k8s_clusters} != "null" ]]; then
     values_amko=$(echo ${values_amko} | jq '. += {"multiClusterIngress": {"enable": false}}')
     values_amko=$(echo ${values_amko} | jq '. += {"replicaCount": 1}')
     # .configs
-    values_amko=$(echo ${values_amko} | jq '. += {"configs": {"gslbLeaderController": "'${ip_avi}'"}}')
+    values_amko=$(echo ${values_amko} | jq '.configs += {"gslbLeaderController": "'${ip_avi}'"}}')
     values_amko=$(echo ${values_amko} | jq '.configs += {"controllerVersion": "'${avi_version}'"}')
-
     values_amko=$(echo ${values_amko} | jq '.configs += {"refreshInterval": 1800}')
     values_amko=$(echo ${values_amko} | jq '.configs += {"logLevel": "INFO"}')
     values_amko=$(echo ${values_amko} | jq '.configs += {"logLevel": "INFO"}')
@@ -69,7 +68,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     values_amko=$(echo ${values_amko} | jq '. += {"gslbLeaderCredentials": {"username": "admin"}}')
     values_amko=$(echo ${values_amko} | jq '.gslbLeaderCredentials += {"password": "'${GENERIC_PASSWORD}'"}')
     # .globalDeploymentPolicy
-    values_amko=$(echo ${values_amko} | jq '. += {"globalDeploymentPolicy": {"appSelector": {"label": {"app": "'${amko_app_selector}'"}}}}')
+    values_amko=$(echo ${values_amko} | jq '.globalDeploymentPolicy += {"appSelector": {"label": {"app": "'${amko_app_selector}'"}}}}')
     # .serviceAccount
     values_amko=$(echo ${values_amko} | jq '. += {"serviceAccount": {"create": true}}')
     values_amko=$(echo ${values_amko} | jq '.serviceAccount += {"annotations": {}}')
@@ -303,7 +302,7 @@ EOT
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Demo AKO and Vanilla K8s</title>
+    <title>Demo AMKO and Vanilla K8s</title>
     <style>
 table, th, td {
   border: 1px solid black;

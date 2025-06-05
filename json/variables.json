@@ -466,6 +466,8 @@
           "lb": true,
           "dhcp_server": "dhcp-0",
           "route_advertisement_types": [
+            "TIER1_STATIC_ROUTES",
+            "TIER1_CONNECTED",
             "TIER1_LB_VIP"
           ]
         }
