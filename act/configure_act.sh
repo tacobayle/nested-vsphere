@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-log_prefix="ACT-Bootstrap"
+log_prefix="ACT-Configure"
 echo "--- $(date): ${log_prefix} start ---"
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}

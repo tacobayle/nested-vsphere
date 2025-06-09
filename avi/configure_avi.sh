@@ -1,5 +1,8 @@
 #!/bin/bash
 #
+log_prefix="Avi-Configure"
+echo "--- $(date): ${log_prefix} start ---"
+#
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
 source /home/ubuntu/bash/variables.sh
@@ -171,3 +174,5 @@ crontab -l 2>/dev/null; echo "* * * * * /home/ubuntu/avi/traffic_gen_client.sh" 
 if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   /home/ubuntu/lbaas/cleanup.sh
 fi
+#
+echo "--- $(date): ${log_prefix} end ---"

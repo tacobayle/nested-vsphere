@@ -433,9 +433,7 @@ act_folder=$(jq -c -r '.act.folder' $jsonFile)
 act_last_octet=$(jq -c -r '.act.last_octet' $jsonFile)
 ip_act="${cidr_mgmt_three_octets}.${act_last_octet}"
 act_name=$(jq -c -r '.act.name' $jsonFile)
-if [[ $(jq -c -r '.spec.act.ova_url' $jsonFile) != "null" ]]; then
-  act_ova_url=$(jq -c -r '.spec.act.ova_url' $jsonFile)
-fi
+act_ova_url=$(jq -c -r '.spec.act.ova_url' $jsonFile)
 #
 # VRA variables
 #
@@ -851,7 +849,7 @@ if [[ ${kind} == *"-avi" ]] ; then
             #
             # Ansible and Terraform infra variables build
             #
-            if [ ! -f "/home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml" ] || [ ! -f "/home/ubuntu/automation/tfAviVsIpamDns/infra.json" ]; then
+            if [ -f "/home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml" ] || [ -f "/home/ubuntu/automation/tfAviVsIpamDns/infra.json" ]; then
               if [[ ${net_vip} -eq 0 && ${pool_ports_index} -eq 0 ]]; then
                 json_data='
                 {

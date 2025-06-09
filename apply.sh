@@ -482,29 +482,26 @@ if [[ ${operation} == "apply" ]] ; then
   fi
   # ACT creation
   if [[ ${act_ova_url} != "null" ]]; then
-    deploy_log_file="/nested-vsphere/log/${deployment_name}_act_deploy.stdout"
-    echo '------------------------------------------------------------' >> ${deploy_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/act/deploy_act.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/act/deploy_act.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} &
+    log_file="/nested-vsphere/log/${deployment_name}_act_deploy.stdout"
+    script_file="/home/ubuntu/act/deploy_act.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   # vRA creation
   if [[ $(jq -c -r '.about.version' /root/${deployment_name}_$(basename ${vcsa_about_json_file}) | cut -d"." -f1) == "8" ]] ; then
     if [[ ${vra_ova_url} != "null" ]]; then
-      deploy_log_file="/nested-vsphere/log/${deployment_name}_vra_deploy.stdout"
-      echo '------------------------------------------------------------' >> ${deploy_log_file} 2>&1
-      echo "running the following command from the gw: /home/ubuntu/vra/deploy_vra.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} 2>&1
-      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vra/deploy_vra.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${deploy_log_file} &
+      log_file="/nested-vsphere/log/${deployment_name}_vra_deploy.stdout"
+      script_file="/home/ubuntu/vra/deploy_vra.sh"
+      echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
     fi
   fi
   # Avi ctrl config.
   if [[ ${kind} == *"-avi" ]]; then
-    avi_config_log_file="/nested-vsphere/log/${deployment_name}_avi_config.stdout"
-    echo '------------------------------------------------------------' >> ${avi_config_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${avi_config_log_file} 2>&1
-    echo "Configuration of Avi - This should take about 45 minutes" >> ${avi_config_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${avi_config_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/configure_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${avi_config_log_file} &
-    echo "Ending timestamp: $(date)" >> ${avi_config_log_file} 2>&1
+    log_file="/nested-vsphere/log/${deployment_name}_avi_config.stdout"
+    script_file="/home/ubuntu/avi/configure_avi.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   #
   # ACT configure
@@ -526,6 +523,7 @@ if [[ ${operation} == "apply" ]] ; then
     # In the future configure_vra will need to wait until bootstrap_vra.sh is done
     log_file="/nested-vsphere/log/${deployment_name}_vra_configure.stdout"
     script_file="/home/ubuntu/vra/_configure_vra.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   #
