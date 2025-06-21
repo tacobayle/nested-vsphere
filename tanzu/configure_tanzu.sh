@@ -25,6 +25,11 @@ if [[ ${configure_supervisor} == "true" ]] ; then
                 $(echo ${json_data} | jq -c -r .)
   fi
   #
+  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+    # test after vCenter config
+    exit
+  fi
+  #
   # Create Content Library for tanzu
   #
   create_subscribed_content_library_json_output="/home/ubuntu/tanzu/tanzu_content_library.json"

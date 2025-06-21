@@ -529,13 +529,8 @@ if [[ ${operation} == "apply" ]] ; then
   #
   wait
   #
-  # test for vpc use case
-  #
-  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-    # test after vCenter config
-    exit
-  fi
   # VKS config.
+  #
   if [[ ${kind} == *"-avi" ]]; then
     if [[ ${configure_supervisor} == "true" ]]; then
       vks_log_file="/nested-vsphere/log/${deployment_name}_vks.stdout"
