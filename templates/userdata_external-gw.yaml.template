@@ -68,7 +68,7 @@ write_files:
       directories='${directories}'
       echo $directories | jq -c -r .[] | while read directory
       do
-        sudo -u ubuntu  mkdir -p /home/ubuntu/$directory
+        sudo -u ubuntu mkdir -p /home/ubuntu/$directory
       done
       #
       # pip3

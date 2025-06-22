@@ -9,7 +9,7 @@
   "K8s_version_short": "v1.31",
   "directories": ["esxi","yaml-files/amko", ".kube", "openssl", "routes", "vault", "traffic_gen", "tkgm", "tkgm/workload_clusters", "tkgm/mgmt_cluster", "tkgm/bin", "tkc", "unmanaged_k8s_clusters", "templates", "bin", "python", ".ssh"],
   "folders_to_copy": ["vcenter", "nsx", "avi", "app", "tanzu", "templates", "bash", "json", "lbaas", "html", "openshift", "k8s", "automation", "vra", "act"],
-  "apt_packages": ["python3.9", "vault", "python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso", "expect", "iptables-persistent"],
+  "apt_packages": ["vault", "python3-pip", "jq", "unzip", "expect", "python3-jmespath", "sshpass", "nginx", "chrony", "bind9", "bind9utils", "dnsutils", "xorriso", "expect", "iptables-persistent"],
   "pip3_packages": ["ansible-core==2.12.5", "ansible==5.7.1", "avisdk", "gunicorn", "dnspython", "netaddr", "yq==3.2.2", "flask", "flask_restful", "flask_cors", "pyvmomi==8.0.3.0.1"],
   "yaml_folder": "yaml-files",
   "yaml_links": [

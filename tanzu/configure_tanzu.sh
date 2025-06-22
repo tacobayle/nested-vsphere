@@ -614,15 +614,27 @@ EOT
     fi
     if $(echo ${cluster} | jq -e '.ako_api_gateway' > /dev/null) ; then
       if [[ $(echo ${cluster} | jq -c -r .ako_api_gateway) == "true" ]]; then
-        echo "defaulting to AKO version $(echo ${cluster} | jq -c -r .ako_version) with gatewayApi for cluster ${tkc_name}"
-        ako_template_file_name="values_api_gw.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
+        if [ ! -f "/home/ubuntu/templates/ako/values_api_gw.yml.$(echo ${cluster} | jq -c -r .ako_version).template" ]; then
+          echo "defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)"
+          ako_template_file_name=$(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)
+        else
+          ako_template_file_name="/home/ubuntu/templates/ako/values_api_gw.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
+        fi
       else
-        echo "defaulting to AKO version $(echo ${cluster} | jq -c -r .ako_version) without gatewayApi for cluster ${tkc_name}"
-        ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
+        if [ ! -f "/home/ubuntu/templates/ako/values.yml.$(echo ${cluster} | jq -c -r .ako_version).template" ]; then
+          echo "defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)"
+          ako_template_file_name=$(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)
+        else
+          ako_template_file_name="/home/ubuntu/templates/ako/values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
+        fi
       fi
     else
-      echo "defaulting to AKO version $(echo ${cluster} | jq -c -r .ako_version) without gatewayApi  for cluster ${tkc_name}"
-      ako_template_file_name="values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
+      if [ ! -f "/home/ubuntu/templates/ako/values.yml.$(echo ${cluster} | jq -c -r .ako_version).template" ]; then
+        echo "defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)"
+        ako_template_file_name=$(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)
+      else
+        ako_template_file_name="/home/ubuntu/templates/ako/values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
+      fi
     fi
     sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
         -e "s/\${clusterName}/${tkc_name}/" \
@@ -637,7 +649,7 @@ EOT
         -e "s/\${cloudName}/${avi_cloud_name}/" \
         -e "s/\${controllerHost}/${ip_avi}/" \
         -e "s/\${tenant}/$(echo ${cluster} | jq -c -r .avi_tenant_name)/" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/ako/${ako_template_file_name} | tee /home/ubuntu/tkc/ako_${tkc_name}_values.yml > /dev/null
+        -e "s/\${password}/${GENERIC_PASSWORD}/" ${ako_template_file_name} | tee /home/ubuntu/tkc/ako_${tkc_name}_values.yml > /dev/null
     sudo cp /home/ubuntu/tkc/ako_${tkc_name}_values.yml /var/www/html/
     ((cluster_count++))
   done

@@ -181,6 +181,12 @@ if [[ ${k8s_clusters} != "null" ]]; then
       network_ref_vip=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).display_name')
       cidr_vip_full=$(echo ${segments_overlay} | jq -r -c '.[] | select(.lbaas_private == true).cidr')
     fi
+    if [ ! -f "/home/ubuntu/templates/ako/values_api_gw.yml.${ako_version}.template" ]; then
+      echo "defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)"
+      ako_template_file_name=$(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)
+    else
+      ako_template_file_name="/home/ubuntu/templates/ako/values_api_gw.yml.${ako_version}.template"
+    fi
     sed -e "s/\${disableStaticRouteSync}/${disableStaticRouteSync}/" \
         -e "s/\${clusterName}/${k8s_basename}${index}/" \
         -e "s/\${cniPlugin}/${cni}/" \
@@ -194,7 +200,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
         -e "s/\${cloudName}/${avi_cloud_name}/" \
         -e "s/\${controllerHost}/${ip_avi}/" \
         -e "s/\${tenant}/${k8s_basename}${index}/" \
-        -e "s/\${password}/${GENERIC_PASSWORD}/" /home/ubuntu/templates/ako/values_api_gw.yml.${ako_version}.template | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null 2>&1
+        -e "s/\${password}/${GENERIC_PASSWORD}/" ${ako_template_file_name} | tee /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml > /dev/null 2>&1
     sudo cp /home/ubuntu/k8s/ako_${k8s_basename}${index}_values.yml /var/www/html/
     #
     # ingress
