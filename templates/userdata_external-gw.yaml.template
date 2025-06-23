@@ -63,6 +63,14 @@ write_files:
         apt install -y $package
       done
       #
+      # snap packages
+      #
+      snap_packages='${snap_packages}'
+      echo $snap_packages | jq -c -r .[] | while read package
+      do
+        snap install $(echo $package | jq -c -r '.name') --channel=$(echo $package | jq -c -r '.channel')
+      done
+      #
       # Directories
       #
       directories='${directories}'
