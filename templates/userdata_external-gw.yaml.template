@@ -76,7 +76,7 @@ write_files:
       #
       # pip3
       #
-      pip3 install --upgrade pip
+      pip3 install --upgrade pip --break-system-packages
       pip3_packages='${pip3_packages}'
       echo $pip3_packages | jq -c -r .[] | while read pip3_package
       do
