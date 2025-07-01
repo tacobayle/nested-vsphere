@@ -318,6 +318,7 @@ write_files:
       #
       mv /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.patching_dns
       cat /etc/netplan/50-cloud-init.yaml.patching_dns | sed -e "s/${forwarders_netplan}/127.0.0.1/" | tee /etc/netplan/50-cloud-init.yaml
+      chmod u=rw /etc/netplan/50-cloud-init.yaml
       netplan apply
       #
       # ssh keys init
@@ -396,9 +397,9 @@ write_files:
             ui = true
             api_addr = "https://${ip_gw}:8200"'
           echo "${vault_config}" | tee /etc/vault.d/vault.hcl
-          # systemctl start vault
-          # systemctl enable vault
-          vault server -config /etc/vault.d/vault.hcl
+          systemctl start vault
+          systemctl enable vault
+          # vault server -config /etc/vault.d/vault.hcl
           vault operator init -key-shares=1 -key-threshold=1 -tls-skip-verify -format json | tee ${vault_secret_file_path}
           vault operator unseal -tls-skip-verify $(jq -c -r .unseal_keys_hex[0] ${vault_secret_file_path})
           vault login -tls-skip-verify $(jq -c -r .root_token ${vault_secret_file_path})
