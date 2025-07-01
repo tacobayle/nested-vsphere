@@ -30,7 +30,9 @@ write_files:
       echo "            match:" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "                macaddress: $macFirst" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "            set-name: $ifaceFirstName" | tee -a /etc/netplan/50-cloud-init.yaml
-      echo "            gateway4: ${default_gw}" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            routes:" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "            - to: default" | tee -a /etc/netplan/50-cloud-init.yaml
+      echo "              via: ${default_gw}" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "            nameservers:" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "              addresses: [${forwarders_netplan}]" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "        $ifaceLastName:" | tee -a /etc/netplan/50-cloud-init.yaml
@@ -39,6 +41,7 @@ write_files:
       echo "            set-name: $ifaceLastName" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "            mtu: 9000" | tee -a /etc/netplan/50-cloud-init.yaml
       echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
+      chmod u=rw /etc/netplan/50-cloud-init.yaml
       netplan apply
       #
       # create a readonly user
@@ -77,7 +80,7 @@ write_files:
       pip3_packages='${pip3_packages}'
       echo $pip3_packages | jq -c -r .[] | while read pip3_package
       do
-        sudo -u ubuntu pip3 install $pip3_package
+        sudo -u ubuntu pip3 install $pip3_package --break-system-packages
       done
       #
       # GOVC install
