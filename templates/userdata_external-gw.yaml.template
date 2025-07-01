@@ -157,6 +157,7 @@ write_files:
         sudo iptables -A FORWARD -i vlan.`echo $net | jq -c -r .vlan_id` -o $ifaceFirstName -j ACCEPT
       done
       echo "    version: 2" | tee -a /etc/netplan/50-cloud-init.yaml
+      chmod u=rw /etc/netplan/50-cloud-init.yaml
       netplan apply
       iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
       iptables-save | tee /etc/iptables/rules.v4
@@ -331,7 +332,7 @@ write_files:
       #
       # nginx ssl
       openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj '/CN=demo/C=nl/ST=Amsterdam/L=Amsterdam/O=VMware/OU=Avi' -addext "subjectAltName = DNS:demo.${domain},IP:${ip_gw}"
-      openssl dhparam -out /etc/ssl/certs/dhparam.pem 1024
+      openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
       #
       echo "ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;"  | tee /etc/nginx/snippets/self-signed.conf
       echo "ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;"  | tee -a /etc/nginx/snippets/self-signed.conf
