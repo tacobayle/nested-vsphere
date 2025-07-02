@@ -321,7 +321,6 @@ if [[ ${operation} == "apply" ]] ; then
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl start avi-lbaas" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sudo systemctl enable avi-lbaas" >> ${log_file}
           ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@dummy_value@\$(jq -c -r '.root_token' ${vault_secret_file_path})@\" /var/www/html/vault.html.tmp | sudo tee /var/www/html/vault.html" >> ${log_file}
-          ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@dummy_value@\$(jq -c -r '.root_token' ${vault_secret_file_path})@\" /var/www/html/vault.html.tmp | sudo tee /var/www/html/vault.html" >> ${log_file}
         fi
         # yaml domain update
         if [[ ${kind} == *"-avi" ]]; then
