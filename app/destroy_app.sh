@@ -27,19 +27,6 @@ if [[ ${ips_app} != "null" ]]; then
       network_ref_app="$(echo ${net_app_list} | jq -r -c '.['${net}'].display_name')"
       govc vm.power -off=true "${folder_app}/${network_ref_app}-${app_basename}${index}"
       govc vm.destroy "${folder_app}/${network_ref_app}-${app_basename}${index}"
-      if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" && ${index} == 1 ]]; then
-        for net_vip in $(seq 0 $(($(echo ${net_client_list} | jq -c -r '. | length')-1)))
-        do
-          if [[ $(echo ${net_app_list} | jq -r -c '.['${net}'].server_preserve_ip') == $(echo ${net_client_list} | jq -r -c '.['${net_vip}'].vip_preserve_ip') ]]; then
-            tier1_name="$(echo ${net_client_list} | jq -r -c '.['${net_vip}'].tier1')"
-            # delete nsx group with tag criteria
-            /bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
-                        "policy/api/v1/infra/domains/default/groups/${nsx_group_app_name}_${network_ref_app}_${tier1_name}" \
-                        "DELETE" \
-                        ""
-          fi
-        done
-      fi
     done
   done
 fi
