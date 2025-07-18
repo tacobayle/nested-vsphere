@@ -352,7 +352,7 @@ if [[ ${operation} == "apply" ]] ; then
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   #
   # affinity rule
-  if [[ $(jq -c -r .spec.vsphere_external.affinity $jsonFile) == "true" ]] ; then
+  if [[ $(jq -c -r .spec.vsphere_underlay.affinity $jsonFile) == "true" ]] ; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
     echo "Creation of a affinity rule on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
@@ -588,7 +588,7 @@ if [[ ${operation} == "destroy" ]] ; then
   echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
   #
-  if [[ $(jq -c -r .spec.vsphere_external.affinity $jsonFile) == "true" ]] ; then
+  if [[ $(jq -c -r .spec.vsphere_underlay.affinity $jsonFile) == "true" ]] ; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
     echo "Deletion of a affinity rule on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1

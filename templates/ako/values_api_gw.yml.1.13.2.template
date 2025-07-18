@@ -86,6 +86,7 @@ ControllerSettings:
   cloudName: ${cloudName} # The configured cloud name on the Avi controller.
   controllerHost: ${controllerHost}  # IP address or Hostname of Avi Controller
   tenantName: ${tenant}   # Name of the tenant where all the AKO objects will be created in AVI.
+  vrfName: ""
 
 featureGates:
   GatewayAPI: true
