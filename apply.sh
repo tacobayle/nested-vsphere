@@ -421,65 +421,45 @@ if [[ ${operation} == "apply" ]] ; then
   # NSX creation
   wait
   if [[ ${kind} == "vsphere-nsx"* ]]; then
-    nsx_deploy_log_file="/nested-vsphere/log/${deployment_name}_nsx_deploy.stdout"
-    echo '------------------------------------------------------------' >> ${nsx_deploy_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${nsx_deploy_log_file} 2>&1
-    echo "Creation of NSX Manager - This should take about 20 minutes" >> ${nsx_deploy_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_deploy_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/deploy_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_deploy_log_file}
-    echo "Ending timestamp: $(date)" >> ${nsx_deploy_log_file} 2>&1
+    log_file="/nested-vsphere/log/${deployment_name}_nsx_deploy.stdout"
+    script_file="/home/ubuntu/nsx/deploy_nsx.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   # NSX config.
   if [[ ${kind} == "vsphere-nsx"* ]]; then
-    nsx_config_log_file="/nested-vsphere/log/${deployment_name}_nsx_config.stdout"
-    echo '------------------------------------------------------------' >> ${nsx_config_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${nsx_config_log_file} 2>&1
-    echo "Config. of NSX Manager - This should take about 60 minutes" >> ${nsx_config_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_config_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_config_log_file}
-    echo "Ending timestamp: $(date)" >> ${nsx_config_log_file} 2>&1
+    log_file="/nested-vsphere/log/${deployment_name}_nsx_config.stdout"
+    script_file="/home/ubuntu/nsx/configure_nsx.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   # NSX VPC config.
   if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-    nsx_vpc_config_log_file="/nested-vsphere/log/${deployment_name}_nsx_vpc_config.stdout"
-    echo '------------------------------------------------------------' >> ${nsx_vpc_config_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${nsx_vpc_config_log_file} 2>&1
-    echo "Config. of NSX VPC - This should take about 2 minutes" >> ${nsx_vpc_config_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/nsx/configure_nsx_vpc.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_vpc_config_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/nsx/configure_nsx_vpc.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${nsx_vpc_config_log_file}
-    echo "Ending timestamp: $(date)" >> ${nsx_vpc_config_log_file} 2>&1
+    log_file="/nested-vsphere/log/${deployment_name}_nsx_vpc_config.stdout"
+    script_file="/home/ubuntu/nsx/configure_nsx_vpc.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
-  #
-  #
   # Avi ctrl creation
   if [[ ${kind} == *"-avi" ]]; then
-    avi_deploy_log_file="/nested-vsphere/log/${deployment_name}_avi_deploy.stdout"
-    echo '------------------------------------------------------------' >> ${avi_deploy_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${avi_deploy_log_file} 2>&1
-    echo "Creation of Avi ctrl  - This should take about 20 minutes" >> ${avi_deploy_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${avi_deploy_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/avi/deploy_avi.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${avi_deploy_log_file}
-    echo "Ending timestamp: $(date)" >> ${avi_deploy_log_file} 2>&1
+    log_file="/nested-vsphere/log/${deployment_name}_avi_deploy.stdout"
+    script_file="/home/ubuntu/avi/deploy_avi.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   # App creation
   if [[ ${kind} == *"-avi" ]]; then
-    app_log_file="/nested-vsphere/log/${deployment_name}_app.stdout"
-    echo '------------------------------------------------------------' >> ${app_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${app_log_file} 2>&1
-    echo "Creation of Avi VMs app, client and k8s clusters  - This should take about 10 minutes" >> ${app_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${app_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/app/deploy_app.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${app_log_file}
-    echo "Ending timestamp: $(date)" >> ${app_log_file} 2>&1
+    log_file="/nested-vsphere/log/${deployment_name}_app.stdout"
+    script_file="/home/ubuntu/app/deploy_app.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   # K8s clusters config creation
   if [[ ${kind} == *"-avi" ]]; then
-    k8s_log_file="/nested-vsphere/log/${deployment_name}_k8s.stdout"
-    echo '------------------------------------------------------------' >> ${k8s_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${k8s_log_file} 2>&1
-    echo "Creation of K8s clusters config including AKO/AMKO yaml file  - This should take about 20 minutes" >> ${k8s_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/k8s/deploy_k8s.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${k8s_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/k8s/deploy_k8s.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${k8s_log_file}
-    echo "Ending timestamp: $(date)" >> ${k8s_log_file} 2>&1
+    log_file="/nested-vsphere/log/${deployment_name}_k8s.stdout"
+    script_file="/home/ubuntu/k8s/deploy_k8s.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   # ACT creation
   if [[ ${act_ova_url} != "null" ]]; then
@@ -504,18 +484,14 @@ if [[ ${operation} == "apply" ]] ; then
     echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
-  #
   # ACT configure
-  #
   if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
     log_file="/nested-vsphere/log/${deployment_name}_act_bootstrap.stdout"
     script_file="/home/ubuntu/act/configure_act.sh"
     echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
-  #
   # vRA bootstrap and config
-  #
   if [[ ${kind} == "vsphere-nsx-avi" ]]; then
     log_file="/nested-vsphere/log/${deployment_name}_configure_vra.stdout"
     script_file="/home/ubuntu/vra/bootstrap_vra.sh"
@@ -523,7 +499,7 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
     # In the future configure_vra will need to wait until bootstrap_vra.sh is done
     log_file="/nested-vsphere/log/${deployment_name}_vra_configure.stdout"
-    script_file="/home/ubuntu/vra/_configure_vra.sh"
+    script_file="/home/ubuntu/vra/configure_vra.sh"
     echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
@@ -532,26 +508,18 @@ if [[ ${operation} == "apply" ]] ; then
   #
   # VKS config.
   #
-  if [[ ${kind} == *"-avi" ]]; then
-    if [[ ${configure_supervisor} == "true" ]]; then
-      vks_log_file="/nested-vsphere/log/${deployment_name}_vks.stdout"
-      echo '------------------------------------------------------------' >> ${vks_log_file} 2>&1
-      echo "Starting timestamp: $(date)" >> ${vks_log_file} 2>&1
-      echo "Configuration of Tanzu - This should take about 45 minutes" >> ${vks_log_file} 2>&1
-      echo "running the following command from the gw: /home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${vks_log_file} 2>&1
-      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/tanzu/configure_tanzu.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${vks_log_file}
-      echo "Ending timestamp: $(date)" >> ${vks_log_file} 2>&1
-    fi
+  if [[ ${kind} == *"-avi" && ${configure_supervisor} == "true" ]]; then
+    log_file="/nested-vsphere/log/${deployment_name}_vks.stdout"
+    script_file="/home/ubuntu/tanzu/configure_tanzu.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
   # Openshift creation
   if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then
-    openshift_log_file="/nested-vsphere/log/${deployment_name}_openshift.stdout"
-    echo '------------------------------------------------------------' >> ${openshift_log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${openshift_log_file} 2>&1
-    echo "OpenShift Deployment - This should take about 1 hour" >> ${openshift_log_file} 2>&1
-    echo "running the following command from the gw: /home/ubuntu/openshift/deploy_openshift.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${openshift_log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/openshift/deploy_openshift.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${openshift_log_file}
-    echo "Ending timestamp: $(date)" >> ${openshift_log_file} 2>&1
+    log_file="/nested-vsphere/log/${deployment_name}_openshift.stdout"
+    script_file="/home/ubuntu/openshift/deploy_openshift.sh"
+    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
   fi
 fi
 #

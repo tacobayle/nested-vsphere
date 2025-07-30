@@ -17,6 +17,7 @@ sudo cp /home/ubuntu/vra/vra_avi_template.yml /var/www/html/
 #
 # HTML doc update
 #
+ips_app_full_first_group=$(echo "$(jq -c -r '.avi.app.first.ips' $jsonFile)" | jq '. | map("'$(echo ${net_app_list} | jq -r -c '.[0].cidr_three_octets')'." + (. | tostring))' | jq -c -r .[])
 tee /home/ubuntu/vra/configure-vra.html> /dev/null <<EOT
 <!DOCTYPE html>
 <html>
@@ -165,7 +166,7 @@ table, th, td {
             <th>Demo ${vra_avi_template}</th>
             <td>Go to Service Broker / Consume / Catalog / ${vra_avi_template} / request
             <br>Fill the form
-            <br>Servers: $(echo ${ips_app_full} | jq -c -r .[])
+            <br>Servers: $(echo ${ips_app_full_first_group} | jq -c -r .[])
             <br>Content sharing / Add Items and select ${vra_avi_template} / add items
             <br>Share (content) with all users/groups in this project
             <br>Create
