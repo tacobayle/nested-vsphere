@@ -394,25 +394,21 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${act_ova_url}\" \"/home/ubuntu/bin/$(basename ${act_ova_url})\" \"${deployment_name}, ACT OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   fi
   # vCenter Deployment and Config.
-  vcsa_deploy_log_file="/nested-vsphere/log/${deployment_name}_vcsa_deploy.stdout"
-  echo '------------------------------------------------------------' >> ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" >> ${vcsa_deploy_log_file} 2>&1
-  echo "vCenter Deployment and Config.  - This should take about 45 minutes" >> ${vcsa_deploy_log_file} 2>&1
-  echo "running the following command from the gw: /home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${vcsa_deploy_log_file} 2>&1
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/vcenter/vcsa.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${vcsa_deploy_log_file}
+  log_file="/nested-vsphere/log/${deployment_name}_vcsa_deploy.stdout"
+  script_file="/home/ubuntu/vcenter/vcsa.sh"
+  echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
   if [ $? -ne 0 ] ; then
     echo "ERROR: vCenter Deployment or Configuration failed" >> ${vcsa_deploy_log_file} 2>&1
     if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ERROR: vCenter Deployment or Configuration failed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
     # exit
   fi
-  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   # Transfer of vcsa_about_json_file from the gw to the pod
   scp -o StrictHostKeyChecking=no ubuntu@${ip_gw}:${vcsa_about_json_file} /root/${deployment_name}_$(basename ${vcsa_about_json_file})
   #
   # Start downloading VRA remotely if vsphere 8
   if [[ $(jq -c -r '.about.version' /root/${deployment_name}_$(basename ${vcsa_about_json_file}) | cut -d"." -f1) == "8" ]] ; then
     if [[ ${vra_ova_url} != "null" ]]; then
-      # Start downloading VRA OVA remotely
       ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${vra_ova_url}\" \"/home/ubuntu/bin/$(basename ${vra_ova_url})\" \"${deployment_name}, VRA OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
     fi
   fi
