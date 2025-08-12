@@ -10,7 +10,7 @@ source /home/ubuntu/bash/variables.sh
 #
 sed -e "s/\${vra_avi_cloud_account}/${vra_avi_cloud_account}/" \
     -e "s/\${vra_vrf_context_ref}/$(echo ${net_client_list} | jq -r -c '[.[] | select(.vip_preserve_ip == false )][0].tier1')/" \
-    -e "s/\${${network_ref}/$(echo ${net_client_list} | jq -r -c '[.[] | select(.vip_preserve_ip == false )][0].display_name')/" \
+    -e "s/\${network_ref}/$(echo ${net_client_list} | jq -r -c '[.[] | select(.vip_preserve_ip == false )][0].display_name')/" \
     -e "s/\${domain}/${domain}/" \
     -e "s/\${avi_subdomain}/${avi_subdomain}/" /home/ubuntu/templates/vra/vra_avi_template.yml.template | tee /home/ubuntu/vra/vra_avi_template.yml
 sudo cp /home/ubuntu/vra/vra_avi_template.yml /var/www/html/
@@ -82,7 +82,7 @@ table, th, td {
             <td>Click the Version button on the bottom left</td>
         </tr>
         <tr>
-            <th>Create an Avi Template</th>
+            <th>Create a New content source Avi Template</th>
             <td>Go to Service Broker / Content and Policies / New content source / Template
             <br>name: ${vra_avi_template}
             <br>Select the source project: ${vra_project}
@@ -91,7 +91,7 @@ table, th, td {
             </td>
         </tr>
         <tr>
-            <th>Create an Avi Template</th>
+            <th>Create an Content sharing policy Avi Template</th>
             <td>Go to Service Broker / Content and Policies / Policies / Definitions / New Policy / Content sharing policy
             <br>name: ${vra_avi_policy}
             <br>Scope / Project / ${vra_project}
@@ -104,7 +104,7 @@ table, th, td {
             <th>Demo ${vra_avi_template}</th>
             <td>Go to Service Broker / Consume / Catalog / ${vra_avi_template} / request
             <br>Fill the form
-            <br>Servers: $(echo ${ips_app_full} | jq -c -r .[])
+            <br>Servers: $(echo "$(jq -c -r '.avi.app.first.ips' $jsonFile)" | jq -c -r '. | map("'$(echo ${net_app_list} | jq -r -c '.[0].cidr_three_octets')'." + (. | tostring))')
             <br>Content sharing / Add Items and select ${vra_avi_template} / add items
             <br>Share (content) with all users/groups in this project
             <br>Create
