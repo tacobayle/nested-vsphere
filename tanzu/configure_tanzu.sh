@@ -407,8 +407,8 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
   #
   # tkc creation
   #
-  echo "waiting 1 minute before tkc/ako templating/creation"
-  sleep 60
+  echo "waiting 2 minutes before tkc/ako templating/creation"
+  sleep 120
   cluster_count=1
   #
   # html /home/ubuntu/tkc/tkgs-workload.html
