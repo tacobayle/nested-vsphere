@@ -238,10 +238,11 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
                     "POST" \
                     "{\"display_name\": \"${display_name}-cert-ca\",
                       \"pem_encoded\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${ca_name}.crt)\",
-                      \"private_key\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${ca_name}.pkcs8.key)\",
                       \"purpose\": \"signing-ca\",
                       \"passphrase\": \"$(cat ${directory}/ca_private_key_passphrase.txt)\"
                     }"
+        # private key is not needed in the above json
+        #             \"private_key\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${ca_name}.pkcs8.key)\",
         # cert app creation
         rm -f ${directory}/${lb_app_cert}.csr ${directory}/${lb_app_cert}.key ${directory}/${lb_app_cert}.v3.ext ${directory}/${lb_app_cert}.crt
         cn="My App"
