@@ -218,6 +218,7 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
                     "${json_key}"
         pool_path=$(jq -c -r '.'${json_key}'' ${file_json_output})
         # cert ca creation
+        rm -f ${directory}/${ca_name}.key ${directory}/${ca_name}.pkcs8.key ${directory}/${ca_name}.crt
         directory="/home/ubuntu/nsx"
         ca_name="My-Root-CA"
         CN="My Root CA"
@@ -237,11 +238,12 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]] ; then
                     "POST" \
                     "{\"display_name\": \"${display_name}-cert-ca\",
                       \"pem_encoded\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${ca_name}.crt)\",
-                      \"private_key\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${ca_name}.key)\",
+                      \"private_key\": \"$(awk '{printf "%s\\n", $0}' ${directory}/${ca_name}.pkcs8.key)\",
                       \"purpose\": \"signing-ca\",
                       \"passphrase\": \"$(cat ${directory}/ca_private_key_passphrase.txt)\"
                     }"
         # cert app creation
+        rm -f ${directory}/${lb_app_cert}.csr ${directory}/${lb_app_cert}.key ${directory}/${lb_app_cert}.v3.ext ${directory}/${lb_app_cert}.crt
         cn="My App"
         c="FR"
         st="Paris"
