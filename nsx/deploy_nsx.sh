@@ -85,4 +85,5 @@ else
   done
   log_message "${deployment_name}: NSX Manager reachable at https://${ip_nsx}" "" "${slack_webhook}" "${google_webhook}"
 fi
+touch ${resultFile}
 exit

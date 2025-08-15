@@ -1,5 +1,5 @@
 test_remote_script() {
-  local retry=60
+  local retry=360
   local pause=10
   local attempt=1
   local ip_gw="${1}"

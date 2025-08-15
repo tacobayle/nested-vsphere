@@ -1,9 +1,13 @@
 #!/bin/bash
 #
-source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
+resultFile="${2}"
+rm -f ${resultFile}
+source /home/ubuntu/bash/log_message.sh
+source /home/ubuntu/bash/functions.sh
 source /home/ubuntu/bash/variables.sh
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': starting NSX manager config."}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: : starting NSX manager config." "" "${slack_webhook}" "${google_webhook}"
 #
 # check NSX Manager
 #
@@ -11,11 +15,11 @@ retry=10
 pause=60
 attempt=0
 while [[ "$(curl -u admin:${GENERIC_PASSWORD} -k -s -o /dev/null -w '%{http_code}' https://${ip_nsx}/api/v1/cluster/status)" != "200" ]]; do
-  echo "waiting for NSX Manager API to be ready"
+  log_message "${deployment_name}: waiting for NSX Manager API to be ready" "" "" ""
   sleep ${pause}
   ((attempt++))
   if [ ${attempt} -eq ${retry} ]; then
-    echo "FAILED to get NSX Manager API to be ready after ${retry}"
+    log_message "${deployment_name}: FAILED to get NSX Manager API to be ready after ${retry}" "" "${slack_webhook}" "${google_webhook}"
     exit 255
   fi
 done
@@ -26,16 +30,15 @@ retry=10
 pause=60
 attempt=0
 while [[ "$(curl -u admin:${GENERIC_PASSWORD} -k -s  https://${ip_nsx}/api/v1/cluster/status | jq -r .detailed_cluster_status.overall_status)" != "STABLE" ]]; do
-  echo "waiting for NSX Manager API to be STABLE"
+  log_message "${deployment_name}: waiting for NSX Manager API to be STABLE" "" "" ""
   sleep ${pause}
   ((attempt++))
   if [ ${attempt} -eq ${retry} ]; then
-    echo "FAILED to get NSX Manager API to be STABLE after ${retry}"
+    log_message "${deployment_name}: FAILED to get NSX Manager API to be STABLE after ${retry}" "" "${slack_webhook}" "${google_webhook}"
     exit 255
   fi
 done
-echo "NSX Manager ready at https://${ip_nsx}"
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX Manager ready at https://'${ip_nsx}'"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+log_message "${deployment_name}: NSX Manager ready at https://${ip_nsx}" "" "${slack_webhook}" "${google_webhook}"
 #
 # Upload the license
 #
@@ -259,7 +262,7 @@ new_members="{\"members\": ${exclusion_list_groups}}"
 #
 # waiting for host transport node to be ready
 #
-echo "pausing for 240 seconds"
+log_message "${deployment_name}: pausing for 240 seconds" "" "" ""
 sleep 240
 file_json_output="/home/ubuntu/nsx/host-transport-nodes-status.json"
 /bin/bash /home/ubuntu/nsx/get_object.sh \
@@ -270,7 +273,7 @@ file_json_output="/home/ubuntu/nsx/host-transport-nodes-status.json"
 retry=60 ; pause=30 ; attempt=0
 jq -c -r .results[] ${file_json_output} | while read item
 do
-  echo "Waiting for host transport nodes to be ready, attempt: ${retry}"
+  log_message "${deployment_name}: Waiting for host transport nodes to be ready, attempt: ${retry}"  "" "" ""
   unique_id=$(echo $item | jq -c -r .unique_id)
   while true ; do
     file_json_output="/home/ubuntu/nsx/host-transport-nodes-status-${unique_id}.json"
@@ -281,14 +284,13 @@ do
 
     hosts_host_transport_node_state=$(echo $response_body)
     if [[ "$(jq -r .deployment_progress_state.progress ${file_json_output})" == 100 ]] && [[ "$(jq -r .state ${file_json_output})" == "success"  ]] ; then
-      echo "  SUCCESS: Host transport node id ${unique_id} progress at 100% and host transport node state success"
-      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Host transport node id '${unique_id}' ready"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      log_message "${deployment_name}: SUCCESS: Host transport node id ${unique_id} progress at 100% and host transport node state success" "" "" ""
       break
     else
-      echo "  Waiting for host transport node id ${unique_id} to be ready, attempt: ${attempt} on ${retry}"
+      log_message "${deployment_name}: Waiting for host transport node id ${unique_id} to be ready, attempt: ${attempt} on ${retry}" "" "" ""
     fi
     if [ ${attempt} -eq ${retry} ]; then
-      echo "  FAILED to get transport node deployment progress at 100% after ${attempt}"
+      log_message "${deployment_name}: FAILED to get transport node deployment progress at 100% after ${attempt}" "" "${slack_webhook}" "${google_webhook}"
       exit
     fi
     sleep $pause
@@ -423,13 +425,13 @@ done
 #
 # Check the status of Nodes (including transport node and edge nodes but filtered with edge_ids
 #
-echo "pausing for 600 seconds"
+log_message "${deployment_name}: pausing for 600 seconds" "" "" ""
 sleep 600
 retry=240 ; pause=20 ; attempt=0
 for item in $(echo ${edge_ids} | jq -c -r '.[]')
 do
   while true ; do
-    echo "attempt ${attempt} to get node id ${item} ready"
+    log_message "${deployment_name}: attempt ${attempt} to get node id ${item} ready" "" "" ""
     file_json_output="/home/ubuntu/nsx/transport-nodes-state.json"
     /bin/bash /home/ubuntu/nsx/get_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
                 "policy/api/v1/transport-nodes/state" \
@@ -437,14 +439,13 @@ do
     for edge in $(seq 0 $(($(jq -c -r '.results | length' ${file_json_output})-1)))
     do
       if [[ $(jq -c -r '.results['$edge'].transport_node_id' ${file_json_output}) == ${item} ]] && [[ $(jq -c -r '.results['$edge'].state' ${file_json_output}) == "success" ]] ; then
-        echo "new edge node id ${item} state is success after ${attempt} attempts of ${pause} seconds"
-        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': edge node '${item}' ready"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+        log_message "${deployment_name}: new edge node id ${item} state is success after ${attempt} attempts of ${pause} seconds" "" "" ""
         break 2
       fi
     done
     ((attempt++))
     if [ ${attempt} -eq ${retry} ]; then
-      echo "Unable to get node id ${item} ready after ${attempt} of ${pause} seconds"
+      log_message "${deployment_name}: Unable to get node id ${item} ready after ${attempt} of ${pause} seconds" "" "${slack_webhook}" "${google_webhook}"
       exit 1
     fi
     sleep ${pause}
@@ -707,7 +708,6 @@ do
               "PUT" \
               "${json_data}"
 done
-#
-#
-#
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX manager configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+log_message "${deployment_name}: NSX manager configured" "" "${slack_webhook}" "${google_webhook}"
+touch ${resultFile}
+exit

@@ -39,9 +39,9 @@ list_gw=$(govc find -json vm -name "${gw_name}")
 #
 if [[ ${operation} == "apply" ]] ; then
   # ubuntu ova download
-  /nested-vsphere/bash/download_file_from_url_to_location.sh "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "${deployment_name}, Ubuntu OVA" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
+  /nested-vsphere/bash/download_file_from_url_to_location.sh "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "${deployment_name}, Ubuntu OVA" > /dev/null 2>&1 &
   # esxi iso download
-  /nested-vsphere/bash/download_file_from_url_to_location.sh "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "${deployment_name}, ESXi ISO" "${SLACK_WEBHOOK_URL}" > /dev/null 2>&1 &
+  /nested-vsphere/bash/download_file_from_url_to_location.sh "${iso_esxi_url}" "/root/$(basename ${iso_esxi_url})" "${deployment_name}, ESXi ISO" > /dev/null 2>&1 &
   echo '------------------------------------------------------------' | tee ${log_file}
   echo "Starting timestamp folder: $(date)" >> ${log_file} 2>&1
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
@@ -55,8 +55,6 @@ if [[ ${operation} == "apply" ]] ; then
   #
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
   echo "Starting timestamp gw: $(date)" >> ${log_file} 2>&1
-  #download_file_from_url_to_location "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
-  #log_message "${deployment_name}:Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
   sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/html/socks.html.template | tee /nested-vsphere/html/socks.html > /dev/null
   sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/html/vault.html.template | tee /nested-vsphere/html/vault.html.tmp > /dev/null
@@ -275,7 +273,7 @@ if [[ ${operation} == "apply" ]] ; then
       net=$(jq -c -r .spec.esxi.nics[1] $jsonFile)
       govc vm.network.add -vm "${folder}/${name_esxi}" -net ${net} -net.adapter vmxnet3 > /dev/null
       govc vm.power -on=true "${folder}/${name_esxi}" > /dev/null
-      log_message "${deployment_name}: nested ESXi '${esxi}' created" "${log_file}" "${slack_webhook}" "${google_webhook}"
+      log_message "${deployment_name}: nested ESXi ${esxi} created" "${log_file}" "${slack_webhook}" "${google_webhook}"
     fi
   done
   echo "Ending timestamp esxi: $(date)" >> ${log_file} 2>&1
@@ -289,7 +287,6 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q "exit" >/dev/null 2>&1
     if [[ $? -eq 0 ]]; then
       echo "Gw ${gw_name} is reachable." >> ${log_file} 2>&1
-      #log_message "${deployment_name}:external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
       if [[ $? -eq 0 ]]; then
 #        for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
@@ -353,7 +350,7 @@ if [[ ${operation} == "apply" ]] ; then
   #
   # Start downloading VCSA ISO remotely
   #
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\"" > /dev/null 2>&1 &
   #
   # affinity rule
   #
@@ -380,7 +377,6 @@ if [[ ${operation} == "apply" ]] ; then
 #    name_esxi="${esxi_basename}${esxi}"
 #    echo "running the following command from the gw: /home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file} 2>&1
 #    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file}
-#    log_message "${deployment_name}:nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #    govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
 #    rm -fr /root/$(basename ${iso_esxi_url})
 #  done
@@ -391,19 +387,19 @@ if [[ ${operation} == "apply" ]] ; then
   wait
   if [[ ${kind} == "vsphere-nsx"* ]]; then
     # Start downloading NSX OVA remotely
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${nsx_ova_url}\" \"/home/ubuntu/bin/$(basename ${nsx_ova_url})\" \"${deployment_name}, NSX OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${nsx_ova_url}\" \"/home/ubuntu/bin/$(basename ${nsx_ova_url})\" \"${deployment_name}, NSX OVA\"" > /dev/null 2>&1 &
   fi
   #
   if [[ ${kind} == *"-avi" ]]; then
     # Start downloading Avi OVA remotely
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${avi_ova_url}\" \"/home/ubuntu/bin/$(basename ${avi_ova_url})\" \"${deployment_name}, Avi OVA\"" > /dev/null 2>&1 &
     # Start downloading Ubuntu OVA remotely
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Ubuntu OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${ubuntu_ova_url}\" \"/home/ubuntu/bin/$(basename ${ubuntu_ova_url})\" \"${deployment_name}, Ubuntu OVA\"" > /dev/null 2>&1 &
     if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then
-      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${openshift_installer_url}\" \"/home/ubuntu/bin/$(basename ${openshift_installer_url})\" \"${deployment_name}, OpenShift Installer\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${openshift_installer_url}\" \"/home/ubuntu/bin/$(basename ${openshift_installer_url})\" \"${deployment_name}, OpenShift Installer\"" > /dev/null 2>&1 &
     fi
     # Start downloading ACT remotely
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${act_ova_url}\" \"/home/ubuntu/bin/$(basename ${act_ova_url})\" \"${deployment_name}, ACT OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${act_ova_url}\" \"/home/ubuntu/bin/$(basename ${act_ova_url})\" \"${deployment_name}, ACT OVA\"" > /dev/null 2>&1 &
   fi
   #
   # vCenter Deployment and Config.
@@ -431,7 +427,7 @@ if [[ ${operation} == "apply" ]] ; then
   # Start downloading VRA remotely if vsphere 8
   if [[ $(jq -c -r '.about.version' /root/${deployment_name}_$(basename ${vcsa_about_json_file}) | cut -d"." -f1) == "8" ]] ; then
     if [[ ${vra_ova_url} != "null" ]]; then
-      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${vra_ova_url}\" \"/home/ubuntu/bin/$(basename ${vra_ova_url})\" \"${deployment_name}, VRA OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${vra_ova_url}\" \"/home/ubuntu/bin/$(basename ${vra_ova_url})\" \"${deployment_name}, VRA OVA\"" > /dev/null 2>&1 &
     fi
   fi
   #
@@ -450,17 +446,23 @@ if [[ ${operation} == "apply" ]] ; then
 #    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
 #    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
     # NSX configuration
-    log_file="/nested-vsphere/log/${deployment_name}_nsx_config.stdout"
     script_file="/home/ubuntu/nsx/configure_nsx.sh"
-    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
+    log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
+    test_remote_script "${ip_gw}" "${script_file}"
     # NSX VPC config.
-    if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-      log_file="/nested-vsphere/log/${deployment_name}_nsx_vpc_config.stdout"
-      script_file="/home/ubuntu/nsx/configure_nsx_vpc.sh"
-      echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
-    fi
+    script_file="/home/ubuntu/nsx/configure_nsx_vpc.sh"
+    log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
+    test_remote_script "${ip_gw}" "${script_file}"
+#    if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+#      log_file="/nested-vsphere/log/${deployment_name}_nsx_vpc_config.stdout"
+#      script_file="/home/ubuntu/nsx/configure_nsx_vpc.sh"
+#      echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+#      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
+#    fi
   fi
   #
   # Avi ctrl creation

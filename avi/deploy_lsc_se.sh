@@ -15,7 +15,7 @@ fi
 #
 # Ubuntu download
 #
-/nested-vsphere/bash/download_file_from_url_to_location.sh "${lsc_ova_url}" "/home/ubuntu/bin/$(basename ${lsc_ova_url})" "${deployment_name}, SE Ubuntu OVA" "${SLACK_WEBHOOK_URL}" &
+/nested-vsphere/bash/download_file_from_url_to_location.sh "${lsc_ova_url}" "/home/ubuntu/bin/$(basename ${lsc_ova_url})" "${deployment_name}, SE Ubuntu OVA" &
 #
 # folder creation for app
 #

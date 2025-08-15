@@ -1,12 +1,17 @@
 #!/bin/bash
 #
-source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
+resultFile="${2}"
+rm -f ${resultFile}
+source /home/ubuntu/bash/log_message.sh
+source /home/ubuntu/bash/functions.sh
 source /home/ubuntu/bash/variables.sh
 #
 # vpc use case for vsphere 9 only
 #
 if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]]; then
+  log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+  log_message "${deployment_name}: : starting NSX Project/VPC config." "" "${slack_webhook}" "${google_webhook}"
   #
   # check NSX Manager
   #
@@ -14,11 +19,11 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
   pause=60
   attempt=0
   while [[ "$(curl -u admin:${GENERIC_PASSWORD} -k -s -o /dev/null -w '%{http_code}' https://${ip_nsx}/api/v1/cluster/status)" != "200" ]]; do
-    echo "waiting for NSX Manager API to be ready"
+    log_message "${deployment_name}: waiting for NSX Manager API to be ready" "" "" ""
     sleep ${pause}
     ((attempt++))
     if [ ${attempt} -eq ${retry} ]; then
-      echo "FAILED to get NSX Manager API to be ready after ${retry}"
+      log_message "${deployment_name}: FAILED to get NSX Manager API to be ready after ${retry}" "" "${slack_webhook}" "${google_webhook}"
       exit 255
     fi
   done
@@ -29,25 +34,21 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
   pause=60
   attempt=0
   while [[ "$(curl -u admin:${GENERIC_PASSWORD} -k -s  https://${ip_nsx}/api/v1/cluster/status | jq -r .detailed_cluster_status.overall_status)" != "STABLE" ]]; do
-    echo "waiting for NSX Manager API to be STABLE"
+    log_message "${deployment_name}: waiting for NSX Manager API to be STABLE" "" "" ""
     sleep ${pause}
     ((attempt++))
     if [ ${attempt} -eq ${retry} ]; then
-      echo "FAILED to get NSX Manager API to be STABLE after ${retry}"
+      log_message "${deployment_name}: FAILED to get NSX Manager API to be STABLE after ${retry}" "" "${slack_webhook}" "${google_webhook}"
       exit 255
     fi
   done
-  if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': starting NSX VPC config."}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-  echo "#"
-  echo "# VPC use case for vsphere 9 only"
-  echo "#"
   #
   # ip block creation only for project default
   #
   echo ${nsx_ip_blocks} | jq -c -r .[] | while read item
   do
     if [[ $(echo ${item} | jq -r -c .project_ref) == "default" || $(echo ${item} | jq -r -c .project_ref) == "null" ]]; then
-      echo "creation of ip-block '$(echo ${item} | jq -c -r .name)'"
+      log_message "${deployment_name}: creation of ip-block $(echo ${item} | jq -c -r .name)" "" "" ""
       json_data='
         {
           "display_name": "'$(echo ${item} | jq -c -r .name)'",
@@ -60,13 +61,13 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
               "${json_data}"
     fi
   done
-  echo "#"
+  log_message "#" "" "" ""
   #
   # create gw_connections
   #
   echo ${nsx_gw_connections} | jq -c -r .[] | while read item
   do
-    echo "creation of gateway-connection '$(echo ${item} | jq -c -r .name)'"
+    log_message "${deployment_name}: creation of gateway-connection $(echo ${item} | jq -c -r .name)" "" "" ""
     # retrieve tier0_path
     file_json_output="/tmp/vpc_t0_path.json"
     json_key="t0_path"
@@ -87,13 +88,13 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
           "PUT" \
           "${json_data}"
   done
-  echo "#"
+  log_message "#" "" "" ""
   #
   # Project creation
   #
   echo ${nsx_projects} | jq -c -r .[] | while read item
   do
-    echo "creation of project '$(echo ${item} | jq -c -r .name)'"
+    log_message "${deployment_name}: creation of project $(echo ${item} | jq -c -r .name)" "" "" ""
     # retrieve external ip_block_external_path
     file_json_output="/tmp/vpc_ip_block.json"
     json_key="ip_block_path"
@@ -162,13 +163,13 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
           "PATCH" \
           "${json_data}"
   done
-  echo "#"
+  log_message "#" "" "" ""
   #
   # associate gw_connections to Default Transit Gateway
   #
   echo ${nsx_transit_gateways} | jq -c -r .[] | while read item
   do
-    echo "associate gw-connection $(echo ${item} | jq -c -r .gw_connection_ref) with transit-gateways $(echo ${item} | jq -c -r .name) for project $(echo ${item} | jq -c -r .project_ref)"
+    log_message "${deployment_name}: associate gw-connection $(echo ${item} | jq -c -r .gw_connection_ref) with transit-gateways $(echo ${item} | jq -c -r .name) for project $(echo ${item} | jq -c -r .project_ref)" "" "" ""
     # retrieve gw_connection_path
     file_json_output="/tmp/gw_connection_path.json"
     json_key="gw_connection_path"
@@ -189,14 +190,14 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
           "PATCH" \
           "${json_data}"
   done
-  echo "#"
+  log_message "#" "" "" ""
   #
   # ip block creation only for project != default && .scope != "vpc" (only the inter vpc tgw cidr will be created as ip block under each project)
   #
   echo ${nsx_ip_blocks} | jq -c -r .[] | while read item
   do
     if [[ $(echo ${item} | jq -r -c .project_ref) != "default" && $(echo ${item} | jq -r -c .project_ref) != "null" && $(echo ${item} | jq -r -c .scope) == "vpc_tgw" ]]; then
-      echo "creation of ip-block '$(echo ${item} | jq -c -r .name)' for project $(echo ${item} | jq -c -r .project_ref)"
+      log_message "${deployment_name}: '$(echo ${item} | jq -c -r .name)' for project $(echo ${item} | jq -c -r .project_ref)" "" "" ""
       # retrieve project id
       file_json_output="/tmp/vpc_project.json"
       json_key="project_id"
@@ -219,13 +220,13 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
               "${json_data}"
     fi
   done
-  echo "#"
+  log_message "#" "" "" ""
   #
   # vpc_connectivity_profiles creation
   #
   echo ${nsx_vpc_connectivity_profiles} | jq -c -r .[] | while read item
   do
-    echo "creation of vpc-connectivity-profile '$(echo ${item} | jq -c -r .name)' for project $(echo ${item} | jq -c -r .project_ref)"
+    log_message "${deployment_name}: creation of vpc-connectivity-profile $(echo ${item} | jq -c -r .name) for project $(echo ${item} | jq -c -r .project_ref)" "" "" ""
     # retrieve external_ip_block_refs_paths
     external_ip_block_refs_paths="[]"
     for index_external_ip_block in $(seq 0 $(($(echo ${item} | jq '.external_ip_block_refs | length') - 1)))
@@ -297,13 +298,13 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
           "PUT" \
           "${json_data}"
   done
-  echo "#"
+  log_message "#" "" "" ""
   #
   # vpc_service_profiles creation
   #
   echo ${nsx_vpc_service_profiles} | jq -c -r .[] | while read item
   do
-    echo "creation of vpc-service-profile '$(echo ${item} | jq -c -r .name)' for project $(echo ${item} | jq -c -r .project_ref)"
+    log_message "${deployment_name}: creation of vpc-service-profile $(echo ${item} | jq -c -r .name) for project $(echo ${item} | jq -c -r .project_ref)" "" "" ""
     json_data='
         {
           "display_name": "'$(echo ${item} | jq -c -r .name)'",
@@ -330,13 +331,13 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
           "PUT" \
           "${json_data}"
   done
-  echo "#"
+  log_message "#" "" "" ""
   #
   # vpc creation
   #
   echo ${nsx_vpcs} | jq -c -r .[] | while read item
   do
-    echo "creation of vpc '$(echo ${item} | jq -c -r .name)' for project $(echo ${item} | jq -c -r .project_ref)"
+    log_message "${deployment_name}: creation of vpc $(echo ${item} | jq -c -r .name) for project $(echo ${item} | jq -c -r .project_ref)" "" "" ""
     private_ips="[]"
     for index_private_ips_refs in $(seq 0 $(($(echo ${item} | jq '.private_ips_refs | length') - 1)))
     do
@@ -385,9 +386,10 @@ if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_abo
           "PUT" \
           "${json_data}"
   done
-  echo "#"
+  log_message "#" "" "" ""
   #
   #
   #
-  if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': NSX VPC configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  log_message "${deployment_name}: NSX Project/VPC configured" "" "${slack_webhook}" "${google_webhook}"
 fi
+touch ${resultFile}
