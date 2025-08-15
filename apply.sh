@@ -2,6 +2,9 @@
 #
 source /nested-vsphere/bash/ip.sh
 source /nested-vsphere/bash/functions.sh
+source /nested-vsphere/bash/log_message.sh
+source /nested-vsphere/bash/vcenter/test_remote_script.sh
+
 #
 rm -f /root/govc.error
 jsonFile_kube="${1}"
@@ -17,6 +20,7 @@ deployment_name=$(jq -c -r .metadata.name $jsonFile_kube)
 if [[ ${operation} == "apply" || ${operation} == "destroy" ]] ; then log_file="/nested-vsphere/log/${deployment_name}_${operation}.stdout" ; fi
 if [[ ${operation} != "apply" && ${operation} != "destroy" ]] ; then echo "ERROR: Unsupported operation" ; exit 255 ; fi
 jsonFile="/root/${deployment_name}_${operation}.json"
+jsonFile_remote="/home/ubuntu/json/${deployment_name}_${operation}.json"
 jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} > ${jsonFile}
 #
 # source the variables
@@ -288,21 +292,21 @@ if [[ ${operation} == "apply" ]] ; then
       #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
       if [[ $? -eq 0 ]]; then
-        for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
-        do
-          ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
-          name_esxi="${esxi_basename}${esxi}"
-          sed -e "s/\${ip_esxi}/${ip_esxi}/" \
-              -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
-              -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
-              -e "s/\${esxi}/${esxi}/" \
-              -e "s/\${deployment_name}/${deployment_name}/" \
-              -e "s/\${cluster_basename}/${cluster_basename}/" \
-              -e "s/\${name_esxi}/${name_esxi}/" \
-              -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/vsphere/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
-          chmod u+x /root/esxi_customization-$esxi.sh
-          scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
-        done
+#        for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
+#        do
+#          ip_esxi=$(echo ${ips_esxi} | jq -r .[$(expr ${esxi} - 1)])
+#          name_esxi="${esxi_basename}${esxi}"
+#          sed -e "s/\${ip_esxi}/${ip_esxi}/" \
+#              -e "s@\${SLACK_WEBHOOK_URL}@${SLACK_WEBHOOK_URL}@" \
+#              -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
+#              -e "s/\${esxi}/${esxi}/" \
+#              -e "s/\${deployment_name}/${deployment_name}/" \
+#              -e "s/\${cluster_basename}/${cluster_basename}/" \
+#              -e "s/\${name_esxi}/${name_esxi}/" \
+#              -e "s/\${ESXI_PASSWORD}/${GENERIC_PASSWORD}/" /nested-vsphere/templates/vsphere/esxi_customization.sh.template | tee /root/esxi_customization-$esxi.sh > /dev/null
+#          chmod u+x /root/esxi_customization-$esxi.sh
+#          scp -o StrictHostKeyChecking=no /root/esxi_customization-$esxi.sh ubuntu@${ip_gw}:/home/ubuntu/esxi/esxi_customization-$esxi.sh
+#        done
         echo $folders_to_copy | jq -c -r .[] | while read folder
         do
           scp -o StrictHostKeyChecking=no -r /nested-vsphere/${folder} ubuntu@${ip_gw}:/home/ubuntu
@@ -352,6 +356,7 @@ if [[ ${operation} == "apply" ]] ; then
   ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${iso_vcenter_url}\" \"/home/ubuntu/bin/$(basename ${iso_vcenter_url})\" \"${deployment_name}, VCSA ISO\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   #
   # affinity rule
+  #
   if [[ $(jq -c -r .spec.vsphere_underlay.affinity $jsonFile) == "true" ]] ; then
     echo '------------------------------------------------------------' >> ${log_file} 2>&1
     echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
@@ -360,19 +365,26 @@ if [[ ${operation} == "apply" ]] ; then
     echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   fi
   #
-  echo '------------------------------------------------------------' >> ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-  echo "ESXI reachability check and customization (SSD) - This should take 2 minutes per nested ESXi" >> ${log_file} 2>&1
-  for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
-  do
-    name_esxi="${esxi_basename}${esxi}"
-    echo "running the following command from the gw: /home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file}
-    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-    govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
-    rm -fr /root/$(basename ${iso_esxi_url})
-  done
-  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+  script_file="/home/ubuntu/vcenter/esxi_customization.sh"
+  log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
+  test_remote_script "${ip_gw}" "${script_file}"
+#
+#
+#  echo '------------------------------------------------------------' >> ${log_file} 2>&1
+#  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+#  echo "ESXI reachability check and customization (SSD) - This should take 2 minutes per nested ESXi" >> ${log_file} 2>&1
+#  for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
+#  do
+#    name_esxi="${esxi_basename}${esxi}"
+#    echo "running the following command from the gw: /home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file} 2>&1
+#    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file}
+#    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#    govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
+#    rm -fr /root/$(basename ${iso_esxi_url})
+#  done
+#  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
   #
   #
@@ -393,17 +405,27 @@ if [[ ${operation} == "apply" ]] ; then
     # Start downloading ACT remotely
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "/home/ubuntu/bash/download_file_from_url_to_location.sh \"${act_ova_url}\" \"/home/ubuntu/bin/$(basename ${act_ova_url})\" \"${deployment_name}, ACT OVA\" \"${SLACK_WEBHOOK_URL}\"" > /dev/null 2>&1 &
   fi
+  #
   # vCenter Deployment and Config.
-  log_file="/nested-vsphere/log/${deployment_name}_vcsa_deploy.stdout"
+  #
   script_file="/home/ubuntu/vcenter/vcsa.sh"
-  echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
-  if [ $? -ne 0 ] ; then
-    echo "ERROR: vCenter Deployment or Configuration failed" >> ${vcsa_deploy_log_file} 2>&1
-    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ERROR: vCenter Deployment or Configuration failed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
-    # exit
-  fi
+  log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
+  ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
+  test_remote_script "${ip_gw}" "${script_file}"
+#
+#  log_file="/nested-vsphere/log/${deployment_name}_vcsa_deploy.stdout"
+#  script_file="/home/ubuntu/vcenter/vcsa.sh"
+#  echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+#  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+#  if [ $? -ne 0 ] ; then
+#    echo "ERROR: vCenter Deployment or Configuration failed" >> ${vcsa_deploy_log_file} 2>&1
+#    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ERROR: vCenter Deployment or Configuration failed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#    # exit
+#  fi
+  #
   # Transfer of vcsa_about_json_file from the gw to the pod
+  #
   scp -o StrictHostKeyChecking=no ubuntu@${ip_gw}:${vcsa_about_json_file} /root/${deployment_name}_$(basename ${vcsa_about_json_file})
   #
   # Start downloading VRA remotely if vsphere 8

@@ -1,9 +1,11 @@
 #!/bin/bash
 #
 SLACK_WEBHOOK_URL=$(jq -c -r '.spec.slack_webhook' $jsonFile)
+slack_webhook=$(jq -c -r '.spec.slack_webhook' $jsonFile)
+google_webhook=$(jq -c -r '.spec.google_webhook' $jsonFile)
 SLACK_WEBHOOK_URL_AVI=$(jq -c -r '.spec.avi.slack_webhook' $jsonFile)
-deployment_name=$(jq -c -r .metadata.name $jsonFile)
-GENERIC_PASSWORD=$(jq -c -r .spec.generic_password $jsonFile)
+deployment_name=$(jq -c -r '.metadata.name' $jsonFile)
+GENERIC_PASSWORD=$(jq -c -r '.spec.generic_password' $jsonFile)
 AVI_OLD_PASSWORD=$(jq -c -r '.spec.avi.avi_old_password' $jsonFile)
 DOCKER_REGISTRY_USERNAME=$(jq -c -r '.spec.docker_registry.username' $jsonFile)
 DOCKER_REGISTRY_PASSWORD=$(jq -c -r '.spec.docker_registry.token' $jsonFile)
