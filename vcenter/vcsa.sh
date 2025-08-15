@@ -6,8 +6,8 @@ rm -f ${resultFile}
 source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/functions.sh
 source /home/ubuntu/bash/variables.sh
-log_message "------------------------------------------------------------" "" "" ""
-log_message "${deployment_name}': Creation of VCSA  - This should take about 45 minutes" "" "${slack_webhook}" "${google_webhook}"
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Creation of VCSA  - This should take about 45 minutes" "" "${slack_webhook}" "${google_webhook}"
 #download_file_from_url_to_location "${iso_vcenter_url}" "/home/ubuntu/bin/$(basename ${iso_vcenter_url})" "VCSA ISO"
 #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO VCSA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #echo "ISO VCSA downloaded"

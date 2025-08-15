@@ -48,7 +48,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "ERROR: unable to create folder ${folder}: it already exists" >> ${log_file} 2>&1
   else
     govc folder.create /${vsphere_dc}/vm/${folder} >> ${log_file} 2>&1
-    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vsphere external folder '${folder}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    log_message "${deployment_name}: vsphere external folder ${folder} created" "${log_file}" "${slack_webhook}" "${google_webhook}"
     echo "Ending timestamp folder: $(date)" >> ${log_file} 2>&1
   fi
   #
@@ -56,7 +56,7 @@ if [[ ${operation} == "apply" ]] ; then
   echo '------------------------------------------------------------' >> ${log_file} 2>&1
   echo "Starting timestamp gw: $(date)" >> ${log_file} 2>&1
   #download_file_from_url_to_location "${ubuntu_ova_url}" "/root/$(basename ${ubuntu_ova_url})" "Ubuntu OVA"
-  #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  #log_message "${deployment_name}:Ubuntu OVA downloaded"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
   #
   sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/html/socks.html.template | tee /nested-vsphere/html/socks.html > /dev/null
   sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/html/vault.html.template | tee /nested-vsphere/html/vault.html.tmp > /dev/null
@@ -186,7 +186,7 @@ if [[ ${operation} == "apply" ]] ; then
     echo "${contents}" | tee /etc/hosts > /dev/null
     contents="${ip_gw} gw"
     echo "${contents}" | tee -a /etc/hosts > /dev/null
-    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    log_message "${deployment_name}: external-gw ${gw_name} VM created" "${log_file}" "${slack_webhook}" "${google_webhook}"
     echo "Ending timestamp gw: $(date)" >> ${log_file} 2>&1
   fi
   names="${gw_name}"
@@ -254,7 +254,7 @@ if [[ ${operation} == "apply" ]] ; then
       xorrisofs -relaxed-filenames -J -R -o "${iso_location}-${esxi}.iso" -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efiboot.img -no-emul-boot ${iso_build_location}
       echo "Uploading new ISO for ESXi ${esxi} to datastore" >> ${log_file} 2>&1
       govc datastore.upload --ds=$(jq -c -r .spec.vsphere_underlay.datastore $jsonFile) --dc=$(jq -c -r .spec.vsphere_underlay.datacenter $jsonFile) "${iso_location}-${esxi}.iso" ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
-      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ISO ESXi '${esxi}' uploaded "}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      log_message "${deployment_name}: ISO ESXi ${esxi} uploaded" "${log_file}" "${slack_webhook}" "${google_webhook}"
       names="${names} ${name_esxi}"
       govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}" > /dev/null
       token=$(/bin/bash /nested-vsphere/vcenter/create_vcenter_api_session.sh "${GOVC_USERNAME}" "" "${GOVC_PASSWORD}" "$(basename ${GOVC_URL})")
@@ -275,7 +275,7 @@ if [[ ${operation} == "apply" ]] ; then
       net=$(jq -c -r .spec.esxi.nics[1] $jsonFile)
       govc vm.network.add -vm "${folder}/${name_esxi}" -net ${net} -net.adapter vmxnet3 > /dev/null
       govc vm.power -on=true "${folder}/${name_esxi}" > /dev/null
-      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${esxi}' created"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      log_message "${deployment_name}: nested ESXi '${esxi}' created" "${log_file}" "${slack_webhook}" "${google_webhook}"
     fi
   done
   echo "Ending timestamp esxi: $(date)" >> ${log_file} 2>&1
@@ -289,7 +289,7 @@ if [[ ${operation} == "apply" ]] ; then
     ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" -q "exit" >/dev/null 2>&1
     if [[ $? -eq 0 ]]; then
       echo "Gw ${gw_name} is reachable." >> ${log_file} 2>&1
-      #if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      #log_message "${deployment_name}:external-gw '${gw_name}' VM reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
       ssh -o StrictHostKeyChecking=no "ubuntu@${ip_gw}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
       if [[ $? -eq 0 ]]; then
 #        for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
@@ -336,7 +336,7 @@ if [[ ${operation} == "apply" ]] ; then
         fi
         #
         echo "Gw ${gw_name} is ready." >> ${log_file} 2>&1
-        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': external-gw '${gw_name}' VM reachable and configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+        log_message "${deployment_name}: external-gw ${gw_name} VM reachable and configured" "${log_file}" "${slack_webhook}" "${google_webhook}"
         break
       else
         echo "Gw ${gw_name}: cloud init is not finished." >> ${log_file} 2>&1
@@ -380,7 +380,7 @@ if [[ ${operation} == "apply" ]] ; then
 #    name_esxi="${esxi_basename}${esxi}"
 #    echo "running the following command from the gw: /home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file} 2>&1
 #    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/esxi/esxi_customization-$esxi.sh" >> ${log_file}
-#    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#    log_message "${deployment_name}:nested ESXi '${name_esxi}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #    govc datastore.rm ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
 #    rm -fr /root/$(basename ${iso_esxi_url})
 #  done
@@ -420,7 +420,7 @@ if [[ ${operation} == "apply" ]] ; then
 #  ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
 #  if [ $? -ne 0 ] ; then
 #    echo "ERROR: vCenter Deployment or Configuration failed" >> ${vcsa_deploy_log_file} 2>&1
-#    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': ERROR: vCenter Deployment or Configuration failed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+#    log_message "${deployment_name}:ERROR: vCenter Deployment or Configuration failed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
 #    # exit
 #  fi
   #
@@ -435,30 +435,36 @@ if [[ ${operation} == "apply" ]] ; then
     fi
   fi
   #
+  # NSX use case
   #
-  # NSX creation
   wait
   if [[ ${kind} == "vsphere-nsx"* ]]; then
-    log_file="/nested-vsphere/log/${deployment_name}_nsx_deploy.stdout"
+    # NSX deployment
     script_file="/home/ubuntu/nsx/deploy_nsx.sh"
-    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
-  fi
-  # NSX config.
-  if [[ ${kind} == "vsphere-nsx"* ]]; then
+    log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
+    ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
+    test_remote_script "${ip_gw}" "${script_file}"
+#    log_file="/nested-vsphere/log/${deployment_name}_nsx_deploy.stdout"
+#    script_file="/home/ubuntu/nsx/deploy_nsx.sh"
+#    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+#    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
+    # NSX configuration
     log_file="/nested-vsphere/log/${deployment_name}_nsx_config.stdout"
     script_file="/home/ubuntu/nsx/configure_nsx.sh"
     echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
     ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
+    # NSX VPC config.
+    if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
+      log_file="/nested-vsphere/log/${deployment_name}_nsx_vpc_config.stdout"
+      script_file="/home/ubuntu/nsx/configure_nsx_vpc.sh"
+      echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
+      ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
+    fi
   fi
-  # NSX VPC config.
-  if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
-    log_file="/nested-vsphere/log/${deployment_name}_nsx_vpc_config.stdout"
-    script_file="/home/ubuntu/nsx/configure_nsx_vpc.sh"
-    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
-    ssh -o StrictHostKeyChecking=no ubuntu@${ip_gw} "${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} &
-  fi
+  #
   # Avi ctrl creation
+  #
   if [[ ${kind} == *"-avi" ]]; then
     log_file="/nested-vsphere/log/${deployment_name}_avi_deploy.stdout"
     script_file="/home/ubuntu/avi/deploy_avi.sh"
@@ -553,7 +559,7 @@ if [[ ${operation} == "destroy" ]] ; then
     if [[ $(govc find -json vm | jq '[.[] | select(. == "vm/'${folder}'/'${name_esxi}'")] | length') -eq 1 ]]; then
       govc vm.power -off=true "${folder}/${name_esxi}"
       govc vm.destroy "${folder}/${name_esxi}"
-      if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': nested ESXi '${name_esxi}' destroyed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+      log_message "${deployment_name}: nested ESXi '${name_esxi}' destroyed" "${log_file}" "${slack_webhook}" "${google_webhook}"
     else
       echo "ERROR: unable to delete ESXi ${name_esxi}: it is already gone" >> ${log_file} 2>&1
     fi
@@ -567,7 +573,7 @@ if [[ ${operation} == "destroy" ]] ; then
   if [[ ${list_gw} != "null" ]] ; then
     govc vm.power -off=true "${gw_name}" >> ${log_file} 2>&1
     govc vm.destroy "${gw_name}" >> ${log_file} 2>&1
-    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Gw destroyed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    log_message "${deployment_name}: Gw destroyed" "${log_file}" "${slack_webhook}" "${google_webhook}"
   else
     echo "ERROR: unable to delete VM ${gw_name}: it does not exists" >> ${log_file} 2>&1
   fi
@@ -588,7 +594,7 @@ if [[ ${operation} == "destroy" ]] ; then
   echo "Deletion of a folder on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
     govc object.destroy /${vsphere_dc}/vm/${folder} >> ${log_file} 2>&1
-    if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vsphere external folder '${folder}' removed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+    log_message "${deployment_name}: vsphere external folder ${folder} removed" "${log_file}" "${slack_webhook}" "${google_webhook}"
   else
     echo "ERROR: unable to delete folder ${folder}: it does not exist" >> ${log_file} 2>&1
   fi
