@@ -27,9 +27,10 @@ jq -s '.[0] * .[1]' ${jsonFile_kube} ${jsonFile_local} > ${jsonFile}
 source /nested-vsphere/bash/variables.sh
 #
 rm -f ${log_file}
+touch ${log_file}
 #
 #
-log_message "${deployment_name}: Starting timestamp: $(date)" "" "" ""
+log_message "${deployment_name}: -----------------------------APPLY-------------------------------" "${log_file}" "" ""
 source /nested-vsphere/bash/govc/load_govc_external.sh
 govc about
 if [ $? -ne 0 ] ; then touch /root/govc.error ; exit ; fi
@@ -352,7 +353,7 @@ if [[ ${operation} == "apply" ]] ; then
   log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
   ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
   ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
-  test_remote_script "${ip_gw}" "${script_file}"
+  test_remote_script "${ip_gw}" "${script_file}" >> ${log_file} 2>&1
   wait
   #
   # Start downloading OVA(s) remotely
@@ -382,7 +383,7 @@ if [[ ${operation} == "apply" ]] ; then
   log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
   ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
   ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
-  test_remote_script "${ip_gw}" "${script_file}"
+  test_remote_script "${ip_gw}" "${script_file}" >> ${log_file} 2>&1
 #
 #  log_file="/nested-vsphere/log/${deployment_name}_vcsa_deploy.stdout"
 #  script_file="/home/ubuntu/vcenter/vcsa.sh"
@@ -415,7 +416,7 @@ if [[ ${operation} == "apply" ]] ; then
     log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
-    test_remote_script "${ip_gw}" "${script_file}"
+    test_remote_script "${ip_gw}" "${script_file}" >> ${log_file} 2>&1
 #    log_file="/nested-vsphere/log/${deployment_name}_nsx_deploy.stdout"
 #    script_file="/home/ubuntu/nsx/deploy_nsx.sh"
 #    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
@@ -425,13 +426,13 @@ if [[ ${operation} == "apply" ]] ; then
     log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
-    test_remote_script "${ip_gw}" "${script_file}"
+    test_remote_script "${ip_gw}" "${script_file}" >> ${log_file} 2>&1
     # NSX VPC config.
     script_file="/home/ubuntu/nsx/configure_nsx_vpc.sh"
     log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
-    test_remote_script "${ip_gw}" "${script_file}"
+    test_remote_script "${ip_gw}" "${script_file}" >> ${log_file} 2>&1
 #    if [[ ${kind} == "vsphere-nsx-vpc-avi" ]]; then
 #      log_file="/nested-vsphere/log/${deployment_name}_nsx_vpc_config.stdout"
 #      script_file="/home/ubuntu/nsx/configure_nsx_vpc.sh"
@@ -447,7 +448,7 @@ if [[ ${operation} == "apply" ]] ; then
     log_message "running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "rm -f ${script_file%.*}.done"
     ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "${script_file} ${jsonFile_remote} ${script_file%.*}.done" >> ${log_file} 2>&1 &
-    test_remote_script "${ip_gw}" "${script_file}"
+    test_remote_script "${ip_gw}" "${script_file}" >> ${log_file} 2>&1
 #    log_file="/nested-vsphere/log/${deployment_name}_avi_deploy.stdout"
 #    script_file="/home/ubuntu/avi/deploy_avi.sh"
 #    echo "running the following command from the gw: ${script_file} /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file} 2>&1
@@ -532,53 +533,37 @@ fi
 #
 #
 if [[ ${operation} == "destroy" ]] ; then
-  echo '------------------------------------------------------------' >> ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
+  log_message "${deployment_name}: -----------------------------DESTROY-------------------------------" "${log_file}" "" ""
   for esxi in $(seq 1 $(echo ${ips_esxi} | jq -c -r '. | length'))
   do
     name_esxi="${deployment_name}-${esxi_basename}${esxi}"
-    echo "Deletion of a nested ESXi ${name_esxi} on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
+    log_message "${deployment_name}: Deletion of a nested ESXi ${name_esxi} on the underlay infrastructure - This should take less than a minute" "${log_file}" "" ""
     if [[ $(govc find -json vm | jq '[.[] | select(. == "vm/'${folder}'/'${name_esxi}'")] | length') -eq 1 ]]; then
       govc vm.power -off=true "${folder}/${name_esxi}"
       govc vm.destroy "${folder}/${name_esxi}"
       log_message "${deployment_name}: nested ESXi '${name_esxi}' destroyed" "${log_file}" "${slack_webhook}" "${google_webhook}"
     else
-      echo "ERROR: unable to delete ESXi ${name_esxi}: it is already gone" >> ${log_file} 2>&1
+      log_message "${deployment_name}: ERROR: unable to delete ESXi ${name_esxi}: it is already gone" "${log_file}" "" ""
     fi
   done
-  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
   #
-  #
-  echo '------------------------------------------------------------' >> ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-  echo "Deletion of a VM on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
   if [[ ${list_gw} != "null" ]] ; then
     govc vm.power -off=true "${gw_name}" >> ${log_file} 2>&1
     govc vm.destroy "${gw_name}" >> ${log_file} 2>&1
     log_message "${deployment_name}: Gw destroyed" "${log_file}" "${slack_webhook}" "${google_webhook}"
   else
-    echo "ERROR: unable to delete VM ${gw_name}: it does not exists" >> ${log_file} 2>&1
+    log_message "${deployment_name}: ERROR: unable to delete VM ${gw_name}: it does not exists" "${log_file}" "" ""
   fi
-  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
-  #
   #
   if [[ $(jq -c -r .spec.vsphere_underlay.affinity $jsonFile) == "true" ]] ; then
-    echo '------------------------------------------------------------' >> ${log_file} 2>&1
-    echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-    echo "Deletion of a affinity rule on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
     govc cluster.rule.remove -name "${deployment_name}-affinity-rule"
-    echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
+    log_message "${deployment_name}: Affinity rule on the underlay infrastructure destroyed" "${log_file}" "${slack_webhook}" "${google_webhook}"
   fi
   #
-  #
-  echo '------------------------------------------------------------' >> ${log_file} 2>&1
-  echo "Starting timestamp: $(date)" >> ${log_file} 2>&1
-  echo "Deletion of a folder on the underlay infrastructure - This should take less than a minute" >> ${log_file} 2>&1
   if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder}'")' >/dev/null ) ; then
     govc object.destroy /${vsphere_dc}/vm/${folder} >> ${log_file} 2>&1
     log_message "${deployment_name}: vsphere external folder ${folder} removed" "${log_file}" "${slack_webhook}" "${google_webhook}"
   else
-    echo "ERROR: unable to delete folder ${folder}: it does not exist" >> ${log_file} 2>&1
+    log_message "${deployment_name}: ERROR: unable to delete folder ${folder}: it does not exist" "${log_file}" "" ""
   fi
-  echo "Ending timestamp: $(date)" >> ${log_file} 2>&1
 fi
