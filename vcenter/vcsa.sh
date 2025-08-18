@@ -276,6 +276,6 @@ sed -e "s/\${vsphere_username}/${vsphere_nested_username}/" \
 chmod u+x /home/ubuntu/vcenter/silence_vsan_expect_script.sh
 /home/ubuntu/vcenter/silence_vsan_expect_script.sh
 #
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': vCenter configured"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+log_message "${deployment_name}:  vCenter configured" "" "${slack_webhook}" "${google_webhook}"
 touch ${resultFile}
 exit

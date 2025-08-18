@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-jsonFile=${1}
+jsonFile="${1}"
 resultFile="${2}"
 rm -f ${resultFile}
 source /home/ubuntu/bash/log_message.sh
@@ -37,7 +37,7 @@ fi
 #
 list_vm=$(govc find -json vm -name "${nsx_manager_name}")
 if [[ ${list_vm} != "null" ]] ; then
-  log_message "${deployment_name}:ERROR: unable to create VM ${nsx_manager_name}: it already exists" "" "" ""
+  log_message "${deployment_name}: ERROR: unable to create VM ${nsx_manager_name}: it already exists" "" "" ""
 else
   #
   # NSX options

@@ -37,5 +37,6 @@ do
     log_message "${deployment_name}: nested ESXi ${name_esxi} disks ${item} marked as SSD" "" "${slack_webhook}" "${google_webhook}"
   done
 done
+log_message "${deployment_name}: ending ESX customization" "" "${slack_webhook}" "${google_webhook}"
 touch ${resultFile}
 exit
