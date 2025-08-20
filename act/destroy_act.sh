@@ -30,9 +30,9 @@ fi
 #
 list_folder=$(govc find -json . -type f)
 echo "Deletion of a folder for act"
-if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${act_folder}'")' >/dev/null ) ; then
-  govc object.destroy /${dc}/vm/${act_folder} >> /dev/null 2>&1
+if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_act}'")' >/dev/null ) ; then
+  govc object.destroy /${dc}/vm/${folder_act} >> /dev/null 2>&1
   echo "$(date): Folder deleted"
 else
-  echo "$(date): ERROR: unable to delete folder ${act_folder}: it does not exist"
+  echo "$(date): ERROR: unable to delete folder ${folder_act}: it does not exist"
 fi

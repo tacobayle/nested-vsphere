@@ -1,10 +1,13 @@
 #!/bin/bash
 #
-log_prefix="ACT-Configure"
-echo "--- $(date): ${log_prefix} start ---"
+jsonFile="${1}"
+resultFile="${2}"
+rm -f ${resultFile}
 source /home/ubuntu/bash/functions.sh
-jsonFile=${1}
+source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/variables.sh
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Configure ACT" "" "${slack_webhook}" "${google_webhook}"
 #
 # Configure ACT account
 #
@@ -104,7 +107,5 @@ function copyToClipboard(boxIndex) {
 </html>
 EOT
 sudo cp /home/ubuntu/act/act.html /var/www/html/
-#
-#
-#
-echo "--- $(date): ${log_prefix} end ---"
+touch ${resultFile}
+exit

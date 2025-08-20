@@ -431,7 +431,7 @@ fi
 #
 # ACT variables
 #
-act_folder=$(jq -c -r '.act.folder' $jsonFile)
+folder_act=$(jq -c -r '.act.folder' $jsonFile)
 act_last_octet=$(jq -c -r '.act.last_octet' $jsonFile)
 ip_act="${cidr_mgmt_three_octets}.${act_last_octet}"
 act_name=$(jq -c -r '.act.name' $jsonFile)
@@ -439,7 +439,7 @@ act_ova_url=$(jq -c -r '.spec.act.ova_url' $jsonFile)
 #
 # VRA variables
 #
-vra_folder=$(jq -c -r '.vra.folder' $jsonFile)
+folder_vra=$(jq -c -r '.vra.folder' $jsonFile)
 vra_last_octet=$(jq -c -r '.vra.last_octet' $jsonFile)
 ip_vra="${cidr_mgmt_three_octets}.${vra_last_octet}"
 vra_name=$(jq -c -r '.vra.name' $jsonFile)

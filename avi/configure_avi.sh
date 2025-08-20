@@ -1,7 +1,13 @@
 #!/bin/bash
 #
-log_prefix="Avi-Configure"
-echo "--- $(date): ${log_prefix} start ---"
+jsonFile="${1}"
+resultFile="${2}"
+rm -f ${resultFile}
+source /home/ubuntu/bash/functions.sh
+source /home/ubuntu/bash/log_message.sh
+source /home/ubuntu/bash/variables.sh
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Avi controller configuration - This should take about 40 minutes" "" "${slack_webhook}" "${google_webhook}"
 #
 source /home/ubuntu/bash/functions.sh
 jsonFile=${1}
@@ -25,16 +31,15 @@ done
 count=1
 until $(curl --output /dev/null --silent --head -k https://${ip_avi})
 do
-  echo "  +++ Attempt ${count}: Waiting for Avi ctrl at https://${ip_avi} to be reachable..."
+  log_message "  +++ Attempt ${count}: Waiting for Avi ctrl at https://${ip_avi} to be reachable..." "" "" ""
   sleep 10
   count=$((count+1))
     if [[ "${count}" -eq 60 ]]; then
-      echo "  +++ ERROR: Unable to connect to Avi ctrl at https://${ip_avi}"
+      log_message "  +++ ERROR: Unable to connect to Avi ctrl at https://${ip_avi}" "" "${slack_webhook}" "${google_webhook}"
       exit
     fi
 done
-echo "Avi ctrl reachable at https://${ip_avi}"
-if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': Avi ctrl reachable at https://'${ip_avi}'"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+log_message "Avi ctrl reachable at https://${ip_avi}" "" "" ""
 #
 # templating python control script
 #
@@ -171,4 +176,6 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   /home/ubuntu/lbaas/cleanup.sh
 fi
 #
-echo "--- $(date): ${log_prefix} end ---"
+log_message "${deployment_name}: Avi ctrl configured" "" "${slack_webhook}" "${google_webhook}"
+touch ${resultFile}
+exit

@@ -1,9 +1,13 @@
 #!/bin/bash
 #
+jsonFile="${1}"
+resultFile="${2}"
+rm -f ${resultFile}
 source /home/ubuntu/bash/functions.sh
-jsonFile=${1}
+source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/variables.sh
-output_file="/home/ubuntu/tanzu/output.txt"
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Deployment of Supervisor cluster  - This should take about 60 minutes" "" "${slack_webhook}" "${google_webhook}"
 #
 #
 #
@@ -78,8 +82,8 @@ if [[ ${configure_supervisor} == "true" ]] ; then
   #
   # place holder to detect the version of vsphere
   #
-  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "8" ]] ; then echo "this is vSphere8" ; fi
-  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]] ; then echo "this is vSphere9" ; fi
+  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "8" ]] ; then log_message "${deployment_name}: this is vSphere8" "" "" "" ; fi
+  if [[ $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]] ; then log_message "${deployment_name}: this is vSphere9" "" "" "" ; fi
   #
   # vsphere-avi use case
   #
@@ -98,7 +102,7 @@ if [[ ${configure_supervisor} == "true" ]] ; then
     #
     # Retrieve Avi Cert Details
     #
-    echo "   +++ getting NSX ALB certificate..."
+    log_message "${deployment_name}:   +++ getting NSX ALB certificate..." "" "" ""
     openssl s_client -showcerts -connect ${ip_avi}:443  </dev/null 2>/dev/null|sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > /home/ubuntu/tanzu/avi-ca.cert
     if [ ! -s /home/ubuntu/tanzu/avi-ca.cert ] ; then exit ; fi
     avi_cert=$(jq -sR . /home/ubuntu/tanzu/avi-ca.cert)
@@ -272,7 +276,7 @@ if [[ ${configure_supervisor} == "true" ]] ; then
       },
       "default_kubernetes_service_content_library":"'${content_library_id}'"
     }'
-    echo "${json_data}"
+    log_message "${deployment_name}: ${json_data}" "" "" ""
     vcenter_api 2 2 "POST" $token "${json_data}" $api_host "api/vcenter/namespace-management/clusters/${cluster_id}?action=enable"
   fi
   #
@@ -318,12 +322,8 @@ if [[ ${configure_supervisor} == "true" ]] ; then
   # Wait for supervisor cluster to be running
   #
   /bin/bash /home/ubuntu/vcenter/wait_for_supervisor_cluster.sh "${api_host}" "${ssoDomain}" "${GENERIC_PASSWORD}"
-  echo "" | tee -a ${output_file} >/dev/null 2>&1
-  echo "+++++ vSphere with Tanzu" | tee -a ${output_file} >/dev/null 2>&1
-  echo "Authenticate to the supervisor cluster from the external-gateway:" | tee -a ${output_file} >/dev/null 2>&1
-  echo "  > /bin/bash /home/ubuntu/tanzu/auth_supervisor.sh" | tee -a ${output_file} >/dev/null 2>&1
   #
-  echo "waiting 5 minutes after supervisor cluster creation..."
+  log_message "${deployment_name}: waiting 5 minutes after supervisor cluster creation..." "" "" ""
   sleep 300
   #
   # retrieve K8s Supervisor node IP
@@ -407,7 +407,7 @@ if [[ ${configure_supervisor} == "true" && ${configure_namespace} == "true" ]] ;
   #
   # tkc creation
   #
-  echo "waiting 2 minutes before tkc/ako templating/creation"
+  log_message "${deployment_name}: waiting 2 minutes before tkc/ako templating/creation" "" "" ""
   sleep 120
   cluster_count=1
   #
@@ -615,14 +615,14 @@ EOT
     if $(echo ${cluster} | jq -e '.ako_api_gateway' > /dev/null) ; then
       if [[ $(echo ${cluster} | jq -c -r .ako_api_gateway) == "true" ]]; then
         if [ ! -f "/home/ubuntu/templates/ako/values_api_gw.yml.$(echo ${cluster} | jq -c -r .ako_version).template" ]; then
-          echo "defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)"
+          log_message "${deployment_name}: defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)" "" "" ""
           ako_template_file_name=$(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)
         else
           ako_template_file_name="/home/ubuntu/templates/ako/values_api_gw.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
         fi
       else
         if [ ! -f "/home/ubuntu/templates/ako/values.yml.$(echo ${cluster} | jq -c -r .ako_version).template" ]; then
-          echo "defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)"
+          log_message "${deployment_name}: defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)" "" "" ""
           ako_template_file_name=$(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)
         else
           ako_template_file_name="/home/ubuntu/templates/ako/values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
@@ -630,7 +630,7 @@ EOT
       fi
     else
       if [ ! -f "/home/ubuntu/templates/ako/values.yml.$(echo ${cluster} | jq -c -r .ako_version).template" ]; then
-        echo "defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)"
+        log_message "${deployment_name}: defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)" "" "" ""
         ako_template_file_name=$(ls -v /home/ubuntu/templates/ako/values.yml.*.template | tail -1)
       else
         ako_template_file_name="/home/ubuntu/templates/ako/values.yml.$(echo ${cluster} | jq -c -r .ako_version).template"
@@ -683,3 +683,5 @@ EOT
   #
   sudo cp /home/ubuntu/tkc/tkgs-workload.html /var/www/html/
 fi
+touch ${resultFile}
+exit

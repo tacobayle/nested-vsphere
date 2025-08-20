@@ -1,8 +1,13 @@
 #!/bin/bash
 #
+jsonFile="${1}"
+resultFile="${2}"
+rm -f ${resultFile}
 source /home/ubuntu/bash/functions.sh
-jsonFile=${1}
+source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/variables.sh
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Deployment of OpenShift cluster  - This should take about 60 minutes" "" "${slack_webhook}" "${google_webhook}"
 #
 #
 #
@@ -38,7 +43,7 @@ if [[ ${openshift} != "null" ]]; then
       -e "s#\${REGISTRY_REDHAT_IO_EMAIL}#${REGISTRY_REDHAT_IO_EMAIL}#" /home/ubuntu/templates/openshift/install-config.yaml.template | tee "/home/ubuntu/openshift/install-config.yaml"
   cp /home/ubuntu/openshift/install-config.yaml /home/ubuntu/openshift/install-config.yaml.archive
   /home/ubuntu/openshift/openshift-install create cluster --dir /home/ubuntu/openshift --log-level info
-  echo "Updating /home/ubuntu/.profile"
+  log_message "${deployment_name}: Updating /home/ubuntu/.profile" "" "" ""
   contents_wo_KUBECONFIG=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
   echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null
   KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2 | grep /home/ubuntu/openshift/auth/kubeconfig)
@@ -123,7 +128,7 @@ if [[ ${openshift} != "null" ]]; then
   if [[ ! ( -v openshift_admin_password && -n "${openshift_admin_password}" && -v openshift_console_url && -n "${openshift_console_url}" ) ]]; then
     echo "openshift vars undefined: openshift_admin_password, openshift_console_url"
   else
-    curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': openshift is up - console url is https://'${openshift_console_url}'"}' ${SLACK_WEBHOOK_URL}
+    log_message "${deployment_name}: openshift is up - console url is https://'${openshift_console_url}'" "" "${slack_webhook}" "${google_webhook}"
     tee /home/ubuntu/openshift/openshift.html> /dev/null <<EOT
 <!DOCTYPE html>
 <html>
@@ -221,3 +226,5 @@ EOT
   fi
   sudo cp /home/ubuntu/openshift/openshift.html /var/www/html/
 fi
+touch ${resultFile}
+exit

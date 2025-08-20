@@ -1,9 +1,13 @@
 #!/bin/bash
 #
-echo "Starting timestamp: $(date)"
+jsonFile="${1}"
+resultFile="${2}"
+rm -f ${resultFile}
 source /home/ubuntu/bash/functions.sh
-jsonFile=${1}
+source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/variables.sh
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Deployment of ACT  - This should take about 20 minutes" "" "${slack_webhook}" "${google_webhook}"
 netmask_act=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.networks[] | select( .type == $arg).cidr' $jsonFile | cut -d"/" -f2) "   ++++++")
 #
 # GOVC check
@@ -11,7 +15,7 @@ netmask_act=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.netw
 load_govc_env_with_cluster "${cluster_basename}1"
 govc about
 if [ $? -ne 0 ] ; then
-  echo "ERROR: unable to connect to vCenter"
+  log_message "${deployment_name}: ERROR: unable to connect to vCenter" "" "${slack_webhook}" "${google_webhook}"
   exit
 fi
 #
@@ -19,19 +23,17 @@ fi
 #
 list_folder=$(govc find -json . -type f)
 echo "Creation of a folder for act"
-if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${act_folder}'")' >/dev/null ) ; then
-  echo "$(date): ERROR: unable to create folder ${act_folder}: it already exists"
+if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_act}'")' >/dev/null ) ; then
+  log_message "${deployment_name}: ERROR: unable to create folder ${folder_act}: it already exists" "" "" ""
 else
-  govc folder.create /${dc}/vm/${act_folder}
-  echo "$(date): Folder created"
+  govc folder.create /${dc}/vm/${folder_act}
 fi
 #
 # act creation
 #
 list_vm=$(govc find -json -type m -name "${act_name}")
 if [[ ${list_vm} != "null" ]] ; then
-  echo "$(date): ERROR: unable to create VM ${act_name}: it already exists"
-  echo "Ending timestamp: $(date)"
+  log_message "${deployment_name}: ERROR: unable to create VM ${act_name}: it already exists "" "" """
   exit
 else
   #
@@ -52,10 +54,9 @@ else
   #
   # act Creation
   #
-  govc import.ova --options="/home/ubuntu/json/options-${act_name}.json" -folder "${act_folder}" "/home/ubuntu/bin/$(basename ${act_ova_url})" > /dev/null
+  govc import.ova --options="/home/ubuntu/json/options-${act_name}.json" -folder "${folder_act}" "/home/ubuntu/bin/$(basename ${act_ova_url})" > /dev/null
   govc vm.power -on=true "${act_name}" > /dev/null
-  echo "$(date): act deployed"
-  if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': act deployed"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+  log_message "${deployment_name}: ACT VM deployed" "" "${slack_webhook}" "${google_webhook}"
 fi
-echo "Ending timestamp: $(date)"
+touch ${resultFile}
 exit

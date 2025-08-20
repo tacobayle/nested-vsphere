@@ -20,7 +20,7 @@ netmask_avi=$(ip_netmask_by_prefix $(jq -c -r --arg arg "MANAGEMENT" '.spec.netw
 load_govc_env_with_cluster "${cluster_basename}1"
 govc about
 if [ $? -ne 0 ] ; then
-  echo log_message "ERROR: unable to connect to vCenter" "" "" ""
+  log_message "${deployment_name}: ERROR: unable to connect to vCenter" "" "${slack_webhook}" "${google_webhook}"
   exit
 fi
 #
@@ -38,7 +38,8 @@ fi
 #
 list_vm=$(govc find -json -type m -name "${avi_ctrl_name}")
 if [[ ${list_vm} != "null" ]] ; then
-  log_message "${deployment_name}: ERROR: unable to create VM ${avi_ctrl_name}: it a "" "" ""lready exists"
+  log_message "${deployment_name}: ERROR: unable to create VM ${avi_ctrl_name}: it already exists" "" "" ""
+  exit
 else
   #
   # Avi options

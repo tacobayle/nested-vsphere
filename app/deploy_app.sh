@@ -1,8 +1,14 @@
 #!/bin/bash
 #
+#
+jsonFile="${1}"
+resultFile="${2}"
+rm -f ${resultFile}
 source /home/ubuntu/bash/functions.sh
-jsonFile=${1}
+source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/variables.sh
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Deployment of Apps  - This should take about 20 minutes" "" "${slack_webhook}" "${google_webhook}"
 #
 # Ubuntu download
 #
@@ -14,7 +20,7 @@ source /home/ubuntu/bash/variables.sh
 load_govc_env_with_cluster "${cluster_basename}1"
 govc about
 if [ $? -ne 0 ] ; then
-  echo "ERROR: unable to connect to vCenter"
+  log_message "${deployment_name}: ERROR: unable to connect to vCenter" "" "${slack_webhook}" "${google_webhook}"
   exit
 fi
 #
@@ -28,10 +34,9 @@ govc library.import ${content_library_name} "/home/ubuntu/bin/$(basename ${ubunt
 list_folder=$(govc find -json . -type f)
 echo "Creation of a folder for the Apps"
 if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${folder_app}'")' >/dev/null ) ; then
-  echo "ERROR: unable to create folder ${folder_app}: it already exists"
+  log_message "${deployment_name}: ERROR: unable to create folder ${folder_app}: it already exists" "" "" ""
 else
   govc folder.create /${dc}/vm/${folder_app}
-  echo "Ending timestamp: $(date)"
 fi
 #
 # App VMs creation first group // vsphere-avi use case)
@@ -57,13 +62,13 @@ if [[ ${ips_app} != "null" ]]; then
           -e "s/\${prefix}/${prefix_app}/" \
           -e "s/\${packages}/${app_apt_packages}/" \
           -e "s/\${default_gw}/${gw_app}/" \
-          -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/app/userdata_app.yaml.template | tee /home/ubuntu/app/userdata_app${index}.yaml
+          -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/app/userdata_app.yaml.template | tee /home/ubuntu/app/userdata_app${index}.yaml > /dev/null 2>&1
       #
       sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
           -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app${index}.yaml -w 0)@" \
           -e "s/\${password}/${GENERIC_PASSWORD}/" \
           -e "s@\${network_ref}@${network_ref_app}@" \
-          -e "s/\${vm_name}/${network_ref_app}-${app_basename}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-${index}.json"
+          -e "s/\${vm_name}/${network_ref_app}-${app_basename}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-${index}.json" > /dev/null 2>&1
       #
   #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
       govc library.deploy -options "/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
@@ -89,7 +94,7 @@ if [[ ${ips_app} != "null" ]]; then
                             }
                           ]
                         }"
-            echo "waiting for 60 seconds"
+            log_message "${deployment_name}: waiting for 60 seconds" "" "" ""
             sleep 60
             # retrieve the external_id of the first VM
             file_json_output="/home/ubuntu/nsx/vms.json"
@@ -133,13 +138,13 @@ if [[ ${ips_app_second} != "null" ]]; then
         -e "s/\${prefix}/${prefix_app}/" \
         -e "s/\${packages}/${app_apt_packages}/" \
         -e "s/\${default_gw}/${gw_app}/" \
-        -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/app/userdata_app_second.yaml.template | tee /home/ubuntu/app/userdata_app_second${index}.yaml
+        -e "s/\${forwarders_netplan}/${ip_gw}/" /home/ubuntu/templates/app/userdata_app_second.yaml.template | tee /home/ubuntu/app/userdata_app_second${index}.yaml > /dev/null 2>&1
     #
     sed -e "s#\${public_key}#$(cat /home/ubuntu/.ssh/id_rsa.pub)#" \
         -e "s@\${base64_userdata}@$(base64 /home/ubuntu/app/userdata_app_second${index}.yaml -w 0)@" \
         -e "s/\${password}/${GENERIC_PASSWORD}/" \
         -e "s@\${network_ref}@${network_ref_app}@" \
-        -e "s/\${vm_name}/${network_ref_app}-${app_basename_second}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-second-${index}.json"
+        -e "s/\${vm_name}/${network_ref_app}-${app_basename_second}${index}/" /home/ubuntu/templates/options-ubuntu.json.template | tee "/home/ubuntu/app/options-app-second-${index}.json" > /dev/null 2>&1
     #
 #    govc import.ova --options="/home/ubuntu/app/options-app-${index}.json" -folder "${folder_app}" "/home/ubuntu/bin/$(basename ${ubuntu_ova_url})"
     govc library.deploy -options "/home/ubuntu/app/options-app-second-${index}.json" -folder "${folder_app}" /ubuntu/$(basename ${ubuntu_ova_url} .ova)
@@ -307,23 +312,21 @@ if [[ ${ips_app} != "null" ]]; then
       # ssh check
       retry=60 ; pause=10 ; attempt=1
       while true ; do
-        echo "attempt $attempt to verify VM app ${ip_app} is ready"
+        log_message "${deployment_name}: attempt $attempt to verify VM app ${ip_app} is ready" "" "" ""
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q "exit" >/dev/null 2>&1
         if [[ $? -eq 0 ]]; then
-          echo "VM app ${ip_app} is reachable."
-          if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+          log_message "${deployment_name}: VM app ${ip_app} is reachable" "" "${slack_webhook}" "${google_webhook}"
           break
         else
-          echo "VM app ${ip_app} is not reachable."
+          log_message "${deployment_name}: VM app ${ip_app} is not reachable" "" "" ""
         fi
         ((attempt++))
         if [ $attempt -eq $retry ]; then
-          echo "VM app ${ip_app} is not reachable after $attempt attempt"
+          log_message "${deployment_name}: VM app ${ip_app} is not reachable after $attempt attempt" "" "${slack_webhook}" "${google_webhook}"
           break
         fi
         sleep $pause
       done
-      echo "Ending timestamp: $(date)"
     done
   done
 fi
@@ -337,22 +340,22 @@ if [[ ${ips_app_second} != "null" ]]; then
     # ssh check
     retry=60 ; pause=10 ; attempt=1
     while true ; do
-      echo "attempt $attempt to verify VM app ${ip_app} is ready"
+      log_message "${deployment_name}: attempt $attempt to verify VM app ${ip_app} is ready" "" "" ""
       ssh -o StrictHostKeyChecking=no "ubuntu@${ip_app}" -q "exit" >/dev/null 2>&1
       if [[ $? -eq 0 ]]; then
-        echo "VM app ${ip_app} is reachable."
-        if [ -z "${SLACK_WEBHOOK_URL}" ] ; then echo "ignoring slack update" ; else curl -X POST -H 'Content-type: application/json' --data '{"text":"'$(date "+%Y-%m-%d,%H:%M:%S")', '${deployment_name}': VM app '${ip_app}' reachable"}' ${SLACK_WEBHOOK_URL} >/dev/null 2>&1; fi
+        log_message "${deployment_name}: VM app ${ip_app} is reachable" "" "${slack_webhook}" "${google_webhook}"
         break
       else
-        echo "VM app ${ip_app} is not reachable."
+        log_message "${deployment_name}: VM app ${ip_app} is not reachable" "" "" ""
       fi
       ((attempt++))
       if [ $attempt -eq $retry ]; then
-        echo "VM app ${ip_app} is not reachable after $attempt attempt"
+        log_message "${deployment_name}: VM app ${ip_app} is not reachable after $attempt attempt" "" "${slack_webhook}" "${google_webhook}"
         break
       fi
       sleep $pause
     done
-    echo "Ending timestamp: $(date)"
   done
 fi
+touch ${resultFile}
+exit

@@ -1,10 +1,13 @@
 #!/bin/bash
 #
-log_prefix="VRA-Configure"
-echo "--- $(date): ${log_prefix} start ---"
+jsonFile="${1}"
+resultFile="${2}"
+rm -f ${resultFile}
 source /home/ubuntu/bash/functions.sh
-jsonFile=${1}
+source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/variables.sh
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Configure VRA  - This should take about 20 minutes" "" "${slack_webhook}" "${google_webhook}"
 #
 # create avi template yaml
 #
@@ -209,3 +212,6 @@ access_token=$(curl -X POST -s -k "https://${vra_name}.${domain}/iaas/api/login"
 # Create a project
 #
 curl -X POST -s -k "https://${vra_name}.${domain}/project-service/api/projects" -H 'Content-Type: application/json' -H "Authorization: Bearer $access_token" -d '{"name" : "'${vra_project}'"}'
+touch ${resultFile}
+log_message "${deployment_name}: VRA Configured" "" "${slack_webhook}" "${google_webhook}"
+exit

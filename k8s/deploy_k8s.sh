@@ -1,8 +1,13 @@
 #!/bin/bash
 #
+jsonFile="${1}"
+resultFile="${2}"
+rm -f ${resultFile}
 source /home/ubuntu/bash/functions.sh
-jsonFile=${1}
+source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/variables.sh
+log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
+log_message "${deployment_name}: Deployment of K8s clusters  - This should take about 30 minutes" "" "${slack_webhook}" "${google_webhook}"
 #
 # k8s templating k8s script config
 #
@@ -18,7 +23,7 @@ cp /home/ubuntu/k8s/k8s-config.sh /home/ubuntu/tkc/k8s-config.sh
 load_govc_env_with_cluster "${cluster_basename}1"
 govc about
 if [ $? -ne 0 ] ; then
-  echo "ERROR: unable to connect to vCenter"
+  log_message "${deployment_name}: ERROR: unable to connect to vCenter" "" "${slack_webhook}" "${google_webhook}"
   exit
 fi
 #
@@ -95,10 +100,9 @@ if [[ ${k8s_clusters} != "null" ]]; then
     # folder creation for k8s cluster
     #
     if $(echo ${list_folder} | jq -e '. | any(. == "./vm/'${k8s_basename}${index}'")' >/dev/null ) ; then
-      echo "ERROR: unable to create folder ${k8s_basename}${index}: it already exists"
+      log_message "${deployment_name}: ERROR: unable to create folder ${k8s_basename}${index}: it already exists" "" "" ""
     else
       govc folder.create /${dc}/vm/${k8s_basename}${index}
-      echo "Ending timestamp: $(date)"
     fi
     #
     # VM k8s_clusters creation
@@ -242,29 +246,29 @@ if [[ ${k8s_clusters} != "null" ]]; then
         echo "attempt $attempt to verify VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is ready"
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" -q "exit" > /dev/null 2>&1
         if [[ $? -eq 0 ]]; then
-          echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is reachable."
+          log_message "${deployment_name}: ERROR: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is reachable." "" "" ""
           ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
           if [[ $? -eq 0 ]]; then
-            echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} cloud init done."
+            log_message "${deployment_name}: ERROR: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} cloud init done." "" "" ""
             if [[ ${index_ip} -eq 1 ]]; then
-              echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is a master - transfer join command file to external gw /home/ubuntu/k8s/join-command-${k8s_basename}${index}"
+              log_message "${deployment_name}: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is a master - transfer join command file to external gw /home/ubuntu/k8s/join-command-${k8s_basename}${index}" "" "" ""
               scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/join-command" "/home/ubuntu/k8s/join-command-${k8s_basename}${index}"
               scp -o StrictHostKeyChecking=no "/home/ubuntu/k8s/K8s_check_${k8s_basename}${index}.sh" ubuntu@${ip_k8s_node}:/home/ubuntu/K8s_check_${k8s_basename}${index}.sh
             else
-              echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is a worker - transfer join command file to worker and execute it to join the cluster ${k8s_basename}${index}"
+              log_message "${deployment_name}: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is a worker - transfer join command file to worker and execute it to join the cluster ${k8s_basename}${index}" "" "" ""
               scp -o StrictHostKeyChecking=no "/home/ubuntu/k8s/join-command-${k8s_basename}${index}" "ubuntu@${ip_k8s_node}:/home/ubuntu/join-command-${k8s_basename}${index}"
               ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "sudo /bin/bash /home/ubuntu/join-command-${k8s_basename}${index}"
             fi
             break
           else
-            echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app}: cloud init is not finished."
+            log_message "${deployment_name}: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_app}: cloud init is not finished." "" "" ""
           fi
         else
-          echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip} is not reachable."
+          log_message "${deployment_name}: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip} is not reachable." "" "" ""
         fi
         ((attempt++))
         if [ $attempt -eq $retry ]; then
-          echo "VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip} is not reachable after $attempt attempt"
+          log_message "${deployment_name}: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip} is not reachable after $attempt attempt" "" "${slack_webhook}" "${google_webhook}"
           break
         fi
         sleep $pause
@@ -505,21 +509,21 @@ EOT
           retry_count=$((retry_count + 1))
           ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "test -f /home/ubuntu/.kube/config" > /dev/null 2>&1
           if [[ $? -eq 0 ]]; then
-            echo "  File /home/ubuntu/.kube/config found on ${ip_k8s_node} after $retry_count retries."
+            log_message "${deployment_name}:  File /home/ubuntu/.kube/config found on ${ip_k8s_node} after $retry_count retries." "" "" ""
             scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/.kube/config" "/home/ubuntu/k8s/config-${k8s_basename}${index}"
             chmod 600 /home/ubuntu/k8s/config-${k8s_basename}${index}
             break
           else
-            echo "  File /home/ubuntu/.kube/config not found on ${ip_k8s_node} after $retry_count retries."
+            log_message "${deployment_name}:   File /home/ubuntu/.kube/config not found on ${ip_k8s_node} after $retry_count retries." "" "" ""
             if [[ $retry_count -ge $MAX_RETRIES ]]; then
-              echo "  Maximum retries reached. Exiting."
+              log_message "${deployment_name}:  Maximum retries reached. Exiting." "" "" ""
               break
             fi
             sleep $RETRY_DELAY_SECONDS
           fi
         done
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "/bin/bash /home/ubuntu/K8s_check_${k8s_basename}${index}.sh"
-        echo "check file"
+        log_message "${deployment_name}: check file" "" "" ""
         ls /home/ubuntu/k8s/config-${k8s_basename}${index}
         #
         # amko_gslb_member_file
@@ -637,7 +641,7 @@ EOT
   echo ${kube_config_json}
   echo ${kube_config_json} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/k8s/config > /dev/null 2>&1
   chmod 600 /home/ubuntu/k8s/config
-  echo "Updating /home/ubuntu/.profile"
+  log_message "${deployment_name}: Updating /home/ubuntu/.profile" "" "" ""
   contents_wo_KUBECONFIG=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
   echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null 2>&1
   KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2 | grep /home/ubuntu/k8s/config)
@@ -649,3 +653,5 @@ EOT
   echo "${KUBECONFIG}" | tee -a /home/ubuntu/.profile > /dev/null
   echo ${gslb_members_json} | /home/ubuntu/.local/bin/yq -y . | tee ${amko_gslb_member_file_path} > /dev/null 2>&1
 fi
+touch ${resultFile}
+exit
