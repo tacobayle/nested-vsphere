@@ -450,7 +450,6 @@ if [[ ${operation} == "apply" ]] ; then
     script_file="/home/ubuntu/tanzu/configure_tanzu.sh"
     log_message "${deployment_name}: $(date): running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
     test_remote_script "${ip_gw}" "${script_file}" "${jsonFile_remote}" >> ${log_file} 2>&1
-
   fi
   # Openshift creation
   if [[ ${kind} == "vsphere-avi" && ${openshift} != "null" ]]; then

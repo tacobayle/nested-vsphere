@@ -1,6 +1,10 @@
 controllerPrivateIps: |
   ["${controllerPrivateIp}"]
 controller:
+  backup_server: ${ip_backup_server}
+  backup_username: ubuntu
+  backup_password: ${backup_password}
+  backup_remote_directory: /home/ubuntu/avi
   cluster: false
   ntp: |
     ["${ntp}"]

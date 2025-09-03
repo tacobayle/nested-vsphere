@@ -6,6 +6,10 @@ avi_old_password: ${avi_old_password}
 avi_password: ${avi_password}
 avi_username: ${avi_username}
 controller:
+  backup_server: ${ip_backup_server}
+  backup_username: ubuntu
+  backup_password: ${backup_password}
+  backup_remote_directory: /home/ubuntu/avi
   aviCredsJsonFile: ~/.creds.json
   environment: vCenter
   cluster: false

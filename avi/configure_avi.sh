@@ -54,6 +54,8 @@ if [[ ${kind} == "vsphere-avi" ]]; then
   sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
       -e "s/\${ntp}/${ip_gw_mgmt}/" \
       -e "s/\${dns}/${ip_gw_mgmt}/" \
+      -e "s/\${ip_backup_server}/${ip_gw_mgmt}/" \
+      -e "s/\${backup_password}/${GENERIC_PASSWORD}/" \
       -e "s/\${avi_username}/${avi_username}/" \
       -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
       -e "s/\${avi_old_password}/${AVI_OLD_PASSWORD}/" \
@@ -109,6 +111,8 @@ if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
   sed -e "s/\${controllerPrivateIp}/${ip_avi}/" \
       -e "s/\${ntp}/${ip_gw_mgmt}/" \
       -e "s/\${dns}/${ip_gw_mgmt}/" \
+      -e "s/\${ip_backup_server}/${ip_gw_mgmt}/" \
+      -e "s/\${backup_password}/${GENERIC_PASSWORD}/" \
       -e "s/\${avi_username}/${avi_username}/" \
       -e "s/\${avi_password}/${GENERIC_PASSWORD}/" \
       -e "s/\${avi_old_password}/${AVI_OLD_PASSWORD}/" \
