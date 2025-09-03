@@ -851,7 +851,7 @@ if [[ ${kind} == *"-avi" ]] ; then
             #
             # Ansible and Terraform infra variables build
             #
-            if [ -f "/home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml" ] || [ -f "/home/ubuntu/automation/tfAviVsIpamDns/infra.json" ]; then
+            if [ ! -f "/home/ubuntu/automation/ansibleAviVsIpamDns/vars/infra.yml" ] || [ ! -f "/home/ubuntu/automation/tfAviVsIpamDns/infra.json" ]; then
               if [[ ${net_vip} -eq 0 && ${pool_ports_index} -eq 0 ]]; then
                 json_data='
                 {
