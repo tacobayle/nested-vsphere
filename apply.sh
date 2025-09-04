@@ -59,6 +59,7 @@ if [[ ${operation} == "apply" ]] ; then
   sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/html/socks.html.template | tee /nested-vsphere/html/socks.html > /dev/null
   sed -e "s@\${ip_gw}@${ip_gw}@" /nested-vsphere/templates/html/vault.html.template | tee /nested-vsphere/html/vault.html.tmp > /dev/null
   sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/details-${kind}.html.template | tee /nested-vsphere/html/details.html > /dev/null
+  sed -e "s@\${domain}@${domain}@" -e "s@\${avi_subdomain}@${avi_subdomain}@" /nested-vsphere/templates/html/rate-limiting-ako-cookie.html.template | tee /nested-vsphere/html/rate-limiting-ako-cookie.html > /dev/null
   if [[ ${kind} == "vsphere-nsx"* && ${kind} == *"-avi" ]]; then
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/api.js.template | tee /nested-vsphere/html/api.js > /dev/null
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/clean-up.js.template | tee /nested-vsphere/html/clean-up.js > /dev/null
@@ -301,6 +302,9 @@ if [[ ${operation} == "apply" ]] ; then
             scp -o StrictHostKeyChecking=no /root/yaml_download_update.sh ubuntu@${ip_gw}:/home/ubuntu/bash/yaml_download_update.sh
             ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
             ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
+            # update ingress boutique
+            ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@\${avi_subdomain}@${avi_subdomain}@\" -e \"s@\${domain}@${domain}@\" /home/ubuntu/templates/yaml-files/ako_boutique_ingress.yaml.template | tee /home/ubuntu/yaml-files/ako_boutique_ingress.yaml" >> ${log_file}
+            ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@\${applicationProfile_boutique}@${applicationProfile_boutique}@\" -e \"s@\${avi_subdomain}@${avi_subdomain}@\" -e \"s@\${domain}@${domain}@\" /home/ubuntu/templates/yaml-files/ako_boutique_hostrule.yaml.template | tee /home/ubuntu/yaml-files/ako_boutique_hostrule.yaml" >> ${log_file}
           fi
           log_message "${deployment_name}: $(date): external-gw ${gw_name} VM reachable and configured" "${log_file}" "${slack_webhook}" "${google_webhook}"
           break

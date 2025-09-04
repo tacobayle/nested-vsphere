@@ -37,6 +37,10 @@
 <ul>
     <li><a href="act.html" target="_blank">ACT Demo</a></li>
 </ul>
+<h1>Demo Rate limiting</h1>
+<ul>
+    <li><a href="rate-limiting-ako-cookie.html" target="_blank">Demo Rate limiting based on cookie - AKO driven</a></li>
+</ul>
 <h1>Demo WAF</h1>
 <ul>
     <li><a href="see-waf-details-api.html" target="_blank">See WAF details through the API</a></li>

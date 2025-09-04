@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo Rate limiting based on cookie - AKO driven</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>Demo Rate limiting based on cookie - AKO driven</h1>
+<ul>
+<li>Deploy Boutique App</li>
+<br>
+<table>
+    <tr>
+        <th>Prerequisites</th>
+        <td>Make sure you have a k8s cluster deployed and available with AKO onboarded</td>
+    </tr>
+    <tr>
+        <th>Commands from the external gw to create cluster1</th>
+        <td class="code-box">
+<pre><code>
+git clone https://github.com/GoogleCloudPlatform/microservices-demo.git
+cd microservices-demo
+kubectl apply -f ./release/kubernetes-manifests.yaml
+</code></pre>
+            <button onclick="copyToClipboard(0)">Copy Code</button>
+        </td>
+    </tr>
+    <tr>
+        <th>Create an ingress</th>
+        <td class="code-box">
+<pre><code>
+kubectl apply -f /home/ubuntu/yaml-files/ingress-boutique.yaml
+</code></pre>
+            <button onclick="copyToClipboard(1)">Copy Code</button>
+        </td>
+    </tr>
+    <tr>
+        <th>Test the application without CRD</th>
+        <td class="code-box">
+<pre><code>
+requests="100" ; while true ; do rm results.txt ; echo "sending $requests requests" ; for i in $(seq 1 $requests) ; do  curl --cookie "shop_session-id=15cdd4fe-c97e-42b8-b037-de0b197e490a" -k https://boutique.${avi_subdomain}.${domain} -w "%{http_code}\n" -o /dev/null -s | tee -a results.txt >/dev/null ; done ; echo "received $(cat results.txt | grep 200 | wc -l) successful responses"; echo "---"; done
+</code></pre>
+            <button onclick="copyToClipboard(2)">Copy Code</button>
+        </td>
+    </tr>
+    <tr>
+        <th>Apply the CRD</th>
+        <td class="code-box">
+<pre><code>
+kubectl apply -f /home/ubuntu/yaml-files/ako_boutique_hostrule.yaml</code></pre>
+            <button onclick="copyToClipboard(3)">Copy Code</button>
+        </td>
+    </tr>
+    <tr>
+        <th>Test the application with CRD</th>
+        <td class="code-box">
+<pre><code>
+requests="100" ; while true ; do rm results.txt ; echo "sending $requests requests" ; for i in $(seq 1 $requests) ; do  curl --cookie "shop_session-id=15cdd4fe-c97e-42b8-b037-de0b197e490a" -k https://boutique.${avi_subdomain}.${domain} -w "%{http_code}\n" -o /dev/null -s | tee -a results.txt >/dev/null ; done ; echo "received $(cat results.txt | grep 200 | wc -l) successful responses"; echo "---"; done
+</code></pre>
+            <button onclick="copyToClipboard(4)">Copy Code</button>
+        </td>
+    </tr>
+
+</table>
+<br>
+<br>
+</ul>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
