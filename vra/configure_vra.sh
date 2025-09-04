@@ -166,6 +166,14 @@ table, th, td {
     <br>
     <table>
         <tr>
+            <th>vRA Username</th>
+            <td>admin</td>
+        </tr>
+        <tr>
+            <th>vRA UI</th>
+            <td><a href="https://${vra_name}.${domain}" target="_blank">https://${vra_name}.${domain}</a></td>
+        </tr>
+        <tr>
             <th>Demo ${vra_avi_template}</th>
             <td>Go to Service Broker / Consume / Catalog / ${vra_avi_template} / request
             <br>Fill the form
