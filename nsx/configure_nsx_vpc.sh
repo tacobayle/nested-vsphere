@@ -11,7 +11,7 @@ source /home/ubuntu/bash/variables.sh
 #
 if [[ ${kind} == "vsphere-nsx-vpc-avi" && $(jq -c -r '.about.version' ${vcsa_about_json_file} | cut -d"." -f1) == "9" ]]; then
   log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
-  log_message "${deployment_name}: : starting NSX Project/VPC config." "" "${slack_webhook}" "${google_webhook}"
+  log_message "${deployment_name}: starting NSX Project/VPC config." "" "${slack_webhook}" "${google_webhook}"
   #
   # check NSX Manager
   #

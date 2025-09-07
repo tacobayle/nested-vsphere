@@ -6,7 +6,7 @@ rm -f ${resultFile}
 source /home/ubuntu/bash/log_message.sh
 source /home/ubuntu/bash/variables.sh
 log_message "${deployment_name}:------------------------------------------------------------" "" "" ""
-log_message "${deployment_name}: : starting ESX customization." "" "${slack_webhook}" "${google_webhook}"
+log_message "${deployment_name}: starting ESX customization." "" "${slack_webhook}" "${google_webhook}"
 export GOVC_PASSWORD=${GENERIC_PASSWORD}
 export GOVC_INSECURE=true
 export GOVC_USERNAME=root
