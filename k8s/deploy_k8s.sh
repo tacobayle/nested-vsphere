@@ -63,7 +63,7 @@ if [[ ${k8s_clusters} != "null" ]]; then
     values_amko=$(echo ${values_amko} | jq '. += {"multiClusterIngress": {"enable": false}}')
     values_amko=$(echo ${values_amko} | jq '. += {"replicaCount": 1}')
     # .configs
-    values_amko=$(echo ${values_amko} | jq '.configs += {"gslbLeaderController": "'${ip_avi}'"}}')
+    values_amko=$(echo ${values_amko} | jq '.configs += {"gslbLeaderController": "'${ip_avi}'"}')
     values_amko=$(echo ${values_amko} | jq '.configs += {"controllerVersion": "'${avi_version}'"}')
     values_amko=$(echo ${values_amko} | jq '.configs += {"refreshInterval": 1800}')
     values_amko=$(echo ${values_amko} | jq '.configs += {"logLevel": "INFO"}')
