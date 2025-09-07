@@ -71,11 +71,14 @@ write_files:
       #
       #
       #
-      run_cmd 'rm -f /tmp/signing.asc; wget https://baltocdn.com/helm/signing.asc -O /tmp/signing.asc; test $(ls -l /tmp/signing.asc | awk '"'"'{print $5}'"'"') -gt 0'
-      run_cmd 'apt-key add /tmp/signing.asc'
+      #run_cmd 'rm -f /tmp/signing.asc; wget https://baltocdn.com/helm/signing.asc -O /tmp/signing.asc; test $(ls -l /tmp/signing.asc | awk '"'"'{print $5}'"'"') -gt 0'
+      #run_cmd 'apt-key add /tmp/signing.asc'
+      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      sudo chmod 700 get_helm.sh
+      ./get_helm.sh
       run_cmd 'rm -f /tmp/gpg; wget https://download.docker.com/linux/ubuntu/gpg -O /tmp/gpg; test $(ls -l /tmp/gpg | awk '"'"'{print $5}'"'"') -gt 0'
       run_cmd 'apt-key add /tmp/gpg'
-      run_cmd '! add-apt-repository "deb https://baltocdn.com/helm/stable/debian/ all main" | grep Err:'
+      #run_cmd '! add-apt-repository "deb https://baltocdn.com/helm/stable/debian/ all main" | grep Err:'
       run_cmd '! add-apt-repository  "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | grep Err:'
       K8s_version="${K8s_version}"
       K8s_version_short=${K8s_version:0:5}
@@ -85,7 +88,7 @@ write_files:
       run_cmd 'apt update'
       run_cmd 'apt-get install -y docker-ce=${docker_version}; ls /usr/bin/docker'
       run_cmd 'apt-get install -y kubeadm='$K8s_version' kubectl='$K8s_version' kubelet='$K8s_version'; ls /usr/bin/kubeadm /usr/bin/kubectl /usr/bin/kubelet'
-      run_cmd 'apt-get install -y helm; ls /usr/bin/helm'
+      #run_cmd 'apt-get install -y helm; ls /usr/bin/helm'
       #
       #
       #
