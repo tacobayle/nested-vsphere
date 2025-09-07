@@ -237,7 +237,7 @@ if [[ ${operation} == "apply" ]] ; then
       log_message "${deployment_name}: $(date): +++ Uploading custom ESXi ISO for ESXi${esxi} to datastore" "${log_file}" "" ""
       govc datastore.upload --ds=$(jq -c -r .spec.vsphere_underlay.datastore $jsonFile) --dc=$(jq -c -r .spec.vsphere_underlay.datacenter $jsonFile) "${iso_location}-${esxi}.iso" ${deployment_name}-tmp/$(basename ${iso_location}-${esxi}.iso) > /dev/null
       log_message "${deployment_name}: $(date): ISO ESXi ${esxi} uploaded" "${log_file}" "${slack_webhook}" "${google_webhook}"
-      affinity_members="${names} ${name_esxi}"
+      affinity_members="${affinity_members} ${name_esxi}"
       govc vm.create -c $(jq -c -r .spec.esxi.cpu $jsonFile) -m $(jq -c -r .spec.esxi.memory $jsonFile) -disk $(jq -c -r .spec.esxi.disk_os_size $jsonFile) -disk.controller pvscsi -net ${net} -g vmkernel65Guest -net.adapter vmxnet3 -firmware efi -folder "${folder}" -on=false "${name_esxi}" > /dev/null
       token=$(/bin/bash /nested-vsphere/vcenter/create_vcenter_api_session.sh "${GOVC_USERNAME}" "" "${GOVC_PASSWORD}" "$(basename ${GOVC_URL})")
       vcenter_api 2 2 "GET" $token "${json_data}" "$(basename ${GOVC_URL})" "api/vcenter/vm"

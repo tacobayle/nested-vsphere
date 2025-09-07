@@ -123,6 +123,10 @@ resource "avi_virtualservice" "https_vs" {
     port           = var.vs.port
     enable_ssl     = var.vs.ssl
   }
+  services {
+    port           = 80
+    enable_ssl     = "false"
+  }
   analytics_policy {
     client_insights = "NO_INSIGHTS"
     all_headers = "true"
