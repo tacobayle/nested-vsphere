@@ -1187,6 +1187,23 @@
         "duration": 0
       },
       "vip_preserve_ip": true
+    },
+    {
+      "name": "oc01",
+      "ha_mode": "HA_MODE_SHARED_PAIR",
+      "algo": "PLACEMENT_ALGO_PACKED",
+      "min_scaleout_per_vs": 2,
+      "max_vs_per_se": 100,
+      "vcenter_folder": "seg-private",
+      "buffer_se": 0,
+      "extra_shared_config_memory": 0,
+      "vcpus_per_se": 2,
+      "memory_per_se": 2048,
+      "disk_per_se": 25,
+      "realtime_se_metrics": {
+        "enabled": true,
+        "duration": 0
+      }
     }
   ],
   "network_services": [

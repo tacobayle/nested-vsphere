@@ -643,14 +643,16 @@ EOT
   chmod 600 /home/ubuntu/k8s/config
   log_message "${deployment_name}: Updating /home/ubuntu/.profile" "" "" ""
   contents_wo_KUBECONFIG=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
-  echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null 2>&1
   KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG=)
   if [ -z "${KUBECONFIG}" ]; then
+    echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null 2>&1
     echo "export KUBECONFIG=/home/ubuntu/k8s/config" | tee -a /home/ubuntu/.profile > /dev/null
   else
     existing_KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2 | grep /home/ubuntu/k8s/config)
     if [ -z "${existing_KUBECONFIG}" ]; then
-      echo "export KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2):/home/ubuntu/k8s/config" | tee -a /home/ubuntu/.profile > /dev/null
+      contents_to_be_copied=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2)
+      echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null 2>&1
+      echo "export KUBECONFIG=${contents_to_be_copied}:/home/ubuntu/k8s/config" | tee -a /home/ubuntu/.profile > /dev/null
     fi
   fi
   echo ${gslb_members_json} | /home/ubuntu/.local/bin/yq -y . | tee ${amko_gslb_member_file_path} > /dev/null 2>&1

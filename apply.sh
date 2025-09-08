@@ -438,14 +438,16 @@ if [[ ${operation} == "apply" ]] ; then
     test_remote_script "${ip_gw}" "${script_file}" "${jsonFile_remote}" >> ${log_file} 2>&1
   fi
   # vRA bootstrap and config
-  if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+  if [[ $(jq -c -r '.about.version' /root/${deployment_name}_$(basename ${vcsa_about_json_file}) | cut -d"." -f1) == "8" && ${vra_ova_url} != "null" ]] ; then
     script_file="/home/ubuntu/vra/bootstrap_vra.sh"
     log_message "${deployment_name}: $(date): running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
     test_remote_script "${ip_gw}" "${script_file}" "${jsonFile_remote}" >> ${log_file} 2>&1
-    # In the future configure_vra will need to wait until bootstrap_vra.sh is done
-    script_file="/home/ubuntu/vra/configure_vra.sh"
-    log_message "${deployment_name}: $(date): running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
-    test_remote_script "${ip_gw}" "${script_file}" "${jsonFile_remote}" >> ${log_file} 2>&1
+    if [[ ${kind} == "vsphere-nsx-avi" ]]; then
+      # In the future configure_vra will need to wait until bootstrap_vra.sh is done
+      script_file="/home/ubuntu/vra/configure_vra.sh"
+      log_message "${deployment_name}: $(date): running the following command from the gw: ${script_file} ${jsonFile_remote} ${script_file%.*}.done" ${log_file} ${slack_webhook} ${google_webhook}
+      test_remote_script "${ip_gw}" "${script_file}" "${jsonFile_remote}" >> ${log_file} 2>&1
+    fi
   fi
   #
   wait

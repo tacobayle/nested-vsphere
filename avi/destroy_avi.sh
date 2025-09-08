@@ -20,6 +20,8 @@ list_vm=$(govc find -json vm -name "${avi_ctrl_name}")
 if [[ ${list_vm} != "null" ]] ; then
   govc vm.power -off=true "${avi_ctrl_name}" >> /dev/null 2>&1
   govc vm.destroy "${avi_ctrl_name}" >> /dev/null 2>&1
+  rm -f /home/ubuntu/avi/deploy_avi.done
+  rm -f /home/ubuntu/avi/configure_avi.done
 else
   echo "ERROR: unable to delete VM ${avi_ctrl_name}: it does not exists"
 fi

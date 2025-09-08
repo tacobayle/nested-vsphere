@@ -309,10 +309,13 @@ write_files:
       #
       # helm install
       #
-      wget https://baltocdn.com/helm/signing.asc -O /tmp/signing.asc
-      apt-key add /tmp/signing.asc
-      sudo add-apt-repository "deb https://baltocdn.com/helm/stable/debian/ all main"
-      apt-get install -y helm
+      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      sudo chmod 700 get_helm.sh
+      ./get_helm.sh
+      #wget https://baltocdn.com/helm/signing.asc -O /tmp/signing.asc
+      #apt-key add /tmp/signing.asc
+      #sudo add-apt-repository "deb https://baltocdn.com/helm/stable/debian/ all main"
+      #apt-get install -y helm
       #
       # Patching DNS to localhost
       #
