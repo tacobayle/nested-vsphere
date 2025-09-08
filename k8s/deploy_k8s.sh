@@ -246,10 +246,10 @@ if [[ ${k8s_clusters} != "null" ]]; then
         echo "attempt $attempt to verify VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is ready"
         ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" -q "exit" > /dev/null 2>&1
         if [[ $? -eq 0 ]]; then
-          log_message "${deployment_name}: ERROR: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is reachable." "" "" ""
+          log_message "${deployment_name}: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is reachable." "" "" ""
           ssh -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}" "test -f /tmp/cloudInitDone.log" 2>/dev/null
           if [[ $? -eq 0 ]]; then
-            log_message "${deployment_name}: ERROR: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} cloud init done." "" "" ""
+            log_message "${deployment_name}: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} cloud init done." "" "" ""
             if [[ ${index_ip} -eq 1 ]]; then
               log_message "${deployment_name}: VM ${k8s_basename}${index}-${k8s_basename_vm}${index_ip}, ${ip_k8s_node} is a master - transfer join command file to external gw /home/ubuntu/k8s/join-command-${k8s_basename}${index}" "" "" ""
               scp -o StrictHostKeyChecking=no "ubuntu@${ip_k8s_node}:/home/ubuntu/join-command" "/home/ubuntu/k8s/join-command-${k8s_basename}${index}"
@@ -644,13 +644,15 @@ EOT
   log_message "${deployment_name}: Updating /home/ubuntu/.profile" "" "" ""
   contents_wo_KUBECONFIG=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
   echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null 2>&1
-  KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2 | grep /home/ubuntu/k8s/config)
+  KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG=)
   if [ -z "${KUBECONFIG}" ]; then
-    KUBECONFIG="export KUBECONFIG=/home/ubuntu/k8s/config"
+    echo "export KUBECONFIG=/home/ubuntu/k8s/config" | tee -a /home/ubuntu/.profile > /dev/null
   else
-    KUBECONFIG="${KUBECONFIG}:/home/ubuntu/k8s/config"
+    existing_KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2 | grep /home/ubuntu/k8s/config)
+    if [ -z "${existing_KUBECONFIG}" ]; then
+      echo "export KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG= | cut -d"=" -f2):/home/ubuntu/k8s/config" | tee -a /home/ubuntu/.profile > /dev/null
+    fi
   fi
-  echo "${KUBECONFIG}" | tee -a /home/ubuntu/.profile > /dev/null
   echo ${gslb_members_json} | /home/ubuntu/.local/bin/yq -y . | tee ${amko_gslb_member_file_path} > /dev/null 2>&1
 fi
 touch ${resultFile}
