@@ -44,8 +44,6 @@ if [[ ${openshift} != "null" ]]; then
   cp /home/ubuntu/openshift/install-config.yaml /home/ubuntu/openshift/install-config.yaml.archive
   /home/ubuntu/openshift/openshift-install create cluster --dir /home/ubuntu/openshift --log-level info
   log_message "${deployment_name}: Updating /home/ubuntu/.profile" "" "" ""
-
-
   contents_wo_KUBECONFIG=$(cat /home/ubuntu/.profile | grep -v KUBECONFIG=)
   echo "${contents_wo_KUBECONFIG}" | tee /home/ubuntu/.profile > /dev/null 2>&1
   KUBECONFIG=$(cat /home/ubuntu/.profile | grep KUBECONFIG=)
