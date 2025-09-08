@@ -86,7 +86,7 @@ write_files:
       run_cmd 'curl -fsSL https://pkgs.k8s.io/core:/stable:/'$K8s_version_short'/deb/Release.key | gpg --dearmor -o /tmp/kubernetes-apt-keyring.gpg; test $(ls -l /tmp/kubernetes-apt-keyring.gpg | awk '"'"'{print $5}'"'"') -gt 0'
       run_cmd 'echo "deb [signed-by=/tmp/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/'$K8s_version_short'/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list'
       run_cmd 'apt update'
-      run_cmd 'apt-get install -y docker-ce=${docker_version}; ls /usr/bin/docker'
+      run_cmd 'apt-get install -y docker-ce=${docker_version}.$(lsb_release -rs)~$(lsb_release -cs); ls /usr/bin/docker'
       run_cmd 'apt-get install -y kubeadm='$K8s_version' kubectl='$K8s_version' kubelet='$K8s_version'; ls /usr/bin/kubeadm /usr/bin/kubectl /usr/bin/kubelet'
       #run_cmd 'apt-get install -y helm; ls /usr/bin/helm'
       #

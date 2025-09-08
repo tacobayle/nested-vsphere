@@ -1461,7 +1461,7 @@
       "name": "argocd"
     }
   ],
-  "docker_version": "5:24.0.2-1~ubuntu.20.04~focal",
+  "docker_version": "5:26.1.4-1~ubuntu",
   "pod_cidr": "192.168.0.0/16",
   "app_apt_packages": ["docker.io", "apache2", "jq"],
   "docker_registry_repo_default_app" : "tacobayle/avi_app",
