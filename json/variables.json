@@ -263,7 +263,7 @@
             "resource_type": "StandardHostSwitchSpec",
             "host_switches": [
               {
-                "host_switch_mode": "STANDARD",
+                "host_switch_mode": "ENS_INTERRUPT",
                 "host_switch_vds_name_ref": "vds1",
                 "host_switch_id": "this will be retrieved",
                 "host_switch_name": "nsx-overlay",
