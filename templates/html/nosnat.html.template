@@ -31,7 +31,7 @@ table, th, td {
         <td>${app_profile_preserve_ip}</td>
     </tr>
     <tr>
-        <th>Create an ingress</th>
+        <th>Virtual Service Name</th>
         <td>${virtual_service_http_preserve_ip_name}</td>
     </tr>
 </table>
