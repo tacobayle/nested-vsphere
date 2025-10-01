@@ -25,6 +25,10 @@
 <ul>
     <li><a href="configure-vra.html" target="_blank">Configure vRA</a></li>
 </ul>
+<h1>Demo Local Load Balancing</h1>
+<ul>
+    <li><a href="nosnat.html" target="_blank">Preserve Client IP</a></li>
+</ul>
 <h1>Demo Automation</h1>
 <ul>
     <li><a href="vra.html" target="_blank">vRA Demo</a></li>

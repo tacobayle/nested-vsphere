@@ -801,6 +801,11 @@ if [[ ${kind} == *"-avi" ]] ; then
               virtual_service_http=$(echo ${virtual_service_http} | jq -c -r '. += {"application_profile_ref": "'${app_profile_preserve_ip}'"}')
               seg_preserve_ip=$(echo ${service_engine_groups} | jq -c -r '[.[] | select(.vip_preserve_ip == true)] | first | .name')
               virtual_service_http=$(echo ${virtual_service_http} | jq -c -r '. += {"se_group_ref": "'${seg_preserve_ip}'"}')
+              if [[ "$(whoami)" != "ubuntu" && ! -f "/nested-vsphere/html/nosnat.html" ]]; then
+                sed -e "s@\${seg_preserve_ip}@${seg_preserve_ip}@" \
+                    -e "s@\${app_profile_preserve_ip}@${app_profile_preserve_ip}@" \
+                    -e "s@\${virtual_service_http_preserve_ip_name}@${tier1_name}${nsx_avi_basename}nsx-group@" /nested-vsphere/templates/html/nosnat.html.template | tee /nested-vsphere/html/nosnat.html > /dev/null
+              fi
             fi
             virtual_services_http=$(jq '. += [$new_item]' --argjson new_item "${virtual_service_http}" <<< "${virtual_services_http}")
           fi

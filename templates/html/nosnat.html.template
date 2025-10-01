@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo Preserve Client IP in NSX Cloud</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>Demo Preserve Client IP in NSX Cloud</h1>
+<ul>
+<li>VS configured with no SNAT</li>
+<br>
+<table>
+    <tr>
+        <th>Service Engine Group</th>
+        <td>${seg_preserve_ip}</td>
+    </tr>
+    <tr>
+        <th>Application Profile</th>
+        <td>${app_profile_preserve_ip}</td>
+    </tr>
+    <tr>
+        <th>Create an ingress</th>
+        <td>${virtual_service_http_preserve_ip_name}</td>
+    </tr>
+</table>
+<br>
+<br>
+</ul>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
