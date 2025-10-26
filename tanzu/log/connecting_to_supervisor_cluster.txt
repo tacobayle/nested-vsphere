@@ -4,3 +4,4 @@ ssh root@vcsa-01.avi.com
 
 ssh root@<ip_of_supervisor>
 
+/etc/kubernetes/super-admin.conf
