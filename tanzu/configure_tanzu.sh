@@ -641,7 +641,6 @@ EOT
         -e "s/\${cniPlugin}/${cniPlugin}/" \
         -e "s@\${nsxtT1LR}@${nsxtT1LR}@" \
         -e "s/\${networkName}/${network_ref_vip}/" \
-#        -e "s@\${cidr}@${cidr_vip_full}@" \
         -e "s/\${serviceType}/${serviceType}/" \
         -e "s/\${shardVSSize}/${shardVSSize}/" \
         -e "s/\${serviceEngineGroupName}/${serviceEngineGroupName}/" \
