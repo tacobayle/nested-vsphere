@@ -303,8 +303,10 @@ if [[ ${operation} == "apply" ]] ; then
             ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "chmod u+x /home/ubuntu/bash/yaml_download_update.sh"
             ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "/home/ubuntu/bash/yaml_download_update.sh /home/ubuntu/json/${deployment_name}_${operation}.json" >> ${log_file}
             # update ingress boutique
-            ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@\${avi_subdomain}@${avi_subdomain}@\" -e \"s@\${domain}@${domain}@\" /home/ubuntu/templates/yaml-files/ako_boutique_ingress.yaml.template | tee /home/ubuntu/yaml-files/ako_boutique_ingress.yaml" >> ${log_file}
-            ssh -o StrictHostKeyChecking=no -t ubuntu@${ip_gw} "sed -e \"s@\${avi_subdomain}@${avi_subdomain}@\" -e \"s@\${domain}@${domain}@\" /home/ubuntu/templates/yaml-files/ako_boutique_hostrule.yaml.template | tee /home/ubuntu/yaml-files/ako_boutique_hostrule.yaml" >> ${log_file}
+            sed -e "s@\${avi_subdomain}@${avi_subdomain}@" -e "s@\${domain}@${domain}@" /nested-vsphere/templates/yaml-files/ako_boutique_ingress.yaml.template | tee /root/ako_boutique_ingress.yaml
+            sed -e "s@\${avi_subdomain}@${avi_subdomain}@" -e "s@\${domain}@${domain}@" /nested-vsphere/templates/yaml-files/ako_boutique_hostrule.yaml.template | tee /root/ako_boutique_hostrule.yaml
+            scp -o StrictHostKeyChecking=no /root/ako_boutique_hostrule.yaml ubuntu@${ip_gw}:/home/ubuntu/yaml-files/ako_boutique_hostrule.yaml
+            scp -o StrictHostKeyChecking=no /root/ako_boutique_ingress.yaml ubuntu@${ip_gw}:/home/ubuntu/yaml-files/ako_boutique_ingress.yaml
           fi
           log_message "${deployment_name}: $(date): external-gw ${gw_name} VM reachable and configured" "${log_file}" "${slack_webhook}" "${google_webhook}"
           break
