@@ -53,7 +53,10 @@
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-svc-LB-1-infra-crd.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route2.yml",
     "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route1-crd.yml",
-    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route2-crd.yml"
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-http-route2-crd.yml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-backendExtension.yaml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-health-monitor.yaml",
+    "https://raw.githubusercontent.com/tacobayle/k8sYaml/refs/heads/main/demo-http-apps/demo-l7rule.yaml"
   ],
   "vault": {
     "control_script": {
@@ -1572,8 +1575,8 @@
         "pods_cidrs": ["10.245.0.0/21"],
         "avi_tenant_name": "ns1",
         "se_in_provider_context": true,
-        "ako_version": "1.13.2",
-        "ako_api_gateway": false
+        "ako_version": "2.1.1",
+        "ako_api_gateway": true
       },
       {
         "name": "ns2-cluster-1-tenant",
