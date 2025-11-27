@@ -1576,7 +1576,7 @@
         "avi_tenant_name": "ns1",
         "se_in_provider_context": true,
         "ako_version": "2.1.1",
-        "ako_api_gateway": true
+        "ako_gateway_api": true
       },
       {
         "name": "ns2-cluster-1-tenant",
@@ -1590,7 +1590,7 @@
         "avi_tenant_name": "ns2",
         "se_in_provider_context": false,
         "ako_version": "1.13.2",
-        "ako_api_gateway": true
+        "ako_gateway_api": true
       },
       {
         "name": "ns3-cluster-1-provider",
@@ -1604,7 +1604,7 @@
         "avi_tenant_name": "ns3",
         "se_in_provider_context": true,
         "ako_version": "1.13.2",
-        "ako_api_gateway": false
+        "ako_gateway_api": false
       }
     ]
   }

@@ -493,7 +493,7 @@ EOT
         </tr>
         <tr>
             <th>AKO Gateway API enabled</th>
-            <td>$(echo ${cluster} | jq -c -r .ako_api_gateway)</td>
+            <td>$(echo ${cluster} | jq -c -r .ako_gateway_api)</td>
         </tr>
         <tr>
             <th>AKO values Yaml</th>
@@ -612,8 +612,8 @@ EOT
                                  --arg arg2 "$(echo ${cidr_vip_full} | cut -d"/" -f1)" \
                                  '.results[] | select(.cloud_ref == $arg1 and .configured_subnets != null and .configured_subnets[0].prefix.ip_addr.addr == $arg2)' ${json_api_output} | jq .name)
     fi
-    if $(echo ${cluster} | jq -e '.ako_api_gateway' > /dev/null) ; then
-      if [[ $(echo ${cluster} | jq -c -r .ako_api_gateway) == "true" ]]; then
+    if $(echo ${cluster} | jq -e '.ako_gateway_api' > /dev/null) ; then
+      if [[ $(echo ${cluster} | jq -c -r .ako_gateway_api) == "true" ]]; then
         if [ ! -f "/home/ubuntu/templates/ako/values_api_gw.yml.$(echo ${cluster} | jq -c -r .ako_version).template" ]; then
           log_message "${deployment_name}: defaulting to the highest AKO template file: $(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)" "" "" ""
           ako_template_file_name=$(ls -v /home/ubuntu/templates/ako/values_api_gw.yml.*.template | tail -1)

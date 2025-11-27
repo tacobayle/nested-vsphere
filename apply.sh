@@ -125,7 +125,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${vault_pki_cert_issuer_name}@${vault_pki_cert_issuer_name}@" \
         -e "s@\${vault_pki_cert_ttl}@${vault_pki_cert_ttl}@" \
         -e "s@\${vault_pki_cert_path}@${vault_pki_cert_path}@" \
-        -e "s@\${vault_pki_role_name}@${vault_pki_role_name}@" \
+        -e "s@\${vault_pki_role_name}@${vault_pki_role_name}@g" \
         -e "s@\${vault_pki_intermediate_name}@${vault_pki_intermediate_name}@" \
         -e "s@\${vault_pki_intermediate_max_lease_ttl}@${vault_pki_intermediate_max_lease_ttl}@" \
         -e "s@\${vault_pki_intermediate_cert_common_name}@${vault_pki_intermediate_cert_common_name}@" \
