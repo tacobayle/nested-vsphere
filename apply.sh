@@ -64,6 +64,7 @@ if [[ ${operation} == "apply" ]] ; then
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/api.js.template | tee /nested-vsphere/html/api.js > /dev/null
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/clean-up.js.template | tee /nested-vsphere/html/clean-up.js > /dev/null
     sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/script.js.template | tee /nested-vsphere/html/script.js > /dev/null
+    sed -e "s@\${domain}@${domain}@" /nested-vsphere/templates/html/demos-${kind}.html.template | tee /nested-vsphere/html/demos.html > /dev/null
   fi
   if [[ ${list_gw} != "null" ]] ; then
     rm -f "/tmp/${deployment_name}_gw_creation.done"

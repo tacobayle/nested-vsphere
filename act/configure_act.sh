@@ -15,6 +15,61 @@ log_message "${deployment_name}: Configure ACT" "" "${slack_webhook}" "${google_
 #
 # HTML doc update
 #
+tee /home/ubuntu/act/configure-act.html> /dev/null <<EOT
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Configure ACT</title>
+    <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  text-align: left;
+}
+.code-box {
+  border: 1px solid black;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+<h1>Configure ACT</h1>
+<ul>
+    <br>
+    <table>
+EOT
+echo ${segments_overlay} | jq -c -r .[] | while read item
+do
+  if $(echo ${item} | jq -e '.lb' > /dev/null) ; then
+    if [[ $(echo ${item} | jq -c -r '.lb') == "true" ]] ; then
+      tee -a /home/ubuntu/act/configure-act.html> /dev/null <<EOT
+      <tr>
+          <th>Update Avi Cloud Configuration</th>
+          <td>add the following tier1 and network: $(echo $item | jq -c -r .tier1), $(echo $item | jq -c -r .display_name)</td>
+      </tr>
+      <tr>
+          <th>Update Avi VRF $(echo $item | jq -c -r .tier1) static ip route</th>
+          <td>0.0.0.0/0 via $(echo $item | jq -c -r .cidr_three_octets).1</td>
+      </tr>
+EOT
+    fi
+  fi
+done
+tee -a /home/ubuntu/act/configure-act.html> /dev/null <<EOT
+    </table>
+    <br>
+    <br>
+</ul>
+<script>
+</body>
+</html>
+EOT
+sudo cp /home/ubuntu/configure-act.html /var/www/html/
+#
+#
+#
 tee /home/ubuntu/act/act.html> /dev/null <<EOT
 <!DOCTYPE html>
 <html>
@@ -40,23 +95,6 @@ table, th, td {
     <br>
     <table>
 EOT
-echo ${segments_overlay} | jq -c -r .[] | while read item
-do
-  if $(echo ${item} | jq -e '.lb' > /dev/null) ; then
-    if [[ $(echo ${item} | jq -c -r '.lb') == "true" ]] ; then
-      tee -a /home/ubuntu/act/act.html> /dev/null <<EOT
-      <tr>
-          <th>Update Avi Cloud Configuration</th>
-          <td>add the following tier1 and network: $(echo $item | jq -c -r .tier1), $(echo $item | jq -c -r .display_name)</td>
-      </tr>
-      <tr>
-          <th>Update Avi VRF $(echo $item | jq -c -r .tier1) static ip route</th>
-          <td>0.0.0.0/0 via $(echo $item | jq -c -r .cidr_three_octets).1</td>
-      </tr>
-EOT
-    fi
-  fi
-done
 tee -a /home/ubuntu/act/act.html> /dev/null <<EOT
         <tr>
             <th>ACT Username</th>
@@ -86,23 +124,6 @@ tee -a /home/ubuntu/act/act.html> /dev/null <<EOT
     <br>
     <br>
 </ul>
-<script>
-function copyToClipboard(boxIndex) {
-  const codeBoxes = document.querySelectorAll('.code-box');
-  const codeBox = codeBoxes[boxIndex];
-  const codeElement = codeBox.querySelector('code');
-
-  const tempTextarea = document.createElement('textarea');
-  tempTextarea.value = codeElement.textContent;
-  document.body.appendChild(tempTextarea);
-
-  tempTextarea.select();
-  document.execCommand('copy');
-
-  document.body.removeChild(tempTextarea);
-
-}
-</script>
 </body>
 </html>
 EOT

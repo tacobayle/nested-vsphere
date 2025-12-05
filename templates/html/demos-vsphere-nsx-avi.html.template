@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nested Deployment: Demos</title>
+</head>
+<body>
+<h1>Demo Local Load Balancing</h1>
+<ul>
+    <li><a href="nosnat.html" target="_blank">Preserve Client IP</a></li>
+</ul>
+<h1>Demo Automation</h1>
+<ul>
+    <li><a href="vra.html" target="_blank">vRA Demo</a></li>
+    <li><a href="ansible.html" target="_blank">Ansible Demo</a></li>
+    <li><a href="terraform.html" target="_blank">Terraform Demo</a></li>
+    <li><a href="https://demo.${domain}" target="_blank">Self Service Portal Demo</a></li>
+    <li><a href="https://demo.${domain}/clean-up.html" target="_blank">Self Service Portal Clean Up</a></li>
+</ul>
+<h1>Demo Avi Conversion Tool</h1>
+<ul>
+    <li><a href="act.html" target="_blank">ACT Demo</a></li>
+</ul>
+<h1>Demo Rate limiting</h1>
+<ul>
+    <li><a href="rate-limiting-ako-cookie.html" target="_blank">Demo Rate limiting based on cookie - AKO driven</a></li>
+</ul>
+<h1>Demo WAF</h1>
+<ul>
+    <li><a href="see-waf-details-api.html" target="_blank">See WAF details through the API</a></li>
+</ul>
+</body>
+</html>
