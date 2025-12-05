@@ -117,12 +117,23 @@ gw=$(echo ${gw} | jq '. | del (.spec.listeners[0].hostname)')
 gw=$(echo ${gw} | jq '.spec.listeners[0] += {"hostname": "*.'${domain}'"}')
 echo ${gw} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-gw-single-listener.yml > /dev/null
 #
+# GatewayApi CRD
+#
+l7rule=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-backendExtension.yaml)
+l7rule=$(echo ${l7rule} | jq '. | del (.spec.backendTLS)')
+l7rule=$(echo ${l7rule} | jq '.spec += {"backendTLS": {"hostCheckEnabled": true, "domainName": ["gw-v1.'"${domain}"'"]}}')
+echo ${l7rule} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-backendExtension.yaml > /dev/null
+#
 # gw http routes update
 #
 route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-http-route-1.yml)
 route=$(echo ${route} | jq '. | del (.spec.hostnames)')
 route=$(echo ${route} | jq '.spec += {"hostnames": ["gw-v1.'"${domain}"'"]}')
 echo ${route} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-gw-http-route-1.yml > /dev/null
+route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-http-route-1-crd.yml)
+route=$(echo ${route} | jq '. | del (.spec.hostnames)')
+route=$(echo ${route} | jq '.spec += {"hostnames": ["gw-v1.'"${domain}"'"]}')
+echo ${route} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-gw-http-route-1-crd.yml > /dev/null
 route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-http-route-2.yml)
 route=$(echo ${route} | jq '. | del (.spec.hostnames)')
 route=$(echo ${route} | jq '.spec += {"hostnames": ["gw-v2.'"${domain}"'"]}')
