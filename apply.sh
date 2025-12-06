@@ -494,6 +494,7 @@ if [[ ${operation} == "destroy" ]] ; then
   #
   if [[ $(jq -c -r .spec.vsphere_underlay.affinity $jsonFile) == "true" ]] ; then
     govc cluster.rule.remove -name "${deployment_name}-affinity-rule"
+    rm -f /tmp/${deployment_name}_affinity.done
     log_message "${deployment_name}: $(date): Affinity rule on the underlay infrastructure destroyed" "${log_file}" "${slack_webhook}" "${google_webhook}"
   fi
   #
