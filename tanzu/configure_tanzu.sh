@@ -436,10 +436,14 @@ table, th, td {
 <h1>Workload Clusters</h1>
 <ul>
 EOT
+  cp /home/ubuntu/tkc/tkgs-workload.html /home/ubuntu/tkc/vks_ingress.html
+  cp /home/ubuntu/tkc/tkgs-workload.html /home/ubuntu/tkc/vks_gw.html
   #
   #
   #
-  javascript_count=0
+  javascript_count_config=0
+  javascript_count_demo_gw=0
+  javascript_count_demo_ingress=0
   for cluster in $(echo ${tkc_clusters} | jq -c -r .[])
   do
     namespace=$(echo ${cluster} | jq -c -r .namespace_ref)
@@ -469,16 +473,17 @@ EOT
     <pre><code>
 /home/ubuntu/tkc/${tkc_name}_create.sh
     </code></pre>
-<button onclick="copyToClipboard(${javascript_count})">Copy Code</button>
+<button onclick="copyToClipboard(${javascript_count_config})">Copy Code</button>
             </td>
         </tr>
         <tr>
-            <th>Authenticate to the cluster</th>
+            <th>Authenticate to the cluster and check the node status</th>
             <td class="code-box">
     <pre><code>
 /home/ubuntu/tkc/auth_${tkc_name}.sh
+kubectl get node
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count+1)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_config+1)))">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -488,7 +493,7 @@ EOT
 /home/ubuntu/tkc/auth_${tkc_name}.sh
 /home/ubuntu/tkc/k8s-config.sh
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count+2)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_config+2)))">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -500,21 +505,155 @@ EOT
             <td><a href="ako_${tkc_name}_values.yml" target="_blank">AKO values Yaml</a></td>
         </tr>
         <tr>
-            <th>Install AKO via helm</th>
+            <th>Check AKO status</th>
+            <td class="code-box">
+    <pre><code>
+kubectl get pod -n avi-system
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_config+3)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Install AKO via helm if needed</th>
             <td class="code-box">
     <pre><code>
 /home/ubuntu/tkc/auth_${tkc_name}.sh
 helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version $(echo ${cluster} | jq -c -r .ako_version) \\
 -f /home/ubuntu/tkc/ako_${tkc_name}_values.yml --namespace=avi-system
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count+3)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_config+4)))">Copy Code</button>
             </td>
         </tr>
     </table>
     <br>
     <br>
 EOT
-    javascript_count=$((javascript_count+4))
+    #
+    # html /home/ubuntu/tkc/vks_gw.html
+    #
+    tee -a /home/ubuntu/tkc/vks_gw.html> /dev/null <<EOT
+    <li>${tkc_name}</li>
+    <br>
+    <table>
+        <tr>
+            <th>vSphere Namespaces</th>
+            <td>${namespace}</td>
+        </tr>
+        <tr>
+            <th>Antrea Config Yaml manifest</th>
+            <td><a href="${tkc_name}-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Cluster Yaml manifest</th>
+            <td><a href="${tkc_name}.yml" target="_blank">Cluster Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>AKO Gateway API enabled</th>
+            <td>$(echo ${cluster} | jq -c -r .ako_gateway_api)</td>
+        </tr>
+        <tr>
+            <th>AKO values Yaml</th>
+            <td><a href="ako_${tkc_name}_values.yml" target="_blank">AKO values Yaml</a></td>
+        </tr>
+        <tr>
+            <th>Check AKO status</th>
+            <td class="code-box">
+    <pre><code>
+kubectl get pod -n avi-system
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+1)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Install AKO via helm if needed</th>
+            <td class="code-box">
+    <pre><code>
+/home/ubuntu/tkc/auth_${tkc_name}.sh
+helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version $(echo ${cluster} | jq -c -r .ako_version) \\
+-f /home/ubuntu/tkc/ako_${tkc_name}_values.yml --namespace=avi-system
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Install App/Deployment</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-http-apps.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+2)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a gateway</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-multiple-listeners.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+3)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a HTTP route</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-1.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+4)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a HTTP route</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-2.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+5)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a Health Monitor</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-health-monitor.yaml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+6)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a l7 rule</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-l7rule.yaml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+7)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a backend extention</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-backendExtension.yaml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+8)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a http route with CRD</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-1-crd.yaml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+9)))">Copy Code</button>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+EOT
+    #
+    javascript_count_config=$((javascript_count_config+5))
+    javascript_count_demo_gw=$((javascript_count_demo_gw+10))
     #
     #
     #
@@ -677,10 +816,35 @@ function copyToClipboard(boxIndex) {
 </body>
 </html>
 EOT
+  tee -a /home/ubuntu/tkc/vks_gw.html> /dev/null <<EOT
+</ul>
+<script>
+function copyToClipboard(boxIndex) {
+  const codeBoxes = document.querySelectorAll('.code-box');
+  const codeBox = codeBoxes[boxIndex];
+  const codeElement = codeBox.querySelector('code');
+
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = codeElement.textContent;
+  document.body.appendChild(tempTextarea);
+
+  tempTextarea.select();
+  document.execCommand('copy');
+
+  document.body.removeChild(tempTextarea);
+
+}
+</script>
+</body>
+</html>
+EOT
+
   #
   #
   #
   sudo cp /home/ubuntu/tkc/tkgs-workload.html /var/www/html/
+  sudo cp /home/ubuntu/tkc/vks_gw.html /var/www/html/
+  sudo cp /home/ubuntu/tkc/vks_ingress.html /var/www/html/
 fi
 touch ${resultFile}
 exit
