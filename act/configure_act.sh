@@ -66,7 +66,7 @@ tee -a /home/ubuntu/act/configure-act.html> /dev/null <<EOT
 </body>
 </html>
 EOT
-sudo cp /home/ubuntu/configure-act.html /var/www/html/
+sudo cp /home/ubuntu/act/configure-act.html /var/www/html/
 #
 #
 #
