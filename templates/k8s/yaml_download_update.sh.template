@@ -130,10 +130,10 @@ route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-http-route-
 route=$(echo ${route} | jq '. | del (.spec.hostnames)')
 route=$(echo ${route} | jq '.spec += {"hostnames": ["gw-v1.'"${domain}"'"]}')
 echo ${route} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-gw-http-route-1.yml > /dev/null
-route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-http-route-1-crd.yml)
+route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-http-route-1-crd.yaml)
 route=$(echo ${route} | jq '. | del (.spec.hostnames)')
 route=$(echo ${route} | jq '.spec += {"hostnames": ["gw-v1.'"${domain}"'"]}')
-echo ${route} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-gw-http-route-1-crd.yml > /dev/null
+echo ${route} | /home/ubuntu/.local/bin/yq -y . | tee /home/ubuntu/yaml-files/demo-gw-http-route-1-crd.yaml > /dev/null
 route=$(/home/ubuntu/.local/bin/yq . /home/ubuntu/yaml-files/demo-gw-http-route-2.yml)
 route=$(echo ${route} | jq '. | del (.spec.hostnames)')
 route=$(echo ${route} | jq '.spec += {"hostnames": ["gw-v2.'"${domain}"'"]}')
