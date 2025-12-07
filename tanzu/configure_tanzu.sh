@@ -665,6 +665,15 @@ kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-1-crd.yaml
 <button onclick="copyToClipboard($((javascript_count_demo_gw+11)))">Copy Code</button>
             </td>
         </tr>
+        <tr>
+            <th>Create a HTTP route pointing to multiple svc with LB</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-multiple-2-3.yaml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+12)))">Copy Code</button>
+            </td>
+        </tr>
     </table>
     <br>
     <br>
@@ -763,7 +772,7 @@ kubectl apply -f /home/ubuntu/${yaml_folder}/demo-http-crds.yml
 EOT
     #
     javascript_count_config=$((javascript_count_config+5))
-    javascript_count_demo_gw=$((javascript_count_demo_gw+11))
+    javascript_count_demo_gw=$((javascript_count_demo_gw+13))
     javascript_count_demo_ingress=$((javascript_count_demo_ingress+7))
     #
     #
