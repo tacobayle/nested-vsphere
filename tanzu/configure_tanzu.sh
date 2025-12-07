@@ -561,7 +561,7 @@ EOT
     <pre><code>
 kubectl get pod -n avi-system
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw+1)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_demo_gw)))">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -572,16 +572,25 @@ kubectl get pod -n avi-system
 helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version $(echo ${cluster} | jq -c -r .ako_version) \\
 -f /home/ubuntu/tkc/ako_${tkc_name}_values.yml --namespace=avi-system
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+1)))">Copy Code</button>
             </td>
         </tr>
         <tr>
-            <th>Install App/Deployment</th>
+            <th>check app status</th>
+            <td class="code-box">
+    <pre><code>
+kubectl get pod
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+2)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Install App/Deployment if needed</th>
             <td class="code-box">
     <pre><code>
 kubectl apply -f /home/ubuntu/${yaml_folder}/demo-http-apps.yml
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw+2)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+3)))">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -590,25 +599,34 @@ kubectl apply -f /home/ubuntu/${yaml_folder}/demo-http-apps.yml
     <pre><code>
 kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-multiple-listeners.yml
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw+3)))">Copy Code</button>
-            </td>
-        </tr>
-        <tr>
-            <th>Create a HTTP route</th>
-            <td class="code-box">
-    <pre><code>
-kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-1.yml
-    </code></pre>
 <button onclick="copyToClipboard($((javascript_count_demo_gw+4)))">Copy Code</button>
             </td>
         </tr>
         <tr>
-            <th>Create a HTTP route</th>
+            <th>Create a HTTP route #1</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-1.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+5)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Scale the deployment</th>
+            <td class="code-box">
+    <pre><code>
+kubectl scale deployment.v1.apps/web-front1 --replicas=4
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+6)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a HTTP route #2</th>
             <td class="code-box">
     <pre><code>
 kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-2.yml
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw+5)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+7)))">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -617,7 +635,7 @@ kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-2.yml
     <pre><code>
 kubectl apply -f /home/ubuntu/${yaml_folder}/demo-health-monitor.yaml
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw+6)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+8)))">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -626,7 +644,7 @@ kubectl apply -f /home/ubuntu/${yaml_folder}/demo-health-monitor.yaml
     <pre><code>
 kubectl apply -f /home/ubuntu/${yaml_folder}/demo-l7rule.yaml
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw+7)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+9)))">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -635,7 +653,7 @@ kubectl apply -f /home/ubuntu/${yaml_folder}/demo-l7rule.yaml
     <pre><code>
 kubectl apply -f /home/ubuntu/${yaml_folder}/demo-backendExtension.yaml
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw+8)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+10)))">Copy Code</button>
             </td>
         </tr>
         <tr>
@@ -644,7 +662,99 @@ kubectl apply -f /home/ubuntu/${yaml_folder}/demo-backendExtension.yaml
     <pre><code>
 kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-1-crd.yaml
     </code></pre>
-<button onclick="copyToClipboard($((javascript_count_demo_gw+9)))">Copy Code</button>
+<button onclick="copyToClipboard($((javascript_count_demo_gw+11)))">Copy Code</button>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+EOT
+    #
+    # html /home/ubuntu/tkc/vks_ingress.html
+    #
+    tee -a /home/ubuntu/tkc/vks_ingress.html> /dev/null <<EOT
+    <li>${tkc_name}</li>
+    <br>
+    <table>
+        <tr>
+            <th>vSphere Namespaces</th>
+            <td>${namespace}</td>
+        </tr>
+        <tr>
+            <th>Antrea Config Yaml manifest</th>
+            <td><a href="${tkc_name}-antrea-package.yml" target="_blank">Antrea Config Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>Cluster Yaml manifest</th>
+            <td><a href="${tkc_name}.yml" target="_blank">Cluster Yaml manifest</a></td>
+        </tr>
+        <tr>
+            <th>AKO values Yaml</th>
+            <td><a href="ako_${tkc_name}_values.yml" target="_blank">AKO values Yaml</a></td>
+        </tr>
+        <tr>
+            <th>Check AKO status</th>
+            <td class="code-box">
+    <pre><code>
+kubectl get pod -n avi-system
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_ingress)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Install AKO via helm if needed</th>
+            <td class="code-box">
+    <pre><code>
+/home/ubuntu/tkc/auth_${tkc_name}.sh
+helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako  --version $(echo ${cluster} | jq -c -r .ako_version) \\
+-f /home/ubuntu/tkc/ako_${tkc_name}_values.yml --namespace=avi-system
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_ingress+1)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>check app status</th>
+            <td class="code-box">
+    <pre><code>
+kubectl get pod
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_ingress+2)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Install App/Deployment if needed</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-http-apps.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_ingress+3)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Create a ingress</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-http-ingress.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_ingress+4)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Scale the deployment</th>
+            <td class="code-box">
+    <pre><code>
+kubectl scale deployment.v1.apps/web-front1 --replicas=6
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_ingress+5)))">Copy Code</button>
+            </td>
+        </tr>
+        <tr>
+            <th>Add ingress CRDs</th>
+            <td class="code-box">
+    <pre><code>
+kubectl apply -f /home/ubuntu/${yaml_folder}/demo-http-crds.yml
+    </code></pre>
+<button onclick="copyToClipboard($((javascript_count_demo_ingress+6)))">Copy Code</button>
             </td>
         </tr>
     </table>
@@ -653,7 +763,8 @@ kubectl apply -f /home/ubuntu/${yaml_folder}/demo-gw-http-route-1-crd.yaml
 EOT
     #
     javascript_count_config=$((javascript_count_config+5))
-    javascript_count_demo_gw=$((javascript_count_demo_gw+10))
+    javascript_count_demo_gw=$((javascript_count_demo_gw+11))
+    javascript_count_demo_ingress=$((javascript_count_demo_ingress+7))
     #
     #
     #
