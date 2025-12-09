@@ -21,26 +21,6 @@ table, th, td {
 <br>
 <table>
     <tr>
-        <th>Install Terraform - commands to use from the external gateway</th>
-        <td class="code-box">
-    <pre><code>
-sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
-wget -O- https://apt.releases.hashicorp.com/gpg | \
-gpg --dearmor | \
-sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
-gpg --no-default-keyring \
---keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
---fingerprint
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-sudo tee /etc/apt/sources.list.d/hashicorp.list
-sudo apt update
-sudo apt-get install terraform
-    </code></pre>
-            <button onclick="copyToClipboard(0)">Copy Code</button>
-        </td>
-    </tr>
-    <tr>
         <th>Create a VS in <u>automation tenant</u> - commands to use from the external gateway</th>
         <td class="code-box">
     <pre><code>
@@ -51,7 +31,7 @@ more infra.json
 terraform init
 terraform apply -auto-approve -var-file=./infra.json -var-file=/home/ubuntu/.creds.json
     </code></pre>
-            <button onclick="copyToClipboard(1)">Copy Code</button>
+            <button onclick="copyToClipboard(0)">Copy Code</button>
         </td>
     </tr>
     <tr>
@@ -61,7 +41,7 @@ terraform apply -auto-approve -var-file=./infra.json -var-file=/home/ubuntu/.cre
 cd ~/automation/tfAviVsIpamDns
 terraform destroy -auto-approve -var-file=./infra.json -var-file=/home/ubuntu/.creds.json
     </code></pre>
-            <button onclick="copyToClipboard(2)">Copy Code</button>
+            <button onclick="copyToClipboard(1)">Copy Code</button>
         </td>
     </tr>
 </table>
