@@ -54,6 +54,17 @@ log_message "${deployment_name}: NSX Manager ready at https://${ip_nsx}" "" "${s
             "POST" \
             ""
 #
+# enable ssh
+#
+json_data='{"service_name": "ssh","service_properties": {"start_on_boot": true,"root_login": true}}'
+/bin/bash /home/ubuntu/nsx/set_object.sh "${ip_nsx}" "${GENERIC_PASSWORD}" \
+            "api/v1/node/services/ssh" \
+            PUT \
+            "${json_data}"
+export SSHPASS=''${GENERIC_PASSWORD}''
+sshpass -e scp -o StrictHostKeyChecking=no /home/ubuntu/nsx/disable_ovf_validation_flag.sh root@${ip_nsx}:/tmp/disable_ovf_validation_flag.sh
+sshpass -e ssh -o StrictHostKeyChecking=no root@${ip_nsx} "bash /tmp/disable_ovf_validation_flag.sh"
+#
 # host-switch-profiles
 #
 echo ${host_switch_profiles} | jq -c -r .[] | while read item
