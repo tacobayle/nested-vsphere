@@ -1576,7 +1576,7 @@
         "pods_cidrs": ["10.245.0.0/21"],
         "avi_tenant_name": "ns1",
         "se_in_provider_context": true,
-        "ako_version": "2.1.1",
+        "ako_version": "2.1.2",
         "ako_gateway_api": true
       },
       {
