@@ -497,6 +497,10 @@ kubectl get node
             </td>
         </tr>
         <tr>
+            <th>AKO Version</th>
+            <td>$(echo ${cluster} | jq -c -r .ako_version)</td>
+        </tr>
+        <tr>
             <th>AKO Gateway API enabled</th>
             <td>$(echo ${cluster} | jq -c -r .ako_gateway_api)</td>
         </tr>
