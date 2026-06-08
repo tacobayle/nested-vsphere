@@ -94,6 +94,7 @@ if [[ ${operation} == "apply" ]] ; then
         -e "s@\${net_client_list}@$(echo ${net_client_list} | jq -c -r '.')@g" \
         -e "s@\${ip_blocks_json}@$(echo ${ip_blocks_json} | jq -c -r '.')@g" \
         -e "s@\${jsonFile}@$(basename ${jsonFile})@g" \
+        -e "s@\${gw_pip_artefact}@${gw_pip_artefact}@g" \
         -e "s/\${reverse_mgmt}/${reverse_mgmt}/g" \
         -e "s/\${cidr_mgmt_three_octets}/${cidr_mgmt_three_octets}/g" \
         -e "s/\${ip_avi_dns}/${ip_avi_dns}/" \
