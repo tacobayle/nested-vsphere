@@ -36,7 +36,7 @@ do
   count=$((count+1))
     if [[ "${count}" -eq 60 ]]; then
       log_message "  +++ ERROR: Unable to connect to Avi ctrl at https://${ip_avi}" "" "${slack_webhook}" "${google_webhook}"
- echo     exit
+      exit
     fi
 done
 log_message "Avi ctrl reachable at https://${ip_avi}" "" "" ""
