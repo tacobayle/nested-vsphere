@@ -41,7 +41,7 @@ contents="$(jq '.new_vcsa.esxi.hostname = "'${esxi_basename}'1.'${domain}'" |
                 .new_vcsa.sso.domain_name = "'${ssoDomain}'" |
                 .ceip.settings.ceip_enabled = 'false'' /home/ubuntu/json/vCSA_with_cluster_on_ESXi.json)"
 echo "${contents}" | jq 'del (.new_vcsa.esxi.VCSA_cluster.storage_pool.single_tier)' | tee /home/ubuntu/json/vcenter_config.json
-log_message "${deployment_name}': VCSA installation on-going" "" "${slack_webhook}" "${google_webhook}"
+log_message "${deployment_name}: VCSA installation on-going" "" "${slack_webhook}" "${google_webhook}"
 /tmp/vcenter_cdrom/vcsa-cli-installer/lin64/vcsa-deploy install --accept-eula --acknowledge-ceip --no-esx-ssl-verify /home/ubuntu/json/vcenter_config.json
 log_message "${deployment_name}: VCSA installed" "" "${slack_webhook}" "${google_webhook}"
 ssh-keygen -f /home/ubuntu/.ssh/known_hosts -R ${vcsa_name}.${domain} || true

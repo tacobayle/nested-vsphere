@@ -41,7 +41,7 @@ kubectl apply -f ./release/kubernetes-manifests.yaml
         <th>Create an ingress</th>
         <td class="code-box">
 <pre><code>
-kubectl apply -f /home/ubuntu/yaml-files/ingress-boutique.yaml
+kubectl apply -f /home/ubuntu/yaml-files/ako_boutique_ingress.yaml
 </code></pre>
             <button onclick="copyToClipboard(1)">Copy Code</button>
         </td>
